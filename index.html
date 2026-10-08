@@ -392,7 +392,9 @@ body { margin: 0; }
 .tile.c3 .face { background: linear-gradient(#f9edbd, #ecd27a); border-color: #b98d16; color: #4a3806; }
 .mt.k4 { background: linear-gradient(#ead9fa, #c9a8ee); border-color: #7f52c6; color: #2e1650; }
 .tile.c4 .face { background: linear-gradient(#ead9fa, #c9a8ee); border-color: #7f52c6; color: #2e1650; }
-.board.colormode .tile:not(.cc) .face { filter: saturate(.5) brightness(.72); }
+/* 色のない文字は白。暗くせず「これも使える・消せる」とわかるようにする */
+.board.colormode .tile:not(.cc) .face { background: linear-gradient(160deg, #ffffff, #f1f3f8 55%, #d9dde8); border-color: #aeb6cc; color: #1d2233; box-shadow: 0 3px 0 #8a92a8, 0 6px 10px rgba(0,0,0,.35); }
+.board.colormode .tile.vowel:not(.cc) .face { color: #1d2233; }
 .tile.cin .face { animation: cin .4s ease-out; }
 @keyframes cin { from { transform: scale(.55); filter: brightness(1.6); } }
 .cwords { display: flex; flex-wrap: wrap; gap: 4px 6px; }
