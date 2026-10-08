@@ -311,13 +311,22 @@ body { margin: 0; }
 .recent li { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 10px; border-radius: 999px; background: var(--panel); border: 1px solid var(--c, var(--line)); max-width: 100%; }
 .recent li b { font-family: var(--font-display); font-weight: 800; letter-spacing: .05em; color: var(--c); font-size: 14px; }
 .recent li span { font-size: 12px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.canwords { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.hud, .odai, .status, .canwords { flex: none; }
 .canwords[hidden] { display: none; }
-.canwords ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.canwords li { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 10px; border-radius: 999px; background: color-mix(in srgb, var(--c) 14%, var(--panel)); border: 1px dashed var(--c, var(--line)); max-width: 100%; }
-.canwords li b { font-family: var(--font-display); font-weight: 800; letter-spacing: .05em; color: var(--c); font-size: 14px; }
-.canwords li span { font-size: 12px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.canwords li.none { font-size: 12px; color: var(--muted); border: 0; background: none; padding: 0; }
+.canbtn { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: var(--panel); border: 1px dashed var(--gold); color: var(--fg); font: inherit; font-size: 13px; cursor: pointer; }
+.canbtn b { color: var(--gold); font-size: 15px; }
+.canbtn .cb-go { color: var(--gold); font-weight: 700; white-space: nowrap; }
+.cansheet { position: fixed; inset: 0; z-index: 60; background: rgba(8, 10, 20, .6); display: flex; align-items: flex-end; justify-content: center; }
+.cansheet[hidden] { display: none; }
+.cs-in { width: 100%; max-width: 520px; max-height: 70vh; overflow-y: auto; background: var(--panel); border-top: 2px solid var(--gold); border-radius: 16px 16px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 10px; }
+.cs-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; }
+.cs-head button { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); color: var(--fg); font: inherit; font-size: 12px; }
+.cs-note { margin: 0; font-size: 11px; color: var(--muted); }
+.cansheet ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.cansheet li { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 10px; border-radius: 999px; background: color-mix(in srgb, var(--c) 14%, var(--panel)); border: 1px dashed var(--c, var(--line)); max-width: 100%; }
+.cansheet li b { font-family: var(--font-display); font-weight: 800; letter-spacing: .05em; color: var(--c); font-size: 14px; }
+.cansheet li span { font-size: 12px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cansheet li.none { font-size: 12px; color: var(--muted); border: 0; background: none; padding: 0; }
 .recent .none { font-size: 12px; color: var(--muted); border: 0; background: none; padding: 0; }
 .overlay { position: fixed; inset: 0; z-index: 30; border-radius: 0; background: rgba(12, 15, 28, .94); padding: 24px 16px; }
 .hud { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px 0; overflow: hidden; display: grid; gap: 4px; }
@@ -370,6 +379,22 @@ body { margin: 0; }
 .cw { display: inline-flex; align-items: baseline; gap: 5px; padding: 1px 8px; border-radius: 8px; border: 2px solid var(--cc); background: color-mix(in srgb, var(--cc) 20%, transparent); }
 .cw b { font-family: var(--font-display); font-weight: 800; letter-spacing: .08em; font-size: 15px; color: #fff; }
 .cw span { font-size: 11px; color: var(--muted); max-width: 7em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.odai.color .cwords { gap: 4px; }
+.odai.color .cw { padding: 0 6px; gap: 4px; border-width: 1.5px; }
+.odai.color .cw b { font-size: 14px; letter-spacing: .04em; }
+.odai.color .cw span { font-size: 10px; max-width: 4.6em; }
+.odai.color .bonus { font-size: 10px; }
+/* カラー：5つの単語を横いっぱいに並べ、残り時間はその下の行に */
+.odai.color .odai-main { display: contents; }
+.odai.color .cwords { grid-column: 1 / -1; }
+.odai.color .bonus { grid-column: 1; align-self: center; white-space: nowrap; }
+.odai.color .odai-time { grid-column: 2; display: flex; align-items: baseline; gap: 6px; border-left: 0; padding-left: 0; }
+.odai.color .timeleft { font-size: 18px; min-width: 3em; }
+@media (max-height: 760px) {
+  .status { min-height: 2.4em; font-size: 12px; }
+  .hud { padding-top: 6px; }
+  .odai { padding-top: 6px; }
+}
 .odai.color .odai-line { display: none; }
 .tile.stone .face::after { content: ""; position: absolute; right: 12%; bottom: 14%; width: 18%; height: 18%; border-right: 2px solid rgba(0,0,0,.35); border-bottom: 2px solid rgba(0,0,0,.35); transform: skew(-20deg); }
 .tile.nope .face { animation: nope .25s; }
@@ -530,9 +555,8 @@ body { margin: 0; }
     </div>
 
     <div class="status" id="status">文字をつかんでなぞると、通ったマスの文字と入れ替わります</div>
-    <div class="canwords" id="canWords" hidden aria-label="作れる単語">
-      <div class="recent-head">1マス動かすだけで作れる単語</div>
-      <ul id="canList"></ul>
+    <div class="canwords" id="canWords" hidden>
+      <button type="button" class="canbtn" id="canBtn" aria-haspopup="dialog"><span>1マス動かすだけで作れる単語 <b id="canCount">0</b>個</span><span class="cb-go">一覧を見る ▸</span></button>
     </div>
     <div class="recent" id="recent" aria-label="さっき作った単語">
       <div class="recent-head">さっき作った単語</div>
@@ -540,6 +564,14 @@ body { margin: 0; }
     </div>
 
   </main>
+
+  <div class="cansheet" id="canSheet" role="dialog" aria-label="作れる単語" hidden>
+    <div class="cs-in">
+      <div class="cs-head"><b>1マス動かすだけで作れる単語</b><button type="button" id="canClose">閉じる</button></div>
+      <ul id="canList"></ul>
+      <p class="cs-note">場所は自分でさがそう。どこかをタップすると閉じます</p>
+    </div>
+  </div>
 
   <section class="view book" id="view-book" aria-label="単語帳" hidden>
     <header class="view-head">
@@ -9804,7 +9836,7 @@ zoom|v2|ズームする・急上昇する`;
     document.querySelector(".odai").classList.toggle("color", color);
     boardEl.classList.toggle("colormode", color);
     $("cwords").hidden = !color;
-    $("bonusText").textContent = color ? "同じ色だけで作ると得点2倍" : "作ると得点3倍";
+    $("bonusText").textContent = color ? "同じ色で作ると2倍" : "作ると得点3倍";
     if (color) { odai = { w: "", m: "" }; setupColor(); } else newOdai();
     if (unseed) unseed();
     updateAssistChip();
@@ -10095,14 +10127,16 @@ zoom|v2|ズームする・急上昇する`;
     const gap = parseFloat(cs.rowGap) || 8;
     let used = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
     let n = 0;
-    for (const el of view.children) { if (el === boardEl) continue; n++; if (el.id === "recent") { used += 40; continue; } used += el.offsetHeight; }
+    for (const el of view.children) { if (el === boardEl) continue; n++; if (el.id === "recent") { used += 50; continue; } used += el.offsetHeight; }
     used += gap * n;
     const availH = view.clientHeight - used;
     const availW = view.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     const w = Math.max(180, Math.min(availW, availH * 6 / 5));
     boardEl.style.width = Math.floor(w) + "px";
   }
-  new ResizeObserver(() => fitBoard()).observe($("view-game"));
+  { const ro = new ResizeObserver(() => fitBoard()); ro.observe($("view-game")); ro.observe($("hud")); ro.observe(document.querySelector(".odai")); }
+  $("canBtn").addEventListener("click", () => { $("canSheet").hidden = false; });
+  $("canSheet").addEventListener("click", () => { $("canSheet").hidden = true; });
   $("dictSel").addEventListener("change", () => { buildDict(); start(); });
 
   $("bookBadge").textContent = Object.keys(book).length;
@@ -10216,10 +10250,14 @@ zoom|v2|ズームする・急上昇する`;
   function renderCanList() {
     const box = $("canWords");
     const show = assistLv() === 1 && !tut && hints;
-    box.hidden = !show; if (!show) return;
+    const was = box.hidden;
+    box.hidden = !show;
+    if (was !== box.hidden) fitBoard();
+    if (!show) { $("canSheet").hidden = true; return; }
     // お題を先頭に、あとはやさしい単語（基本→標準→発展）から順に出す
     const tierOf = w => (DICT.get(w) || {}).tier || 3;
-    const words = hints.cands.slice().sort((x, y) => (y.w === odai.w) - (x.w === odai.w) || tierOf(x.w) - tierOf(y.w) || y.v - x.v).map(x => x.w).slice(0, 5);
+    const words = hints.cands.slice().sort((x, y) => (y.w === odai.w) - (x.w === odai.w) || tierOf(x.w) - tierOf(y.w) || y.v - x.v).map(x => x.w).slice(0, 12);
+    $("canCount").textContent = words.length;
     $("canList").innerHTML = words.length
       ? words.map(w => { const info = DICT.get(w); return `<li style="--c:${POS[info.pos].color}"><b>${w}</b><span>${esc(info.m)}</span></li>`; }).join("")
       : '<li class="none">今は1マスで作れる単語がない。大きくなぞって並べ替えよう</li>';
