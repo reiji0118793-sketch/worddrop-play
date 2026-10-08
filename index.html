@@ -443,10 +443,10 @@ body { margin: 0; }
 .app.gshake { animation: gshake .42s; }
 @keyframes gshake { 15% { transform: translate(-7px, 4px); } 30% { transform: translate(6px, -5px); } 45% { transform: translate(-5px, -3px); } 60% { transform: translate(4px, 4px); } 75% { transform: translate(-2px, 1px); } }
 /* ---------- はじめての遊び方 ---------- */
-#tutRoute { position: absolute; left: 0; top: 0; z-index: 25; pointer-events: none; overflow: visible; }
-#tutFinger { position: absolute; z-index: 30; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; pointer-events: none;
+#navRoute, #tutRoute { position: absolute; left: 0; top: 0; z-index: 25; pointer-events: none; overflow: visible; }
+#navFinger, #tutFinger { position: absolute; z-index: 30; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; pointer-events: none;
   background: rgba(255,255,255,.35); border: 3px solid #fff; box-shadow: 0 0 18px rgba(255,255,255,.8); }
-.tile.tut .face { box-shadow: 0 0 0 3px #fff, 0 0 18px 4px rgba(255,228,92,.95); }
+.tile.navstart .face, .tile.tut .face { box-shadow: 0 0 0 3px #fff, 0 0 18px 4px rgba(255,228,92,.95); }
 #tutCoach { position: fixed; left: 12px; right: 12px; bottom: 76px; z-index: 55; max-width: 460px; margin: 0 auto; padding: 14px 16px; border-radius: 16px;
   background: rgba(14,18,36,.96); border: 2px solid #d9b45a; box-shadow: 0 10px 30px rgba(0,0,0,.5); color: #fff; font-family: "Zen Maru Gothic", sans-serif; cursor: pointer; }
 #tutCoach .tc-close { position: absolute; right: 10px; top: 8px; font-size: 11px; color: #a3a9c4; }
@@ -749,7 +749,7 @@ acne|n2|にきび
 acorn|n3|どんぐり
 acre|n2|エーカー
 acrid|a3|しんらつな
-across|d1|を横断して
+across|d1|横切って・向こう側に
 act|n1|行為
 actin|n3|アクチン
 acting|n1|演技
@@ -1296,7 +1296,7 @@ behalf|n1|代わり・代理
 behave|v2|ふるまう
 behead|v3|〜の首をはねる
 behest|n3|命令
-behind|d1|の後ろに
+behind|d1|〜の後ろに
 behold|v2|見る
 beige|n3|ベージュ色
 being|n1|存在
@@ -2674,7 +2674,7 @@ domain|n1|領域
 dome|n2|丸屋根
 domed|a3|ドーム形の
 domino|n3|ドミノ牌
-don|v1|を着る
+don|v1|着る
 done|a1|仕上がった
 donkey|n2|ロバ
 donor|n2|寄付者
@@ -2849,7 +2849,7 @@ edge|n1|縁
 edging|n3|縁どり
 edible|a2|食べられる
 edict|n3|勅令
-edit|v1|〜を編集する
+edit|v1|編集する
 editor|n1|編集者
 eel|n3|ウナギ
 eerie|a3|無気味な
@@ -2907,7 +2907,7 @@ empire|n1|帝国
 employ|v2|雇う
 empty|a1|からの
 emu|n3|エミュー
-enable|v1|を可能にする
+enable|v1|可能にする
 enact|v3|を制定する
 enamel|n3|エナメル
 encode|v3|〜を暗号化する
@@ -6218,7 +6218,7 @@ rag|n2|ぼろきれ
 rage|n2|激怒
 ragged|a3|ぼろぼろの
 raglan|n3|ラグランそでのゆったりしたオ
-raid|v2|〜を急襲する
+raid|v2|急襲する
 raider|n3|急襲する人
 rail|n1|レール
 rain|n1|雨
@@ -6230,7 +6230,7 @@ rajah|n3|王
 rake|v3|〜を機銃掃射する
 rakish|a3|放蕩な
 rally|n1|集会・大会
-ram|v2|〜に激突する
+ram|v2|激突する
 ramble|v3|あてもなく歩く
 ramp|n2|傾斜路・スロープ
 ramrod|n3|に火薬を詰め込む)込め矢
@@ -7387,7 +7387,7 @@ spy|n2|スパイ
 squad|n1|班・チーム
 squall|v3|はやてが吹く
 square|n1|正方形
-squash|v2|〜を押しつぶす
+squash|v2|押しつぶす
 squat|v3|地に伏す
 squaw|n3|女
 squawk|v3|鋭く鳴く
@@ -7623,7 +7623,7 @@ swampy|a3|沼地の
 swan|n2|ハクチョウ
 swank|n3|見せびらかし
 swanky|a3|いきな
-swap|v2|〜を交換する
+swap|v2|交換する
 swarm|v3|巣分かれする
 swash|n3|バシャッという音
 swat|n3|〜をぴしゃりと打つ
@@ -7891,7 +7891,7 @@ tilde|n3|スペイン語で n の上につけ
 tile|n2|タイル
 till|p1|〜まで
 tiller|n3|舵の柄
-tilt|v2|〜を傾ける
+tilt|v2|傾ける
 timber|n2|材木
 timbre|n3|音色
 time|n1|時間
@@ -8285,7 +8285,7 @@ use|v1|使う
 used|a1|中古の
 useful|a1|役に立つ
 user|n1|利用者
-usher|v2|〜を案内する
+usher|v2|案内する
 usual|a1|いつもの
 usurp|v3|を横領する
 usury|n3|高利貸し業
@@ -9955,22 +9955,22 @@ zoom|v2|ズームする・急上昇する`;
     }
   }
   // ルートを線で表示して、指のマークで何度もなぞって見せる
-  function drawRoute(route) {
+  function drawRoute(route, pre = "tut") {
     const br = boardEl.getBoundingClientRect(), tr = $("tiles").getBoundingClientRect();
     const pt = q => [tr.left - br.left + (q.c + 0.5) * S, tr.top - br.top + (q.r + 0.5) * S];
     const pts = route.map(pt);
     const ns = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(ns, "svg"); svg.id = "tutRoute";
+    const svg = document.createElementNS(ns, "svg"); svg.id = pre + "Route"; svg.classList.add("routeSvg");
     svg.setAttribute("width", br.width); svg.setAttribute("height", br.height);
     const sw = S * 0.16;
-    svg.innerHTML = `<defs><marker id="tutArr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="2.6" markerHeight="2.6" orient="auto"><path d="M1 1 L9 5 L1 9 z" fill="#ffe45c"/></marker></defs>
+    svg.innerHTML = `<defs><marker id="${pre}Arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="2.6" markerHeight="2.6" orient="auto"><path d="M1 1 L9 5 L1 9 z" fill="#ffe45c"/></marker></defs>
       <polyline points="${pts.map(p => p.join(",")).join(" ")}" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="${sw + 6}" stroke-linecap="round" stroke-linejoin="round"/>
-      <polyline class="tline" points="${pts.map(p => p.join(",")).join(" ")}" fill="none" stroke="#ffe45c" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" marker-mid="url(#tutArr)" marker-end="url(#tutArr)" stroke-dasharray="${sw * 0.2} ${sw * 1.6}"/>
+      <polyline class="tline" points="${pts.map(p => p.join(",")).join(" ")}" fill="none" stroke="#ffe45c" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" marker-mid="url(#${pre}Arr)" marker-end="url(#${pre}Arr)" stroke-dasharray="${sw * 0.2} ${sw * 1.6}"/>
       <circle cx="${pts[0][0]}" cy="${pts[0][1]}" r="${S * 0.42}" fill="none" stroke="#fff" stroke-width="4"/>
       <text x="${pts[0][0]}" y="${route[0].r === 0 ? pts[0][1] + S * 0.68 : pts[0][1] - S * 0.5}" text-anchor="middle" font-size="${S * 0.22}" font-weight="900" fill="#fff" stroke="#000" stroke-width="3" paint-order="stroke">START</text>`;
     boardEl.appendChild(svg);
     svg.querySelector(".tline").animate([{ strokeDashoffset: 0 }, { strokeDashoffset: -sw * 1.8 * 4 }], { duration: 900, iterations: Infinity });
-    const f = document.createElement("div"); f.id = "tutFinger"; boardEl.appendChild(f);
+    const f = document.createElement("div"); f.id = pre + "Finger"; f.className = "routeFinger"; boardEl.appendChild(f);
     const n = pts.length, kf = [{ left: pts[0][0] + "px", top: pts[0][1] + "px", opacity: 0, offset: 0 }, { left: pts[0][0] + "px", top: pts[0][1] + "px", opacity: 1, offset: .08 }];
     pts.forEach((p, k) => kf.push({ left: p[0] + "px", top: p[1] + "px", opacity: 1, offset: .14 + .74 * k / (n - 1) }));
     kf.push({ left: pts[n - 1][0] + "px", top: pts[n - 1][1] + "px", opacity: 0, offset: 1 });
@@ -10139,6 +10139,52 @@ zoom|v2|ズームする・急上昇する`;
     return used;
   }
   function refreshHints() { hints = board && odai ? computeHints() : null; hintStage = 0; applyHintStage(); renderCanList(); }
+  // アシスト「しっかり」：最後までなぞる道すじを探す（チュートリアルと同じ線で見せる）
+  function routeScore() {
+    let v = 0; const words = [];
+    for (const f of findWords(board)) {
+      let d = (f.w.length - 2) * f.w.length * 10;
+      if (f.w === odai.w) d *= 3;
+      if (isColor()) { const col = board[f.cells[0].r][f.cells[0].c].col; if (col !== undefined && f.cells.every(x => board[x.r][x.c].col === col)) d *= 2; }
+      if (isEndless()) d += stonesHit([f.cells]) * 40;
+      v += d; words.push(f.w);
+    }
+    return { v, words };
+  }
+  function findRoutes() {
+    const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], MAXD = 7, K = 60, found = [];
+    const ok = q => q.r >= 0 && q.r < ROWS && q.c >= 0 && q.c < COLS && !board[q.r][q.c].stone;
+    let beam = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (ok({ r, c })) beam.push({ path: [{ r, c }], v: 0 });
+    for (let d = 1; d <= MAXD; d++) {
+      const next = [];
+      for (const st of beam) {
+        const last = st.path[st.path.length - 1];
+        for (const [dr, dc] of N4) {
+          const q = { r: last.r + dr, c: last.c + dc };
+          if (!ok(q) || st.path.some(x => x.r === q.r && x.c === q.c)) continue;
+          const path = st.path.concat([q]);
+          for (let k = 1; k < path.length; k++) swap(path[k - 1], path[k]);
+          const sc = routeScore();
+          for (let k = path.length - 1; k >= 1; k--) swap(path[k - 1], path[k]);
+          next.push({ path, v: sc.v, words: sc.words });
+          if (sc.v > 0) found.push({ path, v: sc.v, words: sc.words });
+        }
+      }
+      if (d <= 2) { beam = next; continue; }
+      next.sort((a, b) => b.v - a.v || Math.random() - 0.5);
+      beam = next.slice(0, K);
+    }
+    // 点が高い順。同じくらいなら短い道。始まりと終わりが同じ道は1つだけ
+    found.sort((a, b) => b.v - a.v || a.path.length - b.path.length);
+    const out = [], seen = new Set();
+    for (const f of found) { const key = f.words.slice().sort().join(","); if (seen.has(key)) continue; seen.add(key); out.push(f); if (out.length >= 3) break; }
+    return out;
+  }
+  function navClear() {
+    for (const id of ["navRoute", "navFinger"]) { const e = $(id); if (e) { e.getAnimations().forEach(a => a.cancel()); e.remove(); } }
+    document.querySelectorAll(".tile.navstart").forEach(e => e.classList.remove("navstart"));
+  }
   // アシスト「ちょっと」：1マス動かすだけで作れる単語と意味の一覧（場所は教えない）
   function renderCanList() {
     const box = $("canWords");
@@ -10152,10 +10198,19 @@ zoom|v2|ズームする・急上昇する`;
       : '<li class="none">今は1マスで作れる単語がない。大きくなぞって並べ替えよう</li>';
   }
   function applyHintStage() {
+    navClear();
     if (!hints) return;
-    hints.shown = assistLv() >= 2 && hintStage > 0 ? hints.all[(hintStage - 1) % hints.all.length] || null : null;
+    hints.shown = null;  // 1マスだけの矢印はやめて、最後までなぞる線で見せる
     render();
-    if (hints.shown) { const info = DICT.get(hints.shown.w); setStatus(`ヒント：光っている「${hints.shown.mover.ch}」を矢印の方へ1マス動かすと <b>${hints.shown.w}</b>（${info.m}）`); }
+    if (assistLv() >= 2 && hintStage > 0 && !tut && !dragging) {
+      if (!hints.routes) hints.routes = findRoutes();
+      if (!hints.routes.length) { setStatus("ヒント：今は作れる単語が見つからない。大きくなぞって並べ替えよう"); return; }
+      const R = hints.routes[(hintStage - 1) % hints.routes.length];
+      elFor(board[R.path[0].r][R.path[0].c]).classList.add("navstart");
+      drawRoute(R.path, "nav");
+      const ws = R.words.map(w => `<b>${w}</b>（${DICT.get(w).m}）`).join("・");
+      setStatus(`ヒント：光っている文字から線のとおりになぞると ${ws}${R.words.length >= 2 ? `　${R.words.length}コンボ！` : ""}`);
+    }
   }
   function poke() { lastAction = performance.now(); if (hintStage) { hintStage = 0; applyHintStage(); } }
   setInterval(() => {
