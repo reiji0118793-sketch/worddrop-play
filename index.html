@@ -8944,6 +8944,11 @@ zoom|v2|ズームする・急上昇する`;
     const [w, pt, m] = line.split("|");
     if (w) ALL.set(w.toUpperCase(), { pos: pt[0], tier: Number(pt[1]), m });
   }
+  // 13歳以上向け：性的・薬物・差別・汚い言葉などは辞書から外す（盤面で単語にならない）
+  const BAN = new Set("NUDITY NUDISM NUDIST ORGY PIMP KINKY SEDUCE TIT NIPPLE TEAT SHAG COITAL COITUS GLANS HOOKY PUBES RAPER SMUT SMUTTY VULVA UDDER JUNKIE JUNKY NARC TOKE STONED OPIUM WINO BOOZER BOOZY SOT TOPE TIPPLE HOOCH GROG PLONK VINO NEGUS POGROM SLAY SLAYER FAECES FECES FECAL URINAL PRIVY LOO PEE POOP EARWAX HAG GORGON DIMWIT NITWIT TWIT CHUMP DOPEY LUST BENDER".split(" "));
+  for (const w of BAN) ALL.delete(w);
+  // 単語としては消せるが、お題・色の単語・作れる単語の一覧には出さない（お酒・暴力・ギャンブル・悪口など）
+  const NOSHOW = new Set("BEER WINE WINERY VODKA WHISKY LIQUOR BOOZE GIN RUM CIDER SHERRY TAVERN BISTRO DRUNK TIPSY SOBER KILLER GUN GUNMAN BOMB BOMBER RIFLE PISTOL MUSKET STAB SHOOT CORPSE CORSE MORGUE GORY BLOODY BLOOD BLEED LETHAL DIE DEAD DEATH DYING DEMISE MORTAL STARVE WAR WEAPON SLAVE THRALL ABUSE TERROR CURSED DEVIL FIEND DEMON IMP IMPISH CULT CASINO GAMBLE BET POKER PARLAY STUPID UGLY FAT FOOL CRAZY SEXIST SEXISM RACISM RACIAL AGEISM CIGAR SMOKE SNUFF STRAFE RAKE AMOK AMUCK".split(" "));
   const DICT = new Map();
   function buildDict() {
     const lv = Number($("dictSel").value);
@@ -9769,7 +9774,7 @@ zoom|v2|ズームする・急上昇する`;
 
 
   function pickOdai() {
-    const pool = [...DICT.entries()].filter(([w, v]) => (pack() ? inPack(w) : v.tier === 1) && w.length >= 3 && w.length <= 5 && [...w].every(ch => WEIGHTS[ch] >= 1));
+    const pool = [...DICT.entries()].filter(([w, v]) => !NOSHOW.has(w) && (pack() ? inPack(w) : v.tier === 1) && w.length >= 3 && w.length <= 5 && [...w].every(ch => WEIGHTS[ch] >= 1));
     let pick;
     do { pick = pool[Math.floor(Math.random() * pool.length)]; } while (odai && pick[0] === odai.w);
     odai = { w: pick[0], ...pick[1] };
@@ -9782,7 +9787,7 @@ zoom|v2|ズームする・急上昇する`;
     const short = cshort[i];
     const minL = short ? 3 : 4, maxL = short ? 3 : (level >= 3 ? 5 : 4);
     const used = new Set(cwords.filter((x, k) => x && k !== i).map(x => x.w));
-    const pool = [...DICT.entries()].filter(([w, v]) => (pack() ? inPack(w) : v.tier === 1) && w.length >= minL && w.length <= maxL && !used.has(w) && [...w].every(ch => WEIGHTS[ch] >= 1) && (!cwords[i] || w !== cwords[i].w));
+    const pool = [...DICT.entries()].filter(([w, v]) => !NOSHOW.has(w) && (pack() ? inPack(w) : v.tier === 1) && w.length >= minL && w.length <= maxL && !used.has(w) && [...w].every(ch => WEIGHTS[ch] >= 1) && (!cwords[i] || w !== cwords[i].w));
     const [w, v] = pool[Math.floor(Math.random() * pool.length)];
     cwords[i] = { w, ...v };
   }
@@ -10300,6 +10305,14 @@ zoom|v2|ズームする・急上昇する`;
     }
   }
   // 広告を見るか聞く画面。見て最後まで見たら true
+  // はい／いいえを聞く下からの画面（広告なし）
+  function askSheet(title, text, yes, no) {
+    return new Promise(res => {
+      $("adTitle").textContent = title; $("adText").innerHTML = text; $("adYes").textContent = yes; $("adNo").textContent = no; $("adSheet").hidden = false;
+      const close = ok => { $("adSheet").hidden = true; $("adYes").onclick = $("adNo").onclick = null; res(ok); };
+      $("adYes").onclick = () => close(true); $("adNo").onclick = () => close(false);
+    });
+  }
   function askAd(title, text, yes = "▶ 広告を見る", no = "やめる") {
     return new Promise(res => {
       $("adTitle").textContent = title; $("adText").innerHTML = text; $("adYes").textContent = yes; $("adNo").textContent = no; $("adSheet").hidden = false;
@@ -10445,7 +10458,7 @@ zoom|v2|ズームする・急上昇する`;
         : `ナイス！ <b>${got}コンボ！</b><br>一度のなぞりで単語をたくさん作るほど、<b>コンボ</b>で得点がどんどん増えるよ`, "つぎへ");
       await new Promise(r => $("tutBtn").onclick = r);
       coach("遊び方 3/3", isColor()
-        ? `カラーモードも、<b>どんな単語でも</b>消えてコンボになるよ。<br>エネルギーは毎ターン減るけど、単語を消すと回復。<b>同じ色の文字だけ</b>で作ると大きく回復して得点も2倍。0になったら終わり！`
+        ? `カラーモードも、<b>どんな単語でも</b>消えてコンボになるよ。<br>エネルギーは毎ターン減るけど、単語を消すと回復。<b>同じ色の文字だけ</b>で作ると大きく回復して得点も2倍。0になったら終わり！<br>上の5つのうち<b>1つは必ず、1回なぞるだけで作れる</b>よ。さがしてみて！`
         : `エンドレスは、毎ターン<b>石</b>が落ちてくる。石は動かせないけど、<b>文字は単語に使える</b>よ。<br>石が<b>15個</b>たまったら終わり。どこまで続けられるか挑戦！`, "はじめる！");
       await new Promise(r => $("tutBtn").onclick = r);
       $("tutCoach").hidden = true;
@@ -10476,7 +10489,7 @@ zoom|v2|ズームする・急上昇する`;
       $("dailyDate").textContent = `${d.getMonth() + 1}月${d.getDate()}日の盤面`;
       const alive = di.last === dayKey() || di.last === dayKey(y);
       $("dailyStreak").textContent = alive && di.streak ? `連続 ${di.streak}日${di.last === dayKey() ? "（今日はプレイ済み）" : ""}` : "毎日遊ぶと連続記録"; }
-    $("msNote").textContent = `エンドレスとカラーはスコア勝負なので、アシストは「ちょっと」まで（矢印ナビはデイリーで使えます）`;
+    $("msNote").textContent = `困ったときは、ゲーム画面の「ナビ」ボタンで、消える道を線で見られます`;
     $("overlay").hidden = true;
     $("modeScreen").hidden = false;
   }
@@ -10489,7 +10502,12 @@ zoom|v2|ズームする・急上昇する`;
     start();
     if (!tutDone()) runTutorial();
   }));
-  $("modeChip").addEventListener("click", () => { if (!busy && !dragging) showModeScreen(); });
+  $("modeChip").addEventListener("click", async () => {
+    if (busy || dragging) return;
+    // ゲームの途中（1ターン以上遊んだ・まだ終わっていない）なら、一度だけ確認する
+    if (turns > 0 && $("overlay").hidden && !tut && !(await askSheet("タイトルに戻りますか？", "今のゲームは終わります。", "タイトルに戻る", "ゲームを続ける"))) return;
+    showModeScreen();
+  });
   $("toModeBtn").addEventListener("click", async () => { await Ads.between(); showModeScreen(); });
   $("resetBtn").addEventListener("click", start);
   $("againBtn").addEventListener("click", async () => { await Ads.between(); start(); });
@@ -10686,7 +10704,7 @@ zoom|v2|ズームする・急上昇する`;
     const tierOf = w => (DICT.get(w) || {}).tier || 3;
     const top = new Set(isColor() ? cwords.filter(Boolean).map(x => x.w) : [odai.w]);
     // 上のお題（色の単語）を先頭に、あとはやさしい単語（基本→標準→発展）、長い単語から
-    const words = [...hints.reach].filter(w => DICT.has(w)).sort((x, y) => top.has(y) - top.has(x) || tierOf(x) - tierOf(y) || y.length - x.length).slice(0, 16);
+    const words = [...hints.reach].filter(w => DICT.has(w) && !NOSHOW.has(w)).sort((x, y) => top.has(y) - top.has(x) || tierOf(x) - tierOf(y) || y.length - x.length).slice(0, 16);
     $("canList").innerHTML = words.length
       ? words.map(w => { const info = DICT.get(w); return `<li style="--c:${POS[info.pos].color}"><b>${w}</b><span>${esc(info.m)}</span></li>`; }).join("")
       : '<li class="none">今は作れる単語が見つからない。大きくなぞって並べ替えよう</li>';
