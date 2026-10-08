@@ -9539,13 +9539,13 @@ zoom|v2|ズームする・急上昇する`;
         gained = Math.round(damage * mult * smult);
         score += gained;
         burstDamage(mult, gained, false, smult);
-        if (colorWords) $("bDmg").innerHTML += `<br>${all ? "全色そろえ！×2　" : ""}同じ色の単語 ${colorWords}個（得点2倍）${exact.size ? `・色のお題ぴったり ${exact.size}個（さらに2倍）` : ""}`;
+        if (colorWords) $("bDmg").innerHTML += `<br>${all ? "PERFECT! ×2　" : ""}同じ色の単語 ${colorWords}個（得点2倍）${exact.size ? `・色のお題ぴったり ${exact.size}個（さらに2倍）` : ""}`;
         bumpScore(); SFX.score(combo); jackpot(all ? 1 : combo >= 8 ? 3 : combo >= 5 ? 2 : combo >= 3 || exact.size >= 2 ? 1 : 0, null);  // 全色そろえは、このあと PERFECT! で大きく出す
         achTurn(combo, 0, all, false);
         await sleep(1100);
         await burstHide();
         streak++;
-        setStatus(`<b>+${gained}点</b>　${combo}コンボ${all ? "　全色そろえ！" : ""}`);
+        setStatus(`<b>+${gained}点</b>　${combo}コンボ${all ? "　PERFECT!" : ""}`);
         if (all) await perfectWipe();
       } else { streak = 0; setStatus("どんな単語でもOK。同じ色の文字だけで作ると得点2倍"); }
       // ふつうの単語に色の文字が使われて消えた色も、新しい単語に入れかえる
@@ -10082,10 +10082,9 @@ zoom|v2|ズームする・急上昇する`;
       // PERFECT!（全色そろえ）：虹色の文字＋虹の光
       perfect(ms = 2200) {
         if (!on()) return; const c = center();
-        const e = add("banner", { top: (c.y) + "px" }, `<div class="pfrays"></div><div class="pftxt">PERFECT!</div><div class="pfsub">全色そろえ！</div>`);
+        const e = add("banner", { top: (c.y) + "px" }, `<div class="pfrays"></div><div class="pftxt">PERFECT!</div>`);
         e.querySelector(".pfrays").animate([{ transform: "rotate(0) scale(.2)", opacity: 0 }, { transform: "rotate(60deg) scale(1)", opacity: .6, offset: .2 }, { transform: "rotate(220deg) scale(1.15)", opacity: .6, offset: .85 }, { transform: "rotate(260deg) scale(1.3)", opacity: 0 }], { duration: ms, fill: "both" });
         e.querySelector(".pftxt").animate([{ transform: "scale(4) rotate(-8deg)", opacity: 0 }, { transform: "scale(.85) rotate(2deg)", opacity: 1, offset: .14 }, { transform: "scale(1.05)", opacity: 1, offset: .22 }, { transform: "scale(1)", opacity: 1, offset: .85 }, { transform: "scale(1.4)", opacity: 0 }], { duration: ms, easing: "ease-out", fill: "both" });
-        e.querySelector(".pfsub").animate([{ transform: "translateY(20px)", opacity: 0 }, { transform: "translateY(20px)", opacity: 0, offset: .15 }, { transform: "translateY(0)", opacity: 1, offset: .28 }, { transform: "translateY(0)", opacity: 1, offset: .85 }, { opacity: 0 }], { duration: ms, fill: "both" });
         this.flash("#fff", .55); this.rain(160); this.shake();
         kill(e, ms + 30);
       },
@@ -10108,7 +10107,7 @@ zoom|v2|ズームする・急上昇する`;
     ["combo8", "コンボの鬼", "1回で8コンボ", "8"],
     ["combo12", "伝説のコンボ", "1回で12コンボ", "12"],
     ["long6", "長文読み", "6文字の単語を作る", "6"],
-    ["allColor", "全色そろえ", "カラーで全色そろえ", "◆"],
+    ["allColor", "PERFECT!", "上の5つの単語をぜんぶ消す", "◆"],
     ["colorDone", "カラー完走", "カラーで30ターン生き残る・デイリーを遊びきる", "✓"],
     ["breaker8", "石の破壊神", "1回で石を8個こわす", "石"],
     ["stones100", "石割り名人", "石を合計100個こわす", "石"],
