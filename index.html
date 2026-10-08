@@ -605,7 +605,7 @@ body { margin: 0; }
       </label>
       <label>アシスト
         <select id="assistSel">
-          <option value="2" selected>しっかり（矢印でナビ）</option>
+          <option value="2" selected>しっかり（矢印でナビ・デイリーのみ）</option>
           <option value="1">ちょっと（作れる単語の一覧）</option>
           <option value="0">なし</option>
         </select>
@@ -8872,7 +8872,7 @@ zoom|v2|ズームする・急上昇する`;
   const MODE_NAME = { endless: "エンドレス", color: "カラー", daily: "デイリー", quota: "ノルマ" };
   const COLOR_TURNS = 20, CCOL = ["#e07a66", "#5b8fdc", "#5fae5a", "#d9ae2c", "#9a6bd6"];
   let cwords = [], cshort = [true, true, true, false, false];
-  const bestKey = () => isDaily() ? `wordDrop.daily.${dayKey()}` : `wordDrop.best.v2.${$("modeSel").value}.${$("assistSel").value}`;
+  const bestKey = () => isDaily() ? `wordDrop.daily.${dayKey()}` : `wordDrop.best.v2.${$("modeSel").value}.${assistLv()}`;
   let bestScore = 0;
   function loadBest() { try { bestScore = Number(localStorage.getItem(bestKey())) || 0; } catch (e) { bestScore = 0; } }
 
@@ -9783,6 +9783,7 @@ zoom|v2|ズームする・急上昇する`;
     $("bonusText").textContent = color ? "同じ色だけで作ると得点2倍" : "作ると得点3倍";
     if (color) { odai = { w: "", m: "" }; setupColor(); } else newOdai();
     if (unseed) unseed();
+    updateAssistChip();
     measure(); updateHud(); resetTimerBar(); refreshHints();
     setStatus("文字をつかんでなぞると、通ったマスの文字と入れ替わります");
   }
@@ -10007,8 +10008,8 @@ zoom|v2|ズームする・急上昇する`;
 
   // ---------- モードをえらぶ画面 ----------
   function showModeScreen() {
-    const lv = $("assistSel").value;
     document.querySelectorAll("[data-best]").forEach(el => {
+      const lv = Math.min(Number($("assistSel").value), assistMax(el.dataset.best));
       let v = 0; try { v = Number(localStorage.getItem(el.dataset.best === "daily" ? `wordDrop.daily.${dayKey()}` : `wordDrop.best.v2.${el.dataset.best}.${lv}`)) || 0; } catch (e) {}
       el.textContent = v.toLocaleString();
     });
@@ -10017,7 +10018,7 @@ zoom|v2|ズームする・急上昇する`;
       $("dailyDate").textContent = `${d.getMonth() + 1}月${d.getDate()}日の盤面`;
       const alive = di.last === dayKey() || di.last === dayKey(y);
       $("dailyStreak").textContent = alive && di.streak ? `連続 ${di.streak}日${di.last === dayKey() ? "（今日はプレイ済み）" : ""}` : "毎日遊ぶと連続記録"; }
-    $("msNote").textContent = `BESTはアシスト「${ASSIST_NAME[assistLv()]}」の記録（アシストは設定で変えられます）`;
+    $("msNote").textContent = `エンドレスとカラーはスコア勝負なので、アシストは「ちょっと」まで（矢印ナビはデイリーで使えます）`;
     $("overlay").hidden = true;
     $("modeScreen").hidden = false;
   }
@@ -10091,7 +10092,9 @@ zoom|v2|ズームする・急上昇する`;
   const HINT_NEXT_MS = 5000;
   const ASSIST_KEY = "wordDrop.assist.v1";
   const ASSIST_NAME = { 2: "しっかり", 1: "ちょっと", 0: "なし" };
-  const assistLv = () => Number($("assistSel").value);
+  // 詰みのあるモード（エンドレス・カラー）はスコア勝負なので、アシストは「ちょっと」まで（ナビなし）
+  const assistMax = (mode = $("modeSel").value) => (mode === "endless" || mode === "color") ? 1 : 2;
+  const assistLv = () => Math.min(Number($("assistSel").value), assistMax());
   const hintFirstMs = () => Number($("hintDelay").value) * 1000;
   try { const a = JSON.parse(localStorage.getItem(ASSIST_KEY) || "null"); if (a) { $("assistSel").value = String(a.lv); $("hintDelay").value = String(a.delay); } } catch (e) {}
   function saveAssist() { try { localStorage.setItem(ASSIST_KEY, JSON.stringify({ lv: assistLv(), delay: Number($("hintDelay").value) })); } catch (e) {} }
@@ -10227,7 +10230,7 @@ zoom|v2|ズームする・急上昇する`;
   $("modeSel").addEventListener("change", () => { try { localStorage.setItem("wordDrop.mode.v1", $("modeSel").value); } catch (e) {} start(); });
   try { const m = localStorage.getItem("wordDrop.mode.v1"); if (m === "endless" || m === "color" || m === "daily") $("modeSel").value = m; } catch (e) {}  // ノルマモードは試遊前に外した（コードは残してある）
   $("hintDelay").addEventListener("change", assistChanged);
-  $("assistChip").addEventListener("click", e => { e.stopPropagation(); const v = assistLv(); $("assistSel").value = String(v === 0 ? 2 : v - 1); assistChanged(); loadBest(); updateHud(); setStatus(`アシストを「${ASSIST_NAME[assistLv()]}」にしました`); });
+  $("assistChip").addEventListener("click", e => { e.stopPropagation(); const v = assistLv(); $("assistSel").value = String(v === 0 ? assistMax() : v - 1); assistChanged(); loadBest(); updateHud(); setStatus(`アシストを「${ASSIST_NAME[assistLv()]}」にしました`); });
   updateAssistChip();
   buildDict();
   buildPaths();
