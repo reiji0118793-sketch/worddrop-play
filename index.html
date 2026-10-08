@@ -9551,7 +9551,9 @@ zoom|v2|ズームする・急上昇する`;
         for (const t of board.flat()) if (t.col === col) delete t.col;
         pickColorWord(col); placeColorWord(col);
       }
+      if (isEnergy()) ensurePlant();
       if (touched.size) { render(); renderCwords(); SFX.levelUp(); }
+      else if (isEnergy()) render();
       if (isEnergy()) {
         // 回復：ふつうの単語 +4、同じ色の単語 +12、上の5つの単語ならさらに +13、全色そろえ +30
         const heal = (combo - colorWords) * 4 + colorWords * 12 + exact.size * 13 + (all ? 30 : 0);
@@ -9798,7 +9800,71 @@ zoom|v2|ズームする・急上昇する`;
     cwords = [];
     cshort = [true, true, true, false, false].sort(() => Math.random() - 0.5);
     for (let i = 0; i < CCOL.length; i++) { pickColorWord(i); placeColorWord(i); }
+    plant = null;
+    if (isEnergy()) ensurePlant();
     renderCwords();
+  }
+  // カラー（エネルギー制）の「必ず解ける1手」：上の5つの単語のうち1つは、毎ターン必ず1回なぞるだけで作れるようにしておく。
+  // その単語を作ると回復 +25（同じ色 +12・ぴったり +13）で、減る量（最大22）を必ず上回る＝理想の手なら詰まない。
+  // 難しさ：レベルが上がるほど、なぞる道が長くなる（Lv1〜2は1マス入れかえ、最大で5マスなぞる）
+  let plant = null;  // { i: 色, route: [{r,c}...] }  route どおりになぞると cwords[i] ができる
+  const plantSteps = () => Math.min(4, 1 + Math.floor((level - 1) / 2));
+  function plantWorks(pl) {
+    if (!pl || !cwords[pl.i]) return false;
+    const R = pl.route; let ok = false;
+    for (let k = 1; k < R.length; k++) swap(R[k - 1], R[k]);
+    try { ok = findWords(board).some(f => f.w === cwords[pl.i].w && f.cells.every(x => board[x.r][x.c].col === pl.i)); }
+    finally { for (let k = R.length - 1; k >= 1; k--) swap(R[k - 1], R[k]); }
+    return ok;
+  }
+  function ensurePlant() {
+    if (plantWorks(plant)) return;
+    for (let st = plantSteps(); st >= 1; st--) if (tryPlant(st)) return;
+    plant = null;
+    console.warn("plant failed");
+  }
+  function tryPlant(steps) {
+    const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    const order = cwords.map((x, i) => i).sort(() => Math.random() - 0.5);
+    for (const i of order) {
+      const w = cwords[i].w;
+      for (let tries = 0; tries < 400; tries++) {
+        const horiz = Math.random() < 0.6;
+        const maxR = horiz ? ROWS : ROWS - w.length + 1, maxC = horiz ? COLS - w.length + 1 : COLS;
+        if (maxR <= 0 || maxC <= 0) break;
+        const r0 = Math.floor(Math.random() * maxR), c0 = Math.floor(Math.random() * maxC);
+        const cells = [...w].map((_, k) => horiz ? { r: r0, c: c0 + k } : { r: r0 + k, c: c0 });
+        if (cells.some(q => { const t = board[q.r][q.c]; return t.stone || (t.col !== undefined && t.col !== i); })) continue;
+        const snap = board.map(row => row.map(t => ({ t, ch: t.ch, col: t.col })));
+        const before = new Set(findWords(board).map(f => f.w + f.cells.map(x => x.r * COLS + x.c).join()));
+        // いまの色 i の文字を消して、ならべて置く
+        for (const t of board.flat()) if (t.col === i) delete t.col;
+        cells.forEach((q, k) => { board[q.r][q.c].ch = w[k]; board[q.r][q.c].col = i; });
+        // 単語の1文字目〜最後のどこかから、steps 歩だけ引きずってくずす
+        const s0 = cells[Math.floor(Math.random() * cells.length)];
+        const q = [s0], seen = new Set([s0.r * COLS + s0.c]);
+        for (let k = 0; k < steps; k++) {
+          const last = q[q.length - 1];
+          const opts = N4.map(([dr, dc]) => ({ r: last.r + dr, c: last.c + dc })).filter(n => n.r >= 0 && n.r < ROWS && n.c >= 0 && n.c < COLS && !seen.has(n.r * COLS + n.c) && !board[n.r][n.c].stone);
+          if (!opts.length) break;
+          const nx = opts[Math.floor(Math.random() * opts.length)]; q.push(nx); seen.add(nx.r * COLS + nx.c);
+        }
+        let good = q.length === steps + 1;
+        if (good) { for (let k = 1; k < q.length; k++) swap(q[k - 1], q[k]); }
+        const cand = { i, route: q.slice().reverse() };
+        // くずした状態で、新しく単語ができていないこと（もともとある単語は数えない）
+        const fresh = () => findWords(board).filter(f => !before.has(f.w + f.cells.map(x => x.r * COLS + x.c).join())).length === 0;
+        if (good && fresh() && plantWorks(cand)) {
+          plant = cand;
+          for (const t of board.flat()) if (t.col === i) { const el = elFor(t); el.classList.remove("cin"); void el.offsetWidth; el.classList.add("cin"); }
+          return true;
+        }
+        // もとに戻す
+        if (good) for (let k = q.length - 1; k >= 1; k--) swap(q[k - 1], q[k]);
+        snap.forEach((row, r) => row.forEach((x, c) => { board[r][c] = x.t; x.t.ch = x.ch; if (x.col === undefined) delete x.t.col; else x.t.col = x.col; }));
+      }
+    }
+    return false;
   }
   const stonesPerTurn = () => Math.min(STONE_MAX, 1 + Math.floor(turns / STONE_EVERY));  // 15ターンごとに+1個（最大5個）
   async function dropStones(k) {
