@@ -313,6 +313,26 @@ body { margin: 0; }
 .recent li span { font-size: 12px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hud, .odai, .status, .canwords { flex: none; }
 .canwords[hidden] { display: none; }
+.canwords { display: flex; gap: 8px; }
+.canwords .canbtn { flex: 1 1 auto; min-width: 0; }
+.canbtn[hidden], .navbtn[hidden] { display: none; }
+.navbtn { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 0; background: linear-gradient(#ffe45c, #d9b45a); color: #1a1426; font: inherit; font-size: 14px; font-weight: 900; cursor: pointer; }
+.navbtn b { min-width: 1.6em; padding: 1px 6px; border-radius: 999px; background: #1a1426; color: #ffe45c; font-size: 12px; text-align: center; }
+.navbtn.empty b { background: #4a3a10; color: #fff; }
+.adbtn { display: grid; justify-items: center; gap: 2px; background: linear-gradient(#6fd08a, #3f9c5b); color: #08210f; border: 0; font-weight: 900; }
+.adbtn small { font-size: 11px; font-weight: 700; }
+.adbtn[hidden] { display: none; }
+.ad-text { margin: 0; font-size: 14px; line-height: 1.6; }
+.ad-actions { display: grid; gap: 8px; }
+.ad-actions button { padding: 12px; border-radius: 12px; font: inherit; font-size: 15px; }
+#adNo { background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); }
+.fakead { position: fixed; inset: 0; z-index: 80; background: #05060c; display: grid; place-items: center; text-align: center; color: #fff; padding: 24px; }
+.fakead[hidden] { display: none; }
+.fa-in { display: grid; gap: 14px; justify-items: center; max-width: 320px; }
+.fa-in small { padding: 2px 8px; border: 1px solid #888; border-radius: 4px; color: #bbb; }
+.fa-in b { font-size: 48px; font-family: var(--font-display); }
+.fa-in button { padding: 10px 18px; border-radius: 10px; border: 0; font: inherit; font-weight: 700; background: #ffe45c; color: #1a1426; }
+.fa-in .fa-skip { background: none; color: #999; font-weight: 400; font-size: 12px; }
 .canbtn { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: var(--panel); border: 1px dashed var(--gold); color: var(--fg); font: inherit; font-size: 13px; cursor: pointer; }
 .canbtn b { color: var(--gold); font-size: 15px; }
 .canbtn .cb-go { color: var(--gold); font-weight: 700; white-space: nowrap; }
@@ -546,6 +566,7 @@ body { margin: 0; }
           <p id="clearText"></p>
           <p id="endAch"></p>
           <div class="end-actions">
+            <button id="contBtn" class="adbtn" type="button" hidden>▶ 広告を見てコンティニュー<small id="contNote"></small></button>
             <button id="againBtn" class="primary" type="button">もう一度遊ぶ</button>
             <button id="toModeBtn" type="button">モードをえらぶ</button>
             <button id="toBookBtn" type="button">単語帳を見る</button>
@@ -557,6 +578,7 @@ body { margin: 0; }
     <div class="status" id="status">文字をつかんでなぞると、通ったマスの文字と入れ替わります</div>
     <div class="canwords" id="canWords" hidden>
       <button type="button" class="canbtn" id="canBtn" aria-haspopup="dialog"><span>今の盤面で作れる単語</span><span class="cb-go">一覧を見る ▸</span></button>
+      <button type="button" class="navbtn" id="navBtn" aria-label="ナビを使う"><span>ナビ</span><b id="navCount">3</b></button>
     </div>
     <div class="recent" id="recent" aria-label="さっき作った単語">
       <div class="recent-head">さっき作った単語</div>
@@ -570,6 +592,23 @@ body { margin: 0; }
       <div class="cs-head"><b>1回なぞるだけで作れる単語</b><button type="button" id="canClose">閉じる</button></div>
       <ul id="canList"></ul>
       <p class="cs-note">場所は自分でさがそう。どこかをタップすると閉じます</p>
+    </div>
+  </div>
+
+  <div class="cansheet" id="adSheet" role="dialog" aria-label="広告の確認" hidden>
+    <div class="cs-in">
+      <div class="cs-head"><b id="adTitle">ナビがありません</b></div>
+      <p class="ad-text" id="adText"></p>
+      <div class="ad-actions"><button type="button" class="adbtn" id="adYes">▶ 広告を見る</button><button type="button" id="adNo">やめる</button></div>
+    </div>
+  </div>
+  <div class="fakead" id="fakeAd" hidden>
+    <div class="fa-in">
+      <small>広告</small>
+      <p>試遊版なので、ここには本物の広告は出ません。<br>アプリ版では、ここで15〜30秒ほどの動画広告が流れます。</p>
+      <b id="fakeAdSec">5</b>
+      <button type="button" id="fakeAdClose" hidden>閉じて受け取る</button>
+      <button type="button" class="fa-skip" id="fakeAdSkip">やめる（受け取らない）</button>
     </div>
   </div>
 
@@ -9826,8 +9865,30 @@ zoom|v2|ズームする・急上昇する`;
     }
     $("endAch").textContent = [dailyText, gameAch.length ? `このゲームで解除した実績：${gameAch.join("・")}` : ""].filter(Boolean).join("　");
     $("clearText").textContent = `${isEndless() ? `石が${STONE_CAP}個たまった。` : isEnergy() ? "エネルギーが切れた。" : ""}${MODE_NAME[$("modeSel").value]}・アシスト：${ASSIST_NAME[assistLv()]}　Lv.${level}・${turns}ターン。作った単語 ${totalWords}個（${learned.size}種類）。最大 ${maxCombo}コンボ`;
+    navClear();
+    const canCont = (isEndless() || isEnergy()) && contUsed < CONT_MAX;
+    $("contBtn").hidden = !canCont;
+    if (canCont) $("contNote").textContent = `${isEndless() ? "石を5個こわして続ける" : "エネルギーを50回復して続ける"}（あと${CONT_MAX - contUsed}回）`;
     updateHud();
     $("overlay").hidden = false;
+  }
+  // 広告を見てコンティニュー
+  function doContinue() {
+    contUsed++;
+    $("overlay").hidden = true;
+    if (isEndless()) {
+      const st = board.flat().filter(t => t.stone).sort(() => Math.random() - 0.5).slice(0, 5);
+      for (const t of st) { t.stone = false; const el = elFor(t); el.classList.remove("cin"); void el.offsetWidth; el.classList.add("cin"); }
+      setStatus("<b>コンティニュー！</b>　石を5個こわした");
+    } else {
+      energy = Math.min(ENERGY_MAX, 50);
+      setStatus("<b>コンティニュー！</b>　エネルギーが50回復した");
+    }
+    SFX.levelUp(); buzz([20, 40, 20]);
+    render(); updateHud(); resetTimerBar();
+    lastAction = performance.now();
+    busy = false;
+    refreshHints();
   }
   function start() {
     for (const el of els.values()) el.remove();
@@ -9835,7 +9896,7 @@ zoom|v2|ズームする・急上昇する`;
     nextId = 1; held = null; dragging = false; busy = false;
     if (typeof tutClear === "function" && tut) { tut = null; tutClear(); }
     $("tutCoach").hidden = true;
-    gameAch = []; energy = ENERGY_MAX;
+    gameAch = []; energy = ENERGY_MAX; contUsed = 0;
     score = 0; lives = LIVES; level = 1; streak = 0; turns = 0; loadBest(); maxCombo = 0; totalWords = 0; learned = new Map(); odai = null;
     $("overlay").hidden = true; $("burst").hidden = true;
     recent = []; renderRecent();
@@ -9975,6 +10036,88 @@ zoom|v2|ズームする・急上昇する`;
   const TUT_EASY = ["CAT", "DOG", "SUN", "RED", "BIG", "CAR", "BUS", "PEN", "CUP", "HAT", "BOX", "EGG", "MAP", "TOP", "BED", "ICE", "SEA", "SKY", "JOY", "FUN", "WIN", "TEN", "ZOO", "KEY", "LEG", "ARM", "EYE", "HOT", "NEW", "OLD",
     "PLAY", "GAME", "STAR", "CAKE", "BOOK", "FISH", "BIRD", "RAIN", "SNOW", "MOON", "TREE", "SHIP", "LOVE", "HOME", "BLUE", "GOLD", "KING", "LION", "MILK", "RICE", "SONG", "WIND", "DOOR", "HAND", "FIRE", "BALL", "TIME", "BEAR", "FROG", "DUCK"];
   let tutTries = 0;
+  // ---------- 広告（リワード広告・インタースティシャル広告） ----------
+  // iPhoneアプリでは AdMob（@capacitor-community/admob）、ブラウザの試遊版ではダミーの広告画面を出す
+  // ★ 本番前に：AdMobで作った広告ユニットIDに差し替えて、TESTING を false にする（今はGoogle公式のテスト用ID）
+  const ADS = {
+    TESTING: true,
+    rewarded: "ca-app-pub-3940256099942544/1712485313",      // テスト用：リワード広告（iOS）
+    interstitial: "ca-app-pub-3940256099942544/4411468910",  // テスト用：インタースティシャル広告（iOS）
+    interEvery: 3,                                           // ゲームが3回終わるごとに1回
+  };
+  const Ads = (() => {
+    const A = () => window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
+    let started = false, rewardReady = false, interReady = false;
+    const prepReward = async () => { const a = A(); if (!a) return; try { await a.prepareRewardVideoAd({ adId: ADS.rewarded, isTesting: ADS.TESTING }); rewardReady = true; } catch (e) { rewardReady = false; } };
+    const prepInter = async () => { const a = A(); if (!a) return; try { await a.prepareInterstitial({ adId: ADS.interstitial, isTesting: ADS.TESTING }); interReady = true; } catch (e) { interReady = false; } };
+    async function init() {
+      const a = A(); if (!a || started) return; started = true;
+      try {
+        await a.initialize({ maxAdContentRating: "Teen", tagForChildDirectedTreatment: false, initializeForTesting: ADS.TESTING });
+        const t = await a.trackingAuthorizationStatus();
+        if (t && t.status === "notDetermined") await a.requestTrackingAuthorization();
+      } catch (e) {}
+      prepReward(); prepInter();
+    }
+    // ブラウザ用：ダミーの広告画面（5秒）。最後まで見ると受け取れる
+    function fake() {
+      return new Promise(res => {
+        const box = $("fakeAd"), sec = $("fakeAdSec"), close = $("fakeAdClose"), skip = $("fakeAdSkip");
+        let n = 5; sec.textContent = n; close.hidden = true; box.hidden = false;
+        const iv = setInterval(() => { n--; sec.textContent = Math.max(0, n); if (n <= 0) { clearInterval(iv); close.hidden = false; } }, 1000);
+        const done = ok => { clearInterval(iv); box.hidden = true; close.onclick = skip.onclick = null; res(ok); };
+        close.onclick = () => done(true); skip.onclick = () => done(false);
+      });
+    }
+    // リワード広告：最後まで見たら true
+    async function rewarded() {
+      const a = A();
+      if (!a) return fake();
+      if (!rewardReady) await prepReward();
+      if (!rewardReady) { setStatus("広告を読み込めませんでした。少し待ってからもう一度どうぞ"); return false; }
+      return new Promise(res => {
+        let earned = false, finished = false; const hs = [];
+        const finish = () => { if (finished) return; finished = true; hs.forEach(h => h.then(x => x.remove()).catch(() => {})); rewardReady = false; prepReward(); res(earned); };
+        hs.push(a.addListener("onRewardedVideoAdReward", () => { earned = true; }));
+        hs.push(a.addListener("onRewardedVideoAdDismissed", finish));
+        hs.push(a.addListener("onRewardedVideoAdFailedToShow", finish));
+        a.showRewardVideoAd().then(() => { earned = true; }).catch(finish);
+      });
+    }
+    // インタースティシャル広告（ゲームの合間）。アプリ版だけ
+    let ended = 0;
+    async function between() {
+      ended++;
+      const a = A(); if (!a || ended % ADS.interEvery !== 0) return;
+      if (!interReady) return void prepInter();
+      await new Promise(res => {
+        let finished = false; const hs = [];
+        const finish = () => { if (finished) return; finished = true; hs.forEach(h => h.then(x => x.remove()).catch(() => {})); interReady = false; prepInter(); res(); };
+        hs.push(a.addListener("interstitialAdDismissed", finish));
+        hs.push(a.addListener("interstitialAdFailedToShow", finish));
+        a.showInterstitial().catch(finish);
+        setTimeout(finish, 90000);
+      });
+    }
+    return { init, rewarded, between };
+  })();
+  // 広告を見るか聞く画面。見て最後まで見たら true
+  function askAd(title, text) {
+    return new Promise(res => {
+      $("adTitle").textContent = title; $("adText").innerHTML = text; $("adSheet").hidden = false;
+      const close = async ok => { $("adSheet").hidden = true; $("adYes").onclick = $("adNo").onclick = null; res(ok ? await Ads.rewarded() : false); };
+      $("adYes").onclick = () => close(true); $("adNo").onclick = () => close(false);
+    });
+  }
+  // ナビチケット：最初に3枚。0枚のときは広告1回で1回使える
+  const NAV_KEY = "wordDrop.navTickets.v1";
+  const navTickets = () => { try { const v = localStorage.getItem(NAV_KEY); return v === null ? 3 : Math.max(0, parseInt(v, 10) || 0); } catch (e) { return 3; } };
+  const addNav = d => { const v = Math.max(0, navTickets() + d); try { localStorage.setItem(NAV_KEY, String(v)); } catch (e) {} renderNavBtn(); return v; };
+  function renderNavBtn() { const n = navTickets(); $("navCount").textContent = n > 0 ? n : "広告"; $("navBtn").classList.toggle("empty", n <= 0); }
+  const DAILY_FREE_NAV = 3;  // デイリーで「しっかり」のナビが自動で出るのは最初の3問まで
+  // コンティニュー：1ゲーム2回まで。エンドレスは石を5個こわす、カラーはエネルギーを50回復
+  const CONT_MAX = 2;
+  let contUsed = 0;
   // 5つの単語を1行に1つずつ並べてから、1本の道でくずす。逆になぞると5つともそろう盤面を作る
   function buildRouteBoard(words, color) {
     const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -10148,9 +10291,9 @@ zoom|v2|ズームする・急上昇する`;
     if (!tutDone()) runTutorial();
   }));
   $("modeChip").addEventListener("click", () => { if (!busy && !dragging) showModeScreen(); });
-  $("toModeBtn").addEventListener("click", showModeScreen);
+  $("toModeBtn").addEventListener("click", async () => { await Ads.between(); showModeScreen(); });
   $("resetBtn").addEventListener("click", start);
-  $("againBtn").addEventListener("click", start);
+  $("againBtn").addEventListener("click", async () => { await Ads.between(); start(); });
   $("toBookBtn").addEventListener("click", () => { bookScope = "quest"; document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("on", b.dataset.scope === "quest")); showView("book"); });
   // ---------- 画面の切り替え ----------
   function showView(name) {
@@ -10201,6 +10344,14 @@ zoom|v2|ズームする・急上昇する`;
     setTimeout(fillCanList, 30);
   });
   $("canSheet").addEventListener("click", () => { $("canSheet").hidden = true; });
+  $("navBtn").addEventListener("click", useNav);
+  $("contBtn").addEventListener("click", async () => {
+    $("contBtn").disabled = true;
+    const ok = await Ads.rewarded();
+    $("contBtn").disabled = false;
+    if (ok) doContinue();
+  });
+  setTimeout(() => Ads.init(), 1500);
   $("dictSel").addEventListener("change", () => { buildDict(); start(); });
 
   $("bookBadge").textContent = Object.keys(book).length;
@@ -10314,11 +10465,13 @@ zoom|v2|ズームする・急上昇する`;
   // アシスト「ちょっと」：1マス動かすだけで作れる単語と意味の一覧（場所は教えない）
   function renderCanList() {
     const box = $("canWords");
-    const show = assistLv() === 1 && !tut && hints;
+    const show = !tut && !!hints;
     const was = box.hidden;
     box.hidden = !show;
+    $("canBtn").hidden = assistLv() !== 1;
+    renderNavBtn();
     if (was !== box.hidden) fitBoard();
-    if (!show) { $("canSheet").hidden = true; return; }
+    if (!show || assistLv() !== 1) $("canSheet").hidden = true;
   }
   // 一覧を開いたときに計算する（1回なぞって作れる単語。1マスだけの入れかえに限らない）
   function fillCanList() {
@@ -10338,14 +10491,42 @@ zoom|v2|ズームする・急上昇する`;
     hints.shown = null;  // 1マスだけの矢印はやめて、最後までなぞる線で見せる
     render();
     if (assistLv() >= 2 && hintStage > 0 && !tut && !dragging) {
-      if (!hints.routes) hints.routes = isDaily() && dailyRoute ? [{ path: dailyRoute, words: cwords.map(x => x.w) }] : findRoutes();
-      if (!hints.routes.length) { setStatus("ヒント：今は作れる単語が見つからない。大きくなぞって並べ替えよう"); return; }
-      const R = hints.routes[(hintStage - 1) % hints.routes.length];
-      elFor(board[R.path[0].r][R.path[0].c]).classList.add("navstart");
-      drawRoute(R.path, "nav");
-      const ws = R.words.map(w => `<b>${w}</b>（${DICT.get(w).m}）`).join("・");
-      setStatus(`ヒント：光っている文字から線のとおりになぞると ${ws}${R.words.length >= 2 ? `　${R.words.length}コンボ！` : ""}`);
+      if (isDaily() && turns >= DAILY_FREE_NAV) {
+        if (hintStage === 1) setStatus(`無料のナビは最初の${DAILY_FREE_NAV}問まで。ここからは下の「ナビ」ボタンで見られます`);
+        return;
+      }
+      showNavRoute(hintStage - 1);
     }
+  }
+  function navRoutes() { if (!hints.routes) hints.routes = isDaily() && dailyRoute ? [{ path: dailyRoute, words: cwords.map(x => x.w) }] : findRoutes(); return hints.routes; }
+  function showNavRoute(k) {
+    const routes = navRoutes();
+    if (!routes.length) { setStatus("ヒント：今は作れる単語が見つからない。大きくなぞって並べ替えよう"); return false; }
+    const R = routes[k % routes.length];
+    navClear();
+    elFor(board[R.path[0].r][R.path[0].c]).classList.add("navstart");
+    drawRoute(R.path, "nav");
+    const ws = R.words.map(w => `<b>${w}</b>（${DICT.get(w).m}）`).join("・");
+    setStatus(`ナビ：光っている文字から線のとおりになぞると ${ws}${R.words.length >= 2 ? `　${R.words.length}コンボ！` : ""}`);
+    return true;
+  }
+  // 「ナビ」ボタン：チケットを1枚使う。0枚なら広告を見て1回
+  let navBusy = false, navK = 0;
+  async function useNav() {
+    if (navBusy || !hints || busy || dragging || tut || !$("overlay").hidden) return;
+    // もう線が出ているときは、チケットを使わずに別の道を見せる
+    if ($("navRoute")) { navK++; showNavRoute(navK); return; }
+    navBusy = true;
+    try {
+      if (navTickets() <= 0) {
+        const ok = await askAd("ナビがありません", "広告を1回見ると、ナビを1回使えます。<br>たくさん消える道（デイリーなら5色ぜんぶ消える道）を線で見せます。");
+        if (!ok) return;
+        addNav(1);
+      }
+      $("canSheet").hidden = true;
+      navK = 0;
+      if (showNavRoute(0)) { addNav(-1); SFX.levelUp(); }
+    } finally { navBusy = false; }
   }
   function poke() { lastAction = performance.now(); if (hintStage) { hintStage = 0; applyHintStage(); } }
   setInterval(() => {
