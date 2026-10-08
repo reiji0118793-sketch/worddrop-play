@@ -544,6 +544,13 @@ body { margin: 0; }
 .view.game .board { border-width: 0; border-radius: 10px; padding: 0; background: #0e1326; box-shadow: inset 0 0 0 2px #232b4d; }
 .view.game .tile .face { width: 93%; height: 93%; border-radius: 16%; }
 .view.game .board { margin-block: auto; }
+/* 下の常設広告（バナー）：タブとの間にすき間をあけて、押しまちがいを防ぐ */
+:root { --bannerH: 50px; }
+.app { grid-template-rows: minmax(0, 1fr) auto auto; }
+.adbanner { display: none; }
+body.has-banner .tabbar { padding-bottom: 0; margin-bottom: 8px; }
+body.has-banner .adbanner { display: grid; place-items: center; height: calc(var(--bannerH) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); background: #0b0e1c; border-top: 1px solid var(--line); color: #5b6285; font-size: 11px; letter-spacing: .1em; }
+body.has-banner .modescreen { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px + var(--bannerH)); }
 .view.game .ebar { width: 96px; }
 .tabbar button { padding: 9px 4px; }
 </style>
@@ -607,6 +614,7 @@ body { margin: 0; }
           <p id="endAch"></p>
           <div class="end-actions">
             <button id="contBtn" class="adbtn" type="button" hidden>▶ 広告を見てコンティニュー<small id="contNote"></small></button>
+            <button id="bonusBtn" class="adbtn" type="button" hidden>▶ 広告を見てナビ＋1</button>
             <button id="againBtn" class="primary" type="button">もう一度遊ぶ</button>
             <button id="toModeBtn" type="button">モードをえらぶ</button>
             <button id="toBookBtn" type="button">単語帳を見る</button>
@@ -812,6 +820,7 @@ body { margin: 0; }
     <button type="button" data-view="book">単語帳 <span class="badge" id="bookBadge">0</span></button>
     <button type="button" data-view="settings">設定</button>
   </nav>
+  <div class="adbanner" id="adBanner" aria-label="広告"><span id="adBannerTxt">広告スペース（試遊版）</span></div>
 </div>
 <div id="gfx"></div>
 <div id="achToast" aria-live="polite"><div class="medal">★</div><div><small>実績解除</small><b id="achName"></b><span class="d" id="achDesc"></span></div></div>
@@ -9911,6 +9920,7 @@ zoom|v2|ズームする・急上昇する`;
     plant = null;
     measure(); render();
     board.flat().forEach((t, k) => { const el = elFor(t); el.querySelector(".face").style.animationDelay = (k * 18) + "ms"; el.classList.add("dropin"); setTimeout(() => el.classList.remove("dropin"), 1000); });
+    maybeAskReview();
     setStatus(`<b>PERFECT!</b>　全消しボーナス +${PERFECT_BONUS}点${isEnergy() ? "　エネルギー満タン！" : ""}`);
     await sleep(600);
   }
@@ -9992,6 +10002,7 @@ zoom|v2|ズームする・急上昇する`;
     $("endAch").textContent = [dailyText, gameAch.length ? `このゲームで解除した実績：${gameAch.join("・")}` : ""].filter(Boolean).join("　");
     $("clearText").textContent = `${isEndless() ? `石が${STONE_CAP}個たまった。` : isEnergy() ? "エネルギーが切れた。" : ""}${MODE_NAME[$("modeSel").value]}・アシスト：${ASSIST_NAME[assistLv()]}　Lv.${level}・${turns}ターン。作った単語 ${totalWords}個（${learned.size}種類）。最大 ${maxCombo}コンボ`;
     navClear();
+    $("bonusBtn").hidden = false; $("bonusBtn").disabled = false; $("bonusBtn").textContent = "▶ 広告を見てナビ＋1";
     const canCont = (isEndless() || isEnergy()) && contUsed < CONT_MAX;
     $("contBtn").hidden = !canCont;
     if (canCont) $("contNote").textContent = `${isEndless() ? "石を5個こわして続ける" : "エネルギーを50回復して続ける"}（あと${CONT_MAX - contUsed}回）`;
@@ -10179,6 +10190,8 @@ zoom|v2|ズームする・急上昇する`;
     TESTING: true,
     rewarded: "ca-app-pub-3940256099942544/1712485313",      // テスト用：リワード広告（iOS）
     interstitial: "ca-app-pub-3940256099942544/4411468910",  // テスト用：インタースティシャル広告（iOS）
+    banner: "ca-app-pub-3940256099942544/2934735716",        // テスト用：バナー広告（iOS）
+    interEveryFirstDay: 5,                                   // はじめて遊ぶ日は、合間の広告を少なめに（5回に1回）
     interEvery: 3,                                           // ゲームが3回終わるごとに1回
   };
   const Ads = (() => {
@@ -10224,7 +10237,8 @@ zoom|v2|ズームする・急上昇する`;
     let ended = 0;
     async function between() {
       ended++;
-      const a = A(); if (!a || ended % ADS.interEvery !== 0) return;
+      const every = firstDay() ? ADS.interEveryFirstDay : ADS.interEvery;
+      const a = A(); if (!a || ended % every !== 0) return;
       if (!interReady) return void prepInter();
       await new Promise(res => {
         let finished = false; const hs = [];
@@ -10235,12 +10249,60 @@ zoom|v2|ズームする・急上昇する`;
         setTimeout(finish, 90000);
       });
     }
-    return { init, rewarded, between };
+    // バナー広告：チュートリアルが終わってから、画面のいちばん下にずっと出す
+    let bannerOn = false;
+    async function banner(on) {
+      document.body.classList.toggle("has-banner", on);
+      const a = A();
+      if (a) $("adBannerTxt").textContent = "";
+      if (!a || on === bannerOn) return;
+      bannerOn = on;
+      try {
+        if (on) {
+          a.addListener("bannerAdSizeChanged", sz => { if (sz && sz.height) document.documentElement.style.setProperty("--bannerH", sz.height + "px"); });
+          await a.showBanner({ adId: ADS.banner, adSize: "ADAPTIVE_BANNER", position: "BOTTOM_CENTER", margin: 0, isTesting: ADS.TESTING });
+        } else await a.hideBanner();
+      } catch (e) {}
+    }
+    return { init, rewarded, between, banner };
   })();
+  const FIRST_KEY = "wordDrop.firstDay.v1";
+  try { if (!localStorage.getItem(FIRST_KEY)) localStorage.setItem(FIRST_KEY, dayKey()); } catch (e) {}
+  const firstDay = () => { try { return localStorage.getItem(FIRST_KEY) === dayKey(); } catch (e) { return false; } };
+  // 星の評価のお願い（Apple公式の画面。出る回数はAppleが年3回までに制限する）。PERFECT!のあと、2回目以降・60日に1回まで
+  function maybeAskReview() {
+    const R = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.InAppReview;
+    let st = { n: 0, last: 0 }; try { st = JSON.parse(localStorage.getItem("wordDrop.review.v1") || "null") || st; } catch (e) {}
+    st.n++;
+    const ok = st.n >= 2 && Date.now() - st.last > 60 * 864e5;
+    if (ok) st.last = Date.now();
+    try { localStorage.setItem("wordDrop.review.v1", JSON.stringify(st)); } catch (e) {}
+    if (ok && R) setTimeout(() => R.requestReview().catch(() => {}), 1500);
+  }
+  // 起動したときのおまけ：①デイリー連続記録の保険（広告）②ログインボーナス（広告で3倍）
+  const LOGIN_KEY = "wordDrop.login.v1", GUARD_KEY = "wordDrop.streakGuard.v1";
+  async function startupGifts() {
+    if (!tutDone()) return;
+    const today = dayKey(), y = new Date(); y.setDate(y.getDate() - 1);
+    const y2 = new Date(); y2.setDate(y2.getDate() - 2);
+    let guardAsked = null; try { guardAsked = localStorage.getItem(GUARD_KEY); } catch (e) {}
+    const d = dailyInfo();
+    if (d.streak >= 2 && d.last === dayKey(y2) && guardAsked !== today) {
+      try { localStorage.setItem(GUARD_KEY, today); } catch (e) {}
+      const ok = await askAd("連続記録がとぎれそう！", `デイリーの連続記録 <b>${d.streak}日</b> が、昨日遊ばなかったのでとぎれそうです。<br>広告を見ると記録を守れます（今日デイリーを遊ぶと ${d.streak + 1}日目）。`, "▶ 広告を見て記録を守る", "あきらめる");
+      if (ok) { d.last = dayKey(y); try { localStorage.setItem(DAILY_KEY, JSON.stringify(d)); } catch (e) {} showModeScreen(); }
+    }
+    let got = null; try { got = localStorage.getItem(LOGIN_KEY); } catch (e) {}
+    if (got !== today) {
+      try { localStorage.setItem(LOGIN_KEY, today); } catch (e) {}
+      const ok = await askAd("ログインボーナス", "今日のおまけ：<b>ナビ1枚</b>をどうぞ。<br>広告を見ると <b>3枚</b> に増えます。", "▶ 広告を見て ナビ×3", "ナビ1枚を受け取る");
+      addNav(ok ? 3 : 1);
+    }
+  }
   // 広告を見るか聞く画面。見て最後まで見たら true
-  function askAd(title, text) {
+  function askAd(title, text, yes = "▶ 広告を見る", no = "やめる") {
     return new Promise(res => {
-      $("adTitle").textContent = title; $("adText").innerHTML = text; $("adSheet").hidden = false;
+      $("adTitle").textContent = title; $("adText").innerHTML = text; $("adYes").textContent = yes; $("adNo").textContent = no; $("adSheet").hidden = false;
       const close = async ok => { $("adSheet").hidden = true; $("adYes").onclick = $("adNo").onclick = null; res(ok ? await Ads.rewarded() : false); };
       $("adYes").onclick = () => close(true); $("adNo").onclick = () => close(false);
     });
@@ -10388,6 +10450,7 @@ zoom|v2|ズームする・急上昇する`;
       await new Promise(r => $("tutBtn").onclick = r);
       $("tutCoach").hidden = true;
       try { localStorage.setItem(TUT_KEY, "1"); } catch (e) {}
+      Ads.banner(true);
       start();
       setStatus("さあ、本番スタート！");
     } else {
@@ -10481,13 +10544,20 @@ zoom|v2|ズームする・急上昇する`;
   });
   $("canSheet").addEventListener("click", () => { $("canSheet").hidden = true; });
   $("navBtn").addEventListener("click", useNav);
+  $("bonusBtn").addEventListener("click", async () => {
+    $("bonusBtn").disabled = true;
+    const ok = await Ads.rewarded();
+    if (ok) { addNav(1); $("bonusBtn").textContent = `ナビを1枚もらった！（${navTickets()}枚）`; }
+    else $("bonusBtn").disabled = false;
+  });
   $("contBtn").addEventListener("click", async () => {
     $("contBtn").disabled = true;
     const ok = await Ads.rewarded();
     $("contBtn").disabled = false;
     if (ok) doContinue();
   });
-  setTimeout(() => Ads.init(), 1500);
+  setTimeout(async () => { await Ads.init(); Ads.banner(tutDone()); }, 1500);
+  document.body.classList.toggle("has-banner", tutDone());
   $("dictSel").addEventListener("change", () => { buildDict(); start(); });
 
   $("bookBadge").textContent = Object.keys(book).length;
@@ -10686,5 +10756,6 @@ zoom|v2|ズームする・急上昇する`;
   new ResizeObserver(() => { measure(); if (board) render(); }).observe(boardEl);
   start();
   showModeScreen();  // 起動したら、まずモードをえらぶ画面
+  setTimeout(startupGifts, 700);
 })();
 </script>
