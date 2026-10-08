@@ -492,6 +492,19 @@ body { margin: 0; }
   -webkit-mask: radial-gradient(circle, #000 28%, transparent 70%); mask: radial-gradient(circle, #000 28%, transparent 70%); }
 #gfx .btxt { position: absolute; left: -200px; width: 400px; top: -30px; text-align: center; font-family: "Zen Maru Gothic", sans-serif; font-weight: 900;
   font-size: 40px; line-height: 1.1; color: #ffe45c; -webkit-text-stroke: 2px #1a1020; paint-order: stroke fill; text-shadow: 0 4px 0 #000, 0 0 22px rgba(255,200,60,.9); white-space: nowrap; }
+/* PERFECT!（全色そろえ）：虹色の大きな文字 */
+#gfx .pftxt { position: absolute; left: -220px; width: 440px; top: -52px; text-align: center; font-family: var(--font-display); font-weight: 900; font-size: 64px; line-height: 1; letter-spacing: .04em; white-space: nowrap;
+  background: linear-gradient(90deg, #ff4d6d, #ff9f1c, #ffe45c, #4ade80, #38bdf8, #a78bfa, #ff4d6d); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  -webkit-text-stroke: 2px rgba(255,255,255,.9); filter: drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 18px rgba(255,255,255,.55)); animation: rainbow 1.1s linear infinite; }
+#gfx .pfsub { position: absolute; left: -200px; width: 400px; top: 22px; text-align: center; font-family: "Zen Maru Gothic", sans-serif; font-weight: 900; font-size: 24px; color: #fff; -webkit-text-stroke: 1.5px #1a1020; paint-order: stroke fill; text-shadow: 0 3px 0 #000; }
+#gfx .pfrays { position: absolute; left: -260px; top: -260px; width: 520px; height: 520px; border-radius: 50%;
+  background: repeating-conic-gradient(#ff4d6d 0 8deg, transparent 8deg 15deg, #ffe45c 15deg 23deg, transparent 23deg 30deg, #38bdf8 30deg 38deg, transparent 38deg 45deg, #4ade80 45deg 53deg, transparent 53deg 60deg);
+  opacity: .55; -webkit-mask: radial-gradient(circle, #000 22%, transparent 70%); mask: radial-gradient(circle, #000 22%, transparent 70%); }
+@keyframes rainbow { to { background-position: 200% 0; } }
+.tile.wipe .face { animation: wipe .45s ease-in forwards; }
+@keyframes wipe { 30% { transform: scale(1.18); filter: brightness(1.8); } 100% { transform: scale(0) rotate(25deg); opacity: 0; } }
+.tile.dropin .face { animation: dropin .45s cubic-bezier(.2,.9,.3,1.3) both; }
+@keyframes dropin { from { transform: translateY(-120%) scale(.6); opacity: 0; } }
 .app.gshake { animation: gshake .42s; }
 @keyframes gshake { 15% { transform: translate(-7px, 4px); } 30% { transform: translate(6px, -5px); } 45% { transform: translate(-5px, -3px); } 60% { transform: translate(4px, 4px); } 75% { transform: translate(-2px, 1px); } }
 /* ---------- はじめての遊び方 ---------- */
@@ -9527,12 +9540,13 @@ zoom|v2|ズームする・急上昇する`;
         score += gained;
         burstDamage(mult, gained, false, smult);
         if (colorWords) $("bDmg").innerHTML += `<br>${all ? "全色そろえ！×2　" : ""}同じ色の単語 ${colorWords}個（得点2倍）${exact.size ? `・色のお題ぴったり ${exact.size}個（さらに2倍）` : ""}`;
-        bumpScore(); SFX.score(combo); jackpot(combo >= 8 || all ? 3 : combo >= 5 ? 2 : combo >= 3 || exact.size >= 2 ? 1 : 0, all ? "全色そろえ!!" : null);
+        bumpScore(); SFX.score(combo); jackpot(all ? 1 : combo >= 8 ? 3 : combo >= 5 ? 2 : combo >= 3 || exact.size >= 2 ? 1 : 0, null);  // 全色そろえは、このあと PERFECT! で大きく出す
         achTurn(combo, 0, all, false);
         await sleep(1100);
         await burstHide();
         streak++;
         setStatus(`<b>+${gained}点</b>　${combo}コンボ${all ? "　全色そろえ！" : ""}`);
+        if (all) await perfectWipe();
       } else { streak = 0; setStatus("どんな単語でもOK。同じ色の文字だけで作ると得点2倍"); }
       // ふつうの単語に色の文字が使われて消えた色も、新しい単語に入れかえる
       cwords.forEach((x, i) => { if (x && board.flat().filter(t => t.col === i).length < x.w.length) touched.add(i); });
@@ -9881,6 +9895,25 @@ zoom|v2|ズームする・急上昇する`;
   }
   // うまくいったときの「大当たり」振動：lv 1（3コンボ・お題）〜 3（8コンボ・全色そろえ）
   // iPhoneアプリでは強い振動を連打して最後に「成功」の振動、Androidでは長い振動パターン
+  // PERFECT!：盤面のブロックを全部消して、まっさらな盤面にする（ボーナス +1000点、エネルギー満タン）
+  const PERFECT_BONUS = 1000;
+  async function perfectWipe() {
+    const tiles = board.flat();
+    gfx.perfect(2600); SFX.bigCombo(14); buzz([30, 40, 30, 40, 80]);
+    await sleep(500);
+    tiles.forEach((t, k) => { const el = elFor(t); el.style.animationDelay = ""; el.querySelector(".face").style.animationDelay = ((k % COLS) * 35 + Math.floor(k / COLS) * 35) + "ms"; el.classList.add("wipe"); });
+    await sleep(700);
+    for (const t of tiles) { const el = els.get(t.id); if (el) el.remove(); els.delete(t.id); }
+    board = freshBoard();
+    score += PERFECT_BONUS; bumpScore();
+    if (isEnergy()) energy = ENERGY_MAX;
+    // 色の単語は、このあと「消えた色は新しい単語に」の処理で5つとも置きなおされる（デイリーは次の問題に入れかわる）
+    plant = null;
+    measure(); render();
+    board.flat().forEach((t, k) => { const el = elFor(t); el.querySelector(".face").style.animationDelay = (k * 18) + "ms"; el.classList.add("dropin"); setTimeout(() => el.classList.remove("dropin"), 1000); });
+    setStatus(`<b>PERFECT!</b>　全消しボーナス +${PERFECT_BONUS}点${isEnergy() ? "　エネルギー満タン！" : ""}`);
+    await sleep(600);
+  }
   function jackpot(lv, label) {
     if (!lv) return;
     gfx.party(lv, label);
@@ -10046,8 +10079,19 @@ zoom|v2|ズームする・急上昇する`;
         e.querySelector(".btxt").animate([{ transform: "scale(3)", opacity: 0 }, { transform: "scale(.9)", opacity: 1, offset: .15 }, { transform: "scale(1)", opacity: 1, offset: .85 }, { transform: "scale(1.3)", opacity: 0 }], { duration: ms, easing: "ease-out", fill: "both" });
         kill(e, ms + 30);
       },
+      // PERFECT!（全色そろえ）：虹色の文字＋虹の光
+      perfect(ms = 2200) {
+        if (!on()) return; const c = center();
+        const e = add("banner", { top: (c.y) + "px" }, `<div class="pfrays"></div><div class="pftxt">PERFECT!</div><div class="pfsub">全色そろえ！</div>`);
+        e.querySelector(".pfrays").animate([{ transform: "rotate(0) scale(.2)", opacity: 0 }, { transform: "rotate(60deg) scale(1)", opacity: .6, offset: .2 }, { transform: "rotate(220deg) scale(1.15)", opacity: .6, offset: .85 }, { transform: "rotate(260deg) scale(1.3)", opacity: 0 }], { duration: ms, fill: "both" });
+        e.querySelector(".pftxt").animate([{ transform: "scale(4) rotate(-8deg)", opacity: 0 }, { transform: "scale(.85) rotate(2deg)", opacity: 1, offset: .14 }, { transform: "scale(1.05)", opacity: 1, offset: .22 }, { transform: "scale(1)", opacity: 1, offset: .85 }, { transform: "scale(1.4)", opacity: 0 }], { duration: ms, easing: "ease-out", fill: "both" });
+        e.querySelector(".pfsub").animate([{ transform: "translateY(20px)", opacity: 0 }, { transform: "translateY(20px)", opacity: 0, offset: .15 }, { transform: "translateY(0)", opacity: 1, offset: .28 }, { transform: "translateY(0)", opacity: 1, offset: .85 }, { opacity: 0 }], { duration: ms, fill: "both" });
+        this.flash("#fff", .55); this.rain(160); this.shake();
+        kill(e, ms + 30);
+      },
       // 大当たり：lv1 紙吹雪 / lv2 帯つき / lv3 帯＋光＋大ゆれ
       party(lv, label) {
+        if (label === "PERFECT") return this.perfect();
         this.rain([0, 28, 60, 110][lv]);
         if (lv >= 2) this.banner(label || (lv >= 3 ? "AMAZING!!" : "GREAT!!"), lv >= 3 ? 1700 : 1300);
         if (lv >= 3) { this.flash("#fff", .4); this.shake(); }
