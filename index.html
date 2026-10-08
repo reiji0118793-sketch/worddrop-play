@@ -556,7 +556,7 @@ body { margin: 0; }
 
     <div class="status" id="status">文字をつかんでなぞると、通ったマスの文字と入れ替わります</div>
     <div class="canwords" id="canWords" hidden>
-      <button type="button" class="canbtn" id="canBtn" aria-haspopup="dialog"><span>1マス動かすだけで作れる単語 <b id="canCount">0</b>個</span><span class="cb-go">一覧を見る ▸</span></button>
+      <button type="button" class="canbtn" id="canBtn" aria-haspopup="dialog"><span>今の盤面で作れる単語</span><span class="cb-go">一覧を見る ▸</span></button>
     </div>
     <div class="recent" id="recent" aria-label="さっき作った単語">
       <div class="recent-head">さっき作った単語</div>
@@ -567,7 +567,7 @@ body { margin: 0; }
 
   <div class="cansheet" id="canSheet" role="dialog" aria-label="作れる単語" hidden>
     <div class="cs-in">
-      <div class="cs-head"><b>1マス動かすだけで作れる単語</b><button type="button" id="canClose">閉じる</button></div>
+      <div class="cs-head"><b>1回なぞるだけで作れる単語</b><button type="button" id="canClose">閉じる</button></div>
       <ul id="canList"></ul>
       <p class="cs-note">場所は自分でさがそう。どこかをタップすると閉じます</p>
     </div>
@@ -720,7 +720,7 @@ body { margin: 0; }
         <span class="mc-art" aria-hidden="true"><i class="mt k3">D</i><i class="mt k0">A</i><i class="mt k1">Y</i><i class="mt k4">!</i></span>
         <span class="mc-body">
           <b class="mc-name">デイリー <small id="dailyDate"></small></b>
-          <span class="mc-desc">今日の盤面と5つの単語は、毎日0時に入れかわる。カラーの単語ルールで20ターン勝負。今日のベストを目指そう</span>
+          <span class="mc-desc">毎ターン、1回なぞるだけで5色ぜんぶ消せるパズルが出る（全20問）。問題は毎日0時に入れかわり、みんな同じ。今日のベストを目指そう</span>
           <span class="mc-meta"><span id="dailyStreak">連続 0日</span><span class="mc-best">今日のBEST <b data-best="daily">0</b></span></span>
         </span>
       </button>
@@ -9470,6 +9470,16 @@ zoom|v2|ズームする・急上昇する`;
       } else { streak = 0; setStatus("どんな単語でもOK。同じ色の文字だけで作ると得点2倍"); }
       // ふつうの単語に色の文字が使われて消えた色も、新しい単語に入れかえる
       cwords.forEach((x, i) => { if (x && board.flat().filter(t => t.col === i).length < x.w.length) touched.add(i); });
+      // デイリーは、毎ターン次のパズル（その日・そのターンで決まった盤面）に入れかえる
+      if (isDaily()) {
+        touched.clear();
+        if (turns < COLOR_TURNS) {
+          buildDailyPuzzle(turns);
+          render();
+          for (const t of board.flat()) if (t.col !== undefined) { const el = elFor(t); el.classList.remove("cin"); void el.offsetWidth; el.classList.add("cin"); }
+          SFX.levelUp();
+        }
+      }
       // 消えた色は、新しい単語になって出てくる
       for (const col of touched) {
         for (const t of board.flat()) if (t.col === col) delete t.col;
@@ -9837,7 +9847,8 @@ zoom|v2|ズームする・急上昇する`;
     boardEl.classList.toggle("colormode", color);
     $("cwords").hidden = !color;
     $("bonusText").textContent = color ? "同じ色で作ると2倍" : "作ると得点3倍";
-    if (color) { odai = { w: "", m: "" }; setupColor(); } else newOdai();
+    dailyRoute = null;
+    if (color) { odai = { w: "", m: "" }; if (isDaily()) buildDailyPuzzle(0); else setupColor(); } else newOdai();
     if (unseed) unseed();
     updateAssistChip();
     measure(); updateHud(); resetTimerBar(); refreshHints();
@@ -9964,6 +9975,55 @@ zoom|v2|ズームする・急上昇する`;
   const TUT_EASY = ["CAT", "DOG", "SUN", "RED", "BIG", "CAR", "BUS", "PEN", "CUP", "HAT", "BOX", "EGG", "MAP", "TOP", "BED", "ICE", "SEA", "SKY", "JOY", "FUN", "WIN", "TEN", "ZOO", "KEY", "LEG", "ARM", "EYE", "HOT", "NEW", "OLD",
     "PLAY", "GAME", "STAR", "CAKE", "BOOK", "FISH", "BIRD", "RAIN", "SNOW", "MOON", "TREE", "SHIP", "LOVE", "HOME", "BLUE", "GOLD", "KING", "LION", "MILK", "RICE", "SONG", "WIND", "DOOR", "HAND", "FIRE", "BALL", "TIME", "BEAR", "FROG", "DUCK"];
   let tutTries = 0;
+  // 5つの単語を1行に1つずつ並べてから、1本の道でくずす。逆になぞると5つともそろう盤面を作る
+  function buildRouteBoard(words, color) {
+    const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    for (let tries = 0; tries < 6000; tries++) {
+      for (const t of board.flat()) { delete t.col; t.stone = false; t.ch = randLetter(); }
+      const placed = [];
+      const rows = words.map((w, i) => i).sort(() => Math.random() - 0.5);
+      rows.forEach((wi, r) => {
+        const w = words[wi], c0 = Math.floor(Math.random() * (COLS - w.length + 1));
+        [...w].forEach((ch, k) => { board[r][c0 + k].ch = ch; if (color) board[r][c0 + k].col = wi; });
+        placed.push(w);
+      });
+      let pos = { r: Math.floor(Math.random() * ROWS), c: Math.floor(Math.random() * COLS) };
+      const q = [pos], seen = new Set([pos.r * COLS + pos.c]);
+      const L = 8 + Math.floor(Math.random() * 4);
+      for (let k = 0; k < L; k++) {
+        const opts = N4.map(([dr, dc]) => ({ r: pos.r + dr, c: pos.c + dc })).filter(n => n.r >= 0 && n.r < ROWS && n.c >= 0 && n.c < COLS && !seen.has(n.r * COLS + n.c));
+        if (!opts.length) break;
+        pos = opts[Math.floor(Math.random() * opts.length)]; q.push(pos); seen.add(pos.r * COLS + pos.c);
+      }
+      if (new Set(q.map(x => x.r)).size < ROWS) continue;
+      const snap = board.map(row => row.slice());
+      for (let k = 1; k < q.length; k++) swap(q[k - 1], q[k]);
+      if (findWords(board).length) { board = snap; continue; }
+      const route = q.slice().reverse();
+      for (let k = 1; k < route.length; k++) swap(route[k - 1], route[k]);
+      const got = new Set(findWords(board).map(f => f.w));
+      for (let k = route.length - 1; k >= 1; k--) swap(route[k - 1], route[k]);
+      if (!placed.every(w => got.has(w))) { board = snap; continue; }
+      return route;
+    }
+    return null;
+  }
+  // デイリー：毎ターン、その日の決まったパズル（1本の道で5色ぜんぶ消せる）を出す。誰でも同じ盤面
+  let dailyRoute = null;
+  function buildDailyPuzzle(turnNo) {
+    const unseed = seedRandom(`worddrop-${dayKey()}-t${turnNo}`);
+    try {
+      for (let tries = 0; tries < 20; tries++) {
+        cwords = [];
+        cshort = [true, true, true, false, false].sort(() => Math.random() - 0.5);
+        for (let i = 0; i < CCOL.length; i++) pickColorWord(i);
+        if (cwords.some(x => x.w.length > COLS)) continue;
+        dailyRoute = buildRouteBoard(cwords.map(x => x.w), true);
+        if (dailyRoute) break;
+      }
+    } finally { unseed(); }
+    renderCwords();
+  }
   function runTutorial(retry) {
     tutClear();
     if (!retry) tutTries = 0;
@@ -10135,7 +10195,11 @@ zoom|v2|ズームする・急上昇する`;
     boardEl.style.width = Math.floor(w) + "px";
   }
   { const ro = new ResizeObserver(() => fitBoard()); ro.observe($("view-game")); ro.observe($("hud")); ro.observe(document.querySelector(".odai")); }
-  $("canBtn").addEventListener("click", () => { $("canSheet").hidden = false; });
+  $("canBtn").addEventListener("click", () => {
+    if (!(hints && hints.reach)) $("canList").innerHTML = '<li class="none">さがしています…</li>';
+    $("canSheet").hidden = false;
+    setTimeout(fillCanList, 30);
+  });
   $("canSheet").addEventListener("click", () => { $("canSheet").hidden = true; });
   $("dictSel").addEventListener("change", () => { buildDict(); start(); });
 
@@ -10239,6 +10303,7 @@ zoom|v2|ズームする・急上昇する`;
     // 点が高い順。同じくらいなら短い道。始まりと終わりが同じ道は1つだけ
     found.sort((a, b) => b.v - a.v || a.path.length - b.path.length);
     const out = [], seen = new Set();
+    out.words = new Set(found.flatMap(f => f.words));
     for (const f of found) { const key = f.words.slice().sort().join(","); if (seen.has(key)) continue; seen.add(key); out.push(f); if (out.length >= 3) break; }
     return out;
   }
@@ -10254,13 +10319,18 @@ zoom|v2|ズームする・急上昇する`;
     box.hidden = !show;
     if (was !== box.hidden) fitBoard();
     if (!show) { $("canSheet").hidden = true; return; }
-    // お題を先頭に、あとはやさしい単語（基本→標準→発展）から順に出す
+  }
+  // 一覧を開いたときに計算する（1回なぞって作れる単語。1マスだけの入れかえに限らない）
+  function fillCanList() {
+    if (!hints) return;
+    if (!hints.reach) hints.reach = new Set([...hints.cands.map(x => x.w), ...findRoutes().words, ...(isDaily() && dailyRoute ? cwords.map(x => x.w) : [])]);
     const tierOf = w => (DICT.get(w) || {}).tier || 3;
-    const words = hints.cands.slice().sort((x, y) => (y.w === odai.w) - (x.w === odai.w) || tierOf(x.w) - tierOf(y.w) || y.v - x.v).map(x => x.w).slice(0, 12);
-    $("canCount").textContent = words.length;
+    const top = new Set(isColor() ? cwords.filter(Boolean).map(x => x.w) : [odai.w]);
+    // 上のお題（色の単語）を先頭に、あとはやさしい単語（基本→標準→発展）、長い単語から
+    const words = [...hints.reach].filter(w => DICT.has(w)).sort((x, y) => top.has(y) - top.has(x) || tierOf(x) - tierOf(y) || y.length - x.length).slice(0, 16);
     $("canList").innerHTML = words.length
       ? words.map(w => { const info = DICT.get(w); return `<li style="--c:${POS[info.pos].color}"><b>${w}</b><span>${esc(info.m)}</span></li>`; }).join("")
-      : '<li class="none">今は1マスで作れる単語がない。大きくなぞって並べ替えよう</li>';
+      : '<li class="none">今は作れる単語が見つからない。大きくなぞって並べ替えよう</li>';
   }
   function applyHintStage() {
     navClear();
@@ -10268,7 +10338,7 @@ zoom|v2|ズームする・急上昇する`;
     hints.shown = null;  // 1マスだけの矢印はやめて、最後までなぞる線で見せる
     render();
     if (assistLv() >= 2 && hintStage > 0 && !tut && !dragging) {
-      if (!hints.routes) hints.routes = findRoutes();
+      if (!hints.routes) hints.routes = isDaily() && dailyRoute ? [{ path: dailyRoute, words: cwords.map(x => x.w) }] : findRoutes();
       if (!hints.routes.length) { setStatus("ヒント：今は作れる単語が見つからない。大きくなぞって並べ替えよう"); return; }
       const R = hints.routes[(hintStage - 1) % hints.routes.length];
       elFor(board[R.path[0].r][R.path[0].c]).classList.add("navstart");
