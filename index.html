@@ -338,6 +338,11 @@ body { margin: 0; }
 .chip.lv { --c: var(--gold); }
 .quota b { font-variant-numeric: tabular-nums; }
 .streak { margin-left: auto; font-weight: 700; color: var(--orange); font-size: 12px; }
+.ebar { display: inline-block; width: 140px; height: 12px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; vertical-align: middle; }
+.ebar i { display: block; height: 100%; background: linear-gradient(90deg, #5fae5a, #b6e36b); transition: width .5s ease; }
+.ebar.danger i { background: linear-gradient(90deg, #e56d52, #ef9a45); animation: blink .6s steps(2) infinite; }
+.enet { margin-left: 8px; font-weight: 700; font-size: 12px; }
+.enet.up { color: #8fd49c; } .enet.down { color: #ef9a45; }
 .lvbar { height: 4px; margin: 6px -12px 0; background: var(--panel-2); }
 .lvbar i { display: block; height: 100%; width: 0; background: var(--gold); transition: width .4s; }
 .end-score { font-family: var(--font-display); font-weight: 800; font-size: 44px; color: var(--fg); line-height: 1.1; margin-bottom: 4px; }
@@ -591,7 +596,7 @@ body { margin: 0; }
       <label>モード
         <select id="modeSel">
           <option value="endless" selected>エンドレス（石がたまったら終わり）</option>
-          <option value="color">カラー（5色コンボ・20ターン）</option>
+          <option value="color">カラー（5色コンボ・エネルギー制）</option>
           <option value="daily">デイリー（今日の盤面・20ターン）</option>
         </select>
       </label>
@@ -675,15 +680,15 @@ body { margin: 0; }
         <span class="mc-art" aria-hidden="true"><i class="mt k0">P</i><i class="mt k1">L</i><i class="mt k2">A</i><i class="mt k3">Y</i></span>
         <span class="mc-body">
           <b class="mc-name">カラー <small>5色コンボ</small></b>
-          <span class="mc-desc">どんな単語でも消えてコンボになる。5色の文字を同じ色だけで単語にすると得点2倍、上の5つの単語ならさらに2倍</span>
-          <span class="mc-meta"><span>20ターン・約3〜5分</span><span class="mc-best">BEST <b data-best="color">0</b></span></span>
+          <span class="mc-desc">どんな単語でも消えてコンボ。エネルギーは毎ターン減り、単語を消すと回復。同じ色の文字だけで作ると大きく回復＆得点2倍</span>
+          <span class="mc-meta"><span>エネルギーが切れたら終わり</span><span class="mc-best">BEST <b data-best="color">0</b></span></span>
         </span>
       </button>
       <button type="button" class="mode-card" data-mode="daily" style="--mc:#d9b45a">
         <span class="mc-art" aria-hidden="true"><i class="mt k3">D</i><i class="mt k0">A</i><i class="mt k1">Y</i><i class="mt k4">!</i></span>
         <span class="mc-body">
           <b class="mc-name">デイリー <small id="dailyDate"></small></b>
-          <span class="mc-desc">今日の盤面と5つの単語は、毎日0時に入れかわる。ルールはカラーと同じ20ターン。今日のベストを目指そう</span>
+          <span class="mc-desc">今日の盤面と5つの単語は、毎日0時に入れかわる。カラーの単語ルールで20ターン勝負。今日のベストを目指そう</span>
           <span class="mc-meta"><span id="dailyStreak">連続 0日</span><span class="mc-best">今日のBEST <b data-best="daily">0</b></span></span>
         </span>
       </button>
@@ -8870,6 +8875,11 @@ zoom|v2|ズームする・急上昇する`;
   const pack = () => PACKS[$("packSel").value] || null;
   const inPack = w => !pack() || pack().words.has(w);
   const MODE_NAME = { endless: "エンドレス", color: "カラー", daily: "デイリー", quota: "ノルマ" };
+  // カラー（デイリー以外）はエネルギー制：毎ターン減り、単語を消すと回復。0で終わり
+  const isEnergy = () => $("modeSel").value === "color";
+  const ENERGY_MAX = 100;
+  const energyDrain = () => Math.min(22, 8 + (level - 1) * 2);   // レベルが上がるほど減りが速い
+  let energy = ENERGY_MAX;
   const COLOR_TURNS = 20, CCOL = ["#e07a66", "#5b8fdc", "#5fae5a", "#d9ae2c", "#9a6bd6"];
   let cwords = [], cshort = [true, true, true, false, false];
   const bestKey = () => isDaily() ? `wordDrop.daily.${dayKey()}` : `wordDrop.best.v2.${$("modeSel").value}.${assistLv()}`;
@@ -9434,12 +9444,21 @@ zoom|v2|ズームする・急上昇する`;
         pickColorWord(col); placeColorWord(col);
       }
       if (touched.size) { render(); renderCwords(); SFX.levelUp(); }
-      if (turns % TURNS_PER_LEVEL === 0 && turns < COLOR_TURNS) {
+      if (isEnergy()) {
+        // 回復：ふつうの単語 +4、同じ色の単語 +12、上の5つの単語ならさらに +13、全色そろえ +30
+        const heal = (combo - colorWords) * 4 + colorWords * 12 + exact.size * 13 + (all ? 30 : 0);
+        const drain = energyDrain();
+        energy = Math.max(0, Math.min(ENERGY_MAX, energy - drain + heal));
+        const net = heal - drain;
+        $("status").innerHTML += `<span class="enet ${net >= 0 ? "up" : "down"}">エネルギー ${net >= 0 ? "+" : ""}${net}</span>`;
+        if (energy > 0 && energy <= 25 && net < 0) { buzz([40, 40, 40]); }
+      }
+      if (turns % TURNS_PER_LEVEL === 0 && (isEnergy() || turns < COLOR_TURNS)) {
         level++; buzz([20, 50, 20]);
         setStatus(`<b>レベルアップ！ Lv.${level}</b>　長い単語も出てくる`);
       }
       updateHud();
-      if (turns >= COLOR_TURNS) { await sleep(300); showEnd(); busy = false; return; }
+      if (isEnergy() ? energy <= 0 : turns >= COLOR_TURNS) { await sleep(300); showEnd(); busy = false; return; }
       resetTimerBar();
       lastAction = performance.now();
       refreshHints();
@@ -9732,6 +9751,10 @@ zoom|v2|ズームする・急上昇する`;
       $("hearts").innerHTML = `<span class="gauge" aria-label="石 ${n}/${STONE_CAP}">${Array.from({ length: STONE_CAP }, (_, i) => `<i class="${i < n ? (n >= STONE_CAP - 3 ? "on danger" : "on") : ""}"></i>`).join("")}</span>`;
       $("quota").innerHTML = `石 <b>${n}</b>/${STONE_CAP}　毎ターン+${stonesPerTurn()}個`;
       $("lvFill").style.width = ((turns % STONE_EVERY) / STONE_EVERY * 100) + "%";
+    } else if (isEnergy()) {
+      const pct = Math.round(energy / ENERGY_MAX * 100);
+      $("hearts").innerHTML = `<span class="ebar${pct <= 25 ? " danger" : ""}" aria-label="エネルギー ${pct}"><i style="width:${pct}%"></i></span>`;
+      $("quota").innerHTML = `エネルギー <b>${energy}</b>　毎ターン−${energyDrain()}`;
     } else if (isColor()) {
       $("hearts").innerHTML = "";
       $("quota").innerHTML = `残り <b>${Math.max(0, COLOR_TURNS - turns)}</b>ターン`;
@@ -9740,7 +9763,8 @@ zoom|v2|ズームする・急上昇する`;
       $("quota").innerHTML = `ノルマ <b>${quotaOf(level)}</b>点／ターン`;
     }
     $("streak").textContent = streak >= 2 ? `連続 ${streak}回 ×${(1 + 0.1 * Math.min(streak, 10)).toFixed(1)}` : "";
-    if (isColor()) $("lvFill").style.width = (turns / COLOR_TURNS * 100) + "%";
+    if (isEnergy()) $("lvFill").style.width = ((turns % TURNS_PER_LEVEL) / TURNS_PER_LEVEL * 100) + "%";
+    else if (isColor()) $("lvFill").style.width = (turns / COLOR_TURNS * 100) + "%";
     else if (!isEndless()) $("lvFill").style.width = ((turns % TURNS_PER_LEVEL) / TURNS_PER_LEVEL * 100) + "%";
     $("bestLabel").textContent = `BEST（${MODE_NAME[$("modeSel").value]}・${ASSIST_NAME[assistLv()]}）`;
   }
@@ -9748,10 +9772,10 @@ zoom|v2|ズームする・急上昇する`;
     const rec = score > bestScore;
     if (rec) { bestScore = score; try { localStorage.setItem(bestKey(), String(score)); } catch (e) {} }
     if (rec) { SFX.record(); buzz([30, 60, 30, 60, 80], "SUCCESS"); } else SFX.over();
-    $("endTitle").textContent = isEndless() ? "詰み！" : isColor() ? "FINISH!" : "GAME OVER";
+    $("endTitle").textContent = isEndless() ? "詰み！" : isEnergy() ? "エネルギー切れ！" : isColor() ? "FINISH!" : "GAME OVER";
     $("endScore").textContent = score.toLocaleString();
     $("newRec").hidden = !rec;
-    if (isColor() && turns >= COLOR_TURNS) achTry("colorDone");
+    if (isEnergy() ? turns >= 30 : isColor() && turns >= COLOR_TURNS) achTry("colorDone");
     let dailyText = "";
     if (isDaily()) {
       const d = dailyInfo(), today = dayKey(), y = new Date(); y.setDate(y.getDate() - 1);
@@ -9759,7 +9783,7 @@ zoom|v2|ズームする・急上昇する`;
       dailyText = `デイリー連続 ${d.streak}日目！ また明日、新しい盤面で。`;
     }
     $("endAch").textContent = [dailyText, gameAch.length ? `このゲームで解除した実績：${gameAch.join("・")}` : ""].filter(Boolean).join("　");
-    $("clearText").textContent = `${isEndless() ? `石が${STONE_CAP}個たまった。` : ""}${MODE_NAME[$("modeSel").value]}・アシスト：${ASSIST_NAME[assistLv()]}　Lv.${level}・${turns}ターン。作った単語 ${totalWords}個（${learned.size}種類）。最大 ${maxCombo}コンボ`;
+    $("clearText").textContent = `${isEndless() ? `石が${STONE_CAP}個たまった。` : isEnergy() ? "エネルギーが切れた。" : ""}${MODE_NAME[$("modeSel").value]}・アシスト：${ASSIST_NAME[assistLv()]}　Lv.${level}・${turns}ターン。作った単語 ${totalWords}個（${learned.size}種類）。最大 ${maxCombo}コンボ`;
     updateHud();
     $("overlay").hidden = false;
   }
@@ -9769,7 +9793,7 @@ zoom|v2|ズームする・急上昇する`;
     nextId = 1; held = null; dragging = false; busy = false;
     if (typeof tutClear === "function" && tut) { tut = null; tutClear(); }
     $("tutCoach").hidden = true;
-    gameAch = [];
+    gameAch = []; energy = ENERGY_MAX;
     score = 0; lives = LIVES; level = 1; streak = 0; turns = 0; loadBest(); maxCombo = 0; totalWords = 0; learned = new Map(); odai = null;
     $("overlay").hidden = true; $("burst").hidden = true;
     recent = []; renderRecent();
@@ -9844,7 +9868,7 @@ zoom|v2|ズームする・急上昇する`;
     ["combo12", "伝説のコンボ", "1回で12コンボ", "12"],
     ["long6", "長文読み", "6文字の単語を作る", "6"],
     ["allColor", "全色そろえ", "カラーで全色そろえ", "◆"],
-    ["colorDone", "カラー完走", "カラーを20ターン遊びきる", "✓"],
+    ["colorDone", "カラー完走", "カラーで30ターン生き残る・デイリーを遊びきる", "✓"],
     ["breaker8", "石の破壊神", "1回で石を8個こわす", "石"],
     ["stones100", "石割り名人", "石を合計100個こわす", "石"],
     ["odai30", "お題ハンター", "お題を合計30回作る", "題"],
@@ -9988,7 +10012,7 @@ zoom|v2|ズームする・急上昇する`;
         : `ナイス！ <b>${got}コンボ！</b><br>一度のなぞりで単語をたくさん作るほど、<b>コンボ</b>で得点がどんどん増えるよ`, "つぎへ");
       await new Promise(r => $("tutBtn").onclick = r);
       coach("遊び方 3/3", isColor()
-        ? `カラーモードも、<b>どんな単語でも</b>消えてコンボになるよ。<br><b>同じ色の文字だけ</b>で作ると得点2倍、上に出ている5つの単語ならさらに2倍。20ターンで勝負！`
+        ? `カラーモードも、<b>どんな単語でも</b>消えてコンボになるよ。<br>エネルギーは毎ターン減るけど、単語を消すと回復。<b>同じ色の文字だけ</b>で作ると大きく回復して得点も2倍。0になったら終わり！`
         : `エンドレスは、毎ターン<b>石</b>が落ちてくる。石は動かせないけど、<b>文字は単語に使える</b>よ。<br>石が<b>15個</b>たまったら終わり。どこまで続けられるか挑戦！`, "はじめる！");
       await new Promise(r => $("tutBtn").onclick = r);
       $("tutCoach").hidden = true;
