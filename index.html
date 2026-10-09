@@ -10228,9 +10228,9 @@ zoom|v2|ズームする・急上昇する`;
     else $("clearText").textContent = `${isEndless() ? `石が${STONE_CAP}個たまった。` : isEnergy() ? "エネルギーが切れた。" : ""}${MODE_NAME[$("modeSel").value]}・アシスト：${ASSIST_NAME[assistLv()]}　Lv.${level}・${turns}ターン。作った単語 ${totalWords}個（${learned.size}種類）。最大 ${maxCombo}コンボ`;
     navClear();
     $("bonusBtn").hidden = false; $("bonusBtn").disabled = false; $("bonusBtn").textContent = "▶ 広告を見てナビ＋1";
-    const canCont = isPuzzle() || ((isEndless() || isEnergy()) && contUsed < CONT_MAX);
+    const canCont = isStudy() || ((isStage() || isEndless() || isEnergy()) && contUsed < CONT_MAX);  // パーフェクトは1ゲーム2回まで
     $("contBtn").hidden = !canCont;
-    if (isPuzzle()) $("contNote").textContent = isStage() ? "ライフを1つ回復して、同じステージから続ける" : "ライフを1つ回復して続ける";
+    if (isPuzzle()) $("contNote").textContent = isStage() ? `ライフを1つ回復して、同じステージから続ける（あと${CONT_MAX - contUsed}回）` : "ライフを1つ回復して続ける";
     else if (canCont) $("contNote").textContent = `${isEndless() ? "石を5個こわして続ける" : "エネルギーを50回復して続ける"}（あと${CONT_MAX - contUsed}回）`;
     updateHud();
     $("overlay").hidden = false;
