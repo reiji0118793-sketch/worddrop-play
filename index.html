@@ -9659,8 +9659,8 @@ zoom|v2|ズームする・急上昇する`;
           streak++; studyBoards++;
           const bonus = 50 * level * cwords.length; score += bonus; bumpScore(); SFX.levelUp(); buzz([20, 40, 20]);
           setStatus(`<b>正解！</b>　${cwords.map(x => `${x.w}（${esc(x.m)}）`).join("・")}　+${bonus}`);
-          if (studyBoards % 3 === 0) {
-            level++;
+          if (studyBoards >= studyNeed()) {
+            level++; studyBoards = 0;
             setStatus(`<b>レベルアップ！ Lv.${level}</b>　${level === DIAG_FROM ? "ここから、ななめにも動かせる" : studyCount() > cwords.length ? `次から${studyCount()}語いっしょに出るよ` : "少し長い単語も出てくる"}`);
           }
           await sleep(700);
@@ -10261,7 +10261,7 @@ zoom|v2|ズームする・急上昇する`;
       $("quota").innerHTML = `ノルマ <b>${quotaOf(level)}</b>点／ターン`;
     }
     $("streak").textContent = streak >= 2 ? `連続 ${streak}回 ×${(1 + 0.1 * Math.min(streak, 10)).toFixed(1)}` : "";
-    if (isPuzzle()) $("lvFill").style.width = (isStudy() ? (studyBoards % 3) / 3 * 100 : 100) + "%";
+    if (isPuzzle()) $("lvFill").style.width = (isStudy() ? studyBoards / studyNeed() * 100 : 100) + "%";
     else if (isEnergy()) $("lvFill").style.width = ((turns % TURNS_PER_LEVEL) / TURNS_PER_LEVEL * 100) + "%";
     else if (isColor()) $("lvFill").style.width = (turns / COLOR_TURNS * 100) + "%";
     else if (!isEndless()) $("lvFill").style.width = ((turns % TURNS_PER_LEVEL) / TURNS_PER_LEVEL * 100) + "%";
@@ -10714,6 +10714,8 @@ zoom|v2|ズームする・急上昇する`;
   const missDel = w => missSave(missList().filter(x => x !== w));
   // レベルが上がるほど、1つの盤面で作る単語が増える（盤面を広く使う）：Lv1〜2は1語、Lv3〜4は2語、Lv5〜6は3語、Lv7〜は4語
   const studyCount = () => level <= 2 ? 1 : level <= 4 ? 2 : level <= 6 ? 3 : 4;
+  // レベルアップまでに必要な正解の盤面数：はじめはテンポよく（Lv.2までは1回）、中盤からはゆっくり
+  const studyNeed = () => [1, 2, 2, 3, 4, 4][level - 1] || 5;
   function buildStudyPuzzle() {
     const k = studyCount();
     const lens = level <= 2 ? [3, 4] : level <= 4 ? [3, 4] : level <= 6 ? [3, 4, 5] : [4, 5, 6];
