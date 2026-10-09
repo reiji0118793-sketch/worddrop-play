@@ -567,6 +567,10 @@ body.has-banner .tabbar { padding-bottom: 0; margin-bottom: 0; }
 body.has-banner .adbanner { margin-top: 12px; }
 body.has-banner .adbanner { display: grid; place-items: center; height: calc(var(--bannerH) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); background: #0b0e1c; border-top: 1px solid var(--line); color: #5b6285; font-size: 11px; letter-spacing: .1em; }
 body.has-banner .modescreen { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px + var(--bannerH)); }
+/* 下のタブは、タイトル画面・単語帳・設定のときだけ。プレイ中は出さない（盤面を広く） */
+body.playing .tabbar { display: none; }
+body:not(.playing) .tabbar { position: relative; z-index: 45; }
+body:not(.playing) .modescreen { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px + var(--bannerH)); }
 .view.game .ebar { width: 96px; }
 .tabbar button { padding: 9px 4px; }
 </style>
@@ -832,7 +836,7 @@ body.has-banner .modescreen { padding-bottom: calc(env(safe-area-inset-bottom, 0
   </section>
 
   <nav class="tabbar" aria-label="画面の切り替え">
-    <button type="button" class="on" data-view="game">ゲーム</button>
+    <button type="button" class="on" data-view="game">ホーム</button>
     <button type="button" data-view="book">単語帳 <span class="badge" id="bookBadge">0</span></button>
     <button type="button" data-view="settings">設定</button>
   </nav>
@@ -10392,12 +10396,14 @@ zoom|v2|ズームする・急上昇する`;
       });
     }
     // インタースティシャル広告（ゲームの合間）。アプリ版だけ
-    let ended = 0;
+    // 回数は「前に広告を出してから何ゲーム目か」で数える。読み込みが間に合わなかったときは、次のゲームのあとに出す（取りこぼさない）
+    let sinceInter = 0;
     async function between() {
-      ended++;
+      sinceInter++;
       const every = firstDay() ? ADS.interEveryFirstDay : ADS.interEvery;
-      const a = A(); if (!a || ended % every !== 0) return;
+      const a = A(); if (!a || sinceInter < every) return;
       if (!interReady) return void prepInter();
+      sinceInter = 0;
       await new Promise(res => {
         let finished = false; const hs = [];
         const finish = () => { if (finished) return; finished = true; hs.forEach(h => h.then(x => x.remove()).catch(() => {})); interReady = false; prepInter(); res(); };
@@ -10417,6 +10423,13 @@ zoom|v2|ズームする・急上昇する`;
       bannerOn = on;
       try {
         if (on) {
+          // 読み込みに失敗したら、少し待って出しなおす（広告が出ない時間をなくす）
+          let retry = 0;
+          a.addListener("bannerAdLoaded", () => { retry = 0; });
+          a.addListener("bannerAdFailedToLoad", () => {
+            const wait = Math.min(120, 15 * 2 ** retry++) * 1000;
+            setTimeout(() => { if (bannerOn) a.showBanner({ adId: ADS.banner, adSize: "BANNER", position: "BOTTOM_CENTER", margin: 0, isTesting: ADS.TESTING }).catch(() => {}); }, wait);
+          });
           a.addListener("bannerAdSizeChanged", sz => { if (sz && sz.height) document.documentElement.style.setProperty("--bannerH", Math.max(50, Math.ceil(sz.height)) + 2 + "px"); });
           await a.showBanner({ adId: ADS.banner, adSize: "BANNER", position: "BOTTOM_CENTER", margin: 0, isTesting: ADS.TESTING });
         } else await a.hideBanner();
@@ -10690,6 +10703,8 @@ zoom|v2|ズームする・急上昇する`;
     $("msNote").textContent = `困ったときは、ゲーム画面の「ナビ」ボタンで、消える道を線で見られます`;
     $("overlay").hidden = true;
     $("modeScreen").hidden = false;
+    document.body.classList.remove("playing");
+    document.querySelectorAll(".tabbar button").forEach(b => b.classList.toggle("on", b.dataset.view === "game"));
   }
   document.querySelectorAll(".mode-card").forEach(c => c.addEventListener("click", () => {
     SFX.ensure(); SFX.levelUp(); buzz(20);
@@ -10712,12 +10727,17 @@ zoom|v2|ズームする・急上昇する`;
   $("toBookBtn").addEventListener("click", () => { bookScope = "quest"; document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("on", b.dataset.scope === "quest")); showView("book"); });
   // ---------- 画面の切り替え ----------
   function showView(name) {
+    document.body.classList.toggle("playing", name === "game" && $("modeScreen").hidden);
     for (const v of ["game", "book", "settings"]) $("view-" + v).hidden = v !== name;
     document.querySelectorAll(".tabbar button").forEach(b => b.classList.toggle("on", b.dataset.view === name));
     if (name === "book") renderBook();
     if (name === "game") { fitBoard(); measure(); if (board) render(); }
   }
-  document.querySelectorAll(".tabbar button").forEach(b => b.addEventListener("click", () => showView(b.dataset.view)));
+  // タブ：「ホーム」はタイトル画面へ。単語帳・設定はタイトル画面の上に開く
+  document.querySelectorAll(".tabbar button").forEach(b => b.addEventListener("click", () => {
+    if (b.dataset.view === "game") { showModeScreen(); return; }
+    $("modeScreen").hidden = true; showView(b.dataset.view);
+  }));
   document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
     bookScope = b.dataset.scope;
     document.querySelectorAll(".seg button").forEach(x => x.classList.toggle("on", x === b));
@@ -10840,18 +10860,20 @@ zoom|v2|ズームする・急上昇する`;
   function refreshHints() { paidNav = null; hints = board && odai ? computeHints() : null; hintStage = 0; applyHintStage(); renderCanList(); }
   // アシスト「しっかり」：最後までなぞる道すじを探す（チュートリアルと同じ線で見せる）
   function routeScore() {
-    let v = 0; const words = [];
+    let v = 0, ex = 0; const words = [];
     for (const f of findWords(board)) {
       let d = (f.w.length - 2) * f.w.length * 10;
       if (f.w === odai.w) d *= 3;
-      if (isColor()) { const col = board[f.cells[0].r][f.cells[0].c].col; if (col !== undefined && f.cells.every(x => board[x.r][x.c].col === col)) d *= 2; }
+      if (isColor()) { const col = board[f.cells[0].r][f.cells[0].c].col; if (col !== undefined && f.cells.every(x => board[x.r][x.c].col === col)) { d *= 2; if (cwords[col] && cwords[col].w === f.w) ex++; } }
       if (isEndless()) d += stonesHit([f.cells]) * 40;
       v += d; words.push(f.w);
     }
-    return { v, words };
+    return { v, words, ex };
   }
-  function findRoutes() {
-    const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], MAXD = 7, K = 60, found = [];
+  // colorFocus：上の色の単語（同じ色の文字でそろう）がいくつ消えるかを一番に考えて、深く探す（アイテムのナビ用）
+  function findRoutes(colorFocus = false) {
+    const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], MAXD = colorFocus ? 11 : 7, K = colorFocus ? 120 : 60, found = [];
+    const key = x => colorFocus ? x.ex * 1e6 + x.v : x.v;
     const ok = q => q.r >= 0 && q.r < ROWS && q.c >= 0 && q.c < COLS && !board[q.r][q.c].stone;
     let beam = [];
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (ok({ r, c })) beam.push({ path: [{ r, c }], v: 0 });
@@ -10866,16 +10888,16 @@ zoom|v2|ズームする・急上昇する`;
           for (let k = 1; k < path.length; k++) swap(path[k - 1], path[k]);
           const sc = routeScore();
           for (let k = path.length - 1; k >= 1; k--) swap(path[k - 1], path[k]);
-          next.push({ path, v: sc.v, words: sc.words });
-          if (sc.v > 0) found.push({ path, v: sc.v, words: sc.words });
+          next.push({ path, v: sc.v, words: sc.words, ex: sc.ex });
+          if (sc.v > 0) found.push({ path, v: sc.v, words: sc.words, ex: sc.ex });
         }
       }
       if (d <= 2) { beam = next; continue; }
-      next.sort((a, b) => b.v - a.v || Math.random() - 0.5);
+      next.sort((a, b) => key(b) - key(a) || Math.random() - 0.5);
       beam = next.slice(0, K);
     }
-    // 点が高い順。同じくらいなら短い道。始まりと終わりが同じ道は1つだけ
-    found.sort((a, b) => b.v - a.v || a.path.length - b.path.length);
+    // 点が高い順（colorFocusなら消える色が多い順）。同じくらいなら短い道。始まりと終わりが同じ道は1つだけ
+    found.sort((a, b) => key(b) - key(a) || a.path.length - b.path.length);
     const out = [], seen = new Set();
     out.words = new Set(found.flatMap(f => f.words));
     for (const f of found) { const key = f.words.slice().sort().join(","); if (seen.has(key)) continue; seen.add(key); out.push(f); if (out.length >= 3) break; }
@@ -10946,16 +10968,8 @@ zoom|v2|ズームする・急上昇する`;
       finally { for (let k = R.length - 1; k >= 1; k--) swap(R[k - 1], R[k]); }
       if (ok) return { path: R, words: cwords.map(x => x.w) };
     }
-    if (isEnergy()) {
-      const route = cwords.length > 5 ? buildDailyBoard(cwords.map(x => x.w)) : buildRouteBoard(cwords.map(x => x.w), true);
-      if (route) {
-        plant = null;
-        render();
-        for (const t of board.flat()) { const el = elFor(t); el.classList.remove("cin"); void el.offsetWidth; el.classList.add("cin"); }
-        return { path: route, words: cwords.map(x => x.w), rebuilt: true };
-      }
-    }
-    const R = findRoutes();
+    // 盤面の並びはそのままで、できるだけたくさんの色が消える道をさがす
+    const R = findRoutes(isColor());
     return R.length ? R[0] : null;
   }
   async function useNav() {
@@ -10983,9 +10997,10 @@ zoom|v2|ズームする・急上昇する`;
     elFor(board[R.path[0].r][R.path[0].c]).classList.add("navstart");
     drawRoute(R.path, "nav");
     const all5 = isColor() && cwords.length && cwords.every(c => R.words.includes(c.w));
+    const ex = isColor() ? (R.ex !== undefined ? R.ex : cwords.filter(c => R.words.includes(c.w)).length) : 0;
     setStatus(all5
-      ? `ナビ：${R.rebuilt ? "盤面を並べかえたよ。" : ""}光っている文字から線のとおりになぞると、<b>${cwords.length}色ぜんぶ消えて PERFECT!</b>`
-      : `ナビ：光っている文字から線のとおりになぞると ${R.words.map(w => `<b>${w}</b>`).join("・")}${R.words.length >= 2 ? `　${R.words.length}コンボ！` : ""}`);
+      ? `ナビ：光っている文字から線のとおりになぞると、<b>${cwords.length}色ぜんぶ消えて PERFECT!</b>`
+      : `ナビ：光っている文字から線のとおりになぞると${ex ? `、<b>${ex}色</b>消える！` : ""} ${R.words.map(w => `<b>${w}</b>`).join("・")}${R.words.length >= 2 ? `　${R.words.length}コンボ！` : ""}`);
   }
   function poke() { lastAction = performance.now(); if (hintStage) { hintStage = 0; applyHintStage(); } }
   setInterval(() => {
