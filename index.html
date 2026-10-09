@@ -179,6 +179,17 @@ header.top p { margin: 0; color: var(--muted); font-size: 13px; }
 .tile.held { transition: none; z-index: 5; }
 .tile.held .face { transform: scale(1.12); box-shadow: 0 0 0 3px var(--gold), 0 12px 18px rgba(0,0,0,.5); }
 .tile.fall { transition: transform .32s cubic-bezier(.3,.1,.4,1.3); }
+/* そろった単語：光ってから、つづりの順に1文字ずつはじけて消える */
+.tile.lit { z-index: 3; }
+.tile.lit .face { transform: scale(1.1); border-color: var(--mc); box-shadow: 0 0 0 3px var(--mc), 0 0 22px var(--mc), 0 3px 0 rgba(0,0,0,.4); filter: brightness(1.12); transition: transform .12s, box-shadow .12s; }
+.tile.popout .face { animation: popout .34s cubic-bezier(.3,.1,.6,1) forwards; }
+@keyframes popout { 0% { transform: scale(1.1); } 30% { transform: scale(1.38); filter: brightness(2); } 100% { transform: scale(0) rotate(18deg); opacity: 0; } }
+.wlabel { position: absolute; z-index: 9; pointer-events: none; transform: translate(-50%, -100%); background: rgba(14, 18, 36, .94); border: 2px solid var(--wc); border-radius: 12px; padding: 3px 12px 5px; text-align: center; white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,.5), 0 0 16px color-mix(in srgb, var(--wc) 50%, transparent); }
+.wlabel.below { transform: translate(-50%, 0); }
+.wl-c { display: block; font-family: var(--font-display); font-weight: 800; font-size: 12px; letter-spacing: .14em; color: var(--bc, var(--gold)); }
+.wl-c b { font-size: 20px; }
+.wl-w { font-family: var(--font-display); font-weight: 800; font-size: 24px; letter-spacing: .08em; color: var(--wc); }
+.wl-m { font-size: 12px; margin-left: 8px; color: var(--fg); }
 .tile.match .face { animation: glow .4s ease-in-out infinite alternate; border-color: var(--mc, var(--gold)); }
 @keyframes glow { to { box-shadow: 0 0 0 4px var(--mc, var(--gold)), 0 0 22px var(--mc, var(--gold)); transform: scale(1.06); } }
 .tile.gone { opacity: 0; }
@@ -392,6 +403,9 @@ body { margin: 0; }
 .tile.c3 .face { background: linear-gradient(#f9edbd, #ecd27a); border-color: #b98d16; color: #4a3806; }
 .mt.k4 { background: linear-gradient(#ead9fa, #c9a8ee); border-color: #7f52c6; color: #2e1650; }
 .tile.c4 .face { background: linear-gradient(#ead9fa, #c9a8ee); border-color: #7f52c6; color: #2e1650; }
+.tile.c5 .face { background: linear-gradient(#fde0c4, #f6b884); border-color: #d07a2c; color: #4a2408; }
+.tile.c6 .face { background: linear-gradient(#ccf3ee, #8fded4); border-color: #2a9d90; color: #0f3a35; }
+.tile.c7 .face { background: linear-gradient(#fbd6ea, #f2a7cf); border-color: #c95a97; color: #4d1433; }
 /* 色のない文字は白。暗くせず「これも使える・消せる」とわかるようにする */
 .board.colormode .tile:not(.cc) .face { background: linear-gradient(160deg, #ffffff, #f1f3f8 55%, #d9dde8); border-color: #aeb6cc; color: #1d2233; box-shadow: 0 3px 0 #8a92a8, 0 6px 10px rgba(0,0,0,.35); }
 .board.colormode .tile.vowel:not(.cc) .face { color: #1d2233; }
@@ -716,7 +730,7 @@ body.has-banner .modescreen { padding-bottom: calc(env(safe-area-inset-bottom, 0
         <select id="modeSel">
           <option value="endless" selected>エンドレス（石がたまったら終わり）</option>
           <option value="color">カラー（5色コンボ・エネルギー制）</option>
-          <option value="daily">デイリー（今日の盤面・20ターン）</option>
+          <option value="daily">デイリー（今日の盤面・10問）</option>
         </select>
       </label>
       <label>単語パック
@@ -807,7 +821,7 @@ body.has-banner .modescreen { padding-bottom: calc(env(safe-area-inset-bottom, 0
         <span class="mc-art" aria-hidden="true"><i class="mt k3">D</i><i class="mt k0">A</i><i class="mt k1">Y</i><i class="mt k4">!</i></span>
         <span class="mc-body">
           <b class="mc-name">デイリー <small id="dailyDate"></small></b>
-          <span class="mc-desc">毎ターン、1回なぞるだけで5色ぜんぶ消せるパズルが出る（全20問）。問題は毎日0時に入れかわり、みんな同じ。今日のベストを目指そう</span>
+          <span class="mc-desc">8色の単語がごちゃまぜの盤面に、1回なぞるだけで全部消える「天才の1手」がかくれている（全10問）。問題は毎日0時に入れかわり、みんな同じ。今日のベストを目指そう</span>
           <span class="mc-meta"><span id="dailyStreak">連続 0日</span><span class="mc-best">今日のBEST <b data-best="daily">0</b></span></span>
         </span>
       </button>
@@ -8974,7 +8988,7 @@ zoom|v2|ズームする・急上昇する`;
   // ---------- スコアアタックの設定 ----------
   const LIVES = 3, TURNS_PER_LEVEL = 5;
   const quotaOf = lv => [30, 60, 100, 150, 200][lv - 1] || 200 + (lv - 5) * 60;
-  const timeOf = lv => tut ? 40 : Math.max(6, Number($("timeSel").value) - Math.max(0, lv - 3));
+  const timeOf = lv => tut ? 40 : $("modeSel").value === "daily" ? 15 : Math.max(6, Number($("timeSel").value) - Math.max(0, lv - 3));
   // ベストスコアは「モード × アシスト」ごとに別々に記録する（ランキングも別々にする前提）
   const STONE_CAP = 15, STONE_EVERY = 15, STONE_MAX = 5;  // 石は文字入り（t.stone = true）。動かせないが単語に使える
   const isEndless = () => $("modeSel").value === "endless";
@@ -9005,7 +9019,8 @@ zoom|v2|ズームする・急上昇する`;
   const ENERGY_MAX = 100;
   const energyDrain = () => Math.min(22, 8 + (level - 1) * 2);   // レベルが上がるほど減りが速い
   let energy = ENERGY_MAX;
-  const COLOR_TURNS = 20, CCOL = ["#e07a66", "#5b8fdc", "#5fae5a", "#d9ae2c", "#9a6bd6"];
+  const COLOR_TURNS = 10, CCOL = ["#e07a66", "#5b8fdc", "#5fae5a", "#d9ae2c", "#9a6bd6", "#f08a3c", "#2bb3a6", "#e06aa8"];  // カラーは前の5色、デイリーは8色
+  const DAILY_LENS = [5, 4, 3, 3, 3, 3, 3, 3];  // デイリーの8つの単語の長さ
   let cwords = [], cshort = [true, true, true, false, false];
   const bestKey = () => isDaily() ? `wordDrop.daily.${dayKey()}` : `wordDrop.best.v2.${$("modeSel").value}.${assistLv()}`;
   let bestScore = 0;
@@ -9462,6 +9477,8 @@ zoom|v2|ズームする・急上昇する`;
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   async function resolveTurn() {
     busy = true; turns++;
+    if (paidNav) { paidNav = null; navClear(); }  // アイテムのナビは、指をはなしたら消す
+    pfRoute = null;
     setStatus("判定中…");
     let combo = 0, damage = 0, gotOdai = false, broke = 0;
     const touched = new Set(), exact = new Set(); let colorWords = 0;
@@ -9500,12 +9517,14 @@ zoom|v2|ズームする・急上昇する`;
           if (t.stone && !cleared.has(t)) { cleared.add(t); broke++; const el = elFor(t); el.classList.add("match"); el.style.setProperty("--mc", "#9aa3b5"); }
         }
       }
-      burstShow();
-      for (const f of found) { combo++; burstWord(f.w, combo); await sleep(560); }
-      await sleep(120);
-      // 消す
+      // 盤面の上で、そろった単語を1つずつ光らせて、つづりの順にはじけて消す
+      const popped = new Set();
+      for (const f of found) { combo++; await popWord(f, combo, popped); }
+      lastCombo = combo;
+      await sleep(80);
+      // 消す（まだ残っている石など）
       if ([...cleared].some(t => t.stone)) { SFX.crack(); buzz([30, 20, 50]); }
-      for (const t of cleared) { const el = elFor(t); el.classList.add("gone"); sparks(el); }
+      for (const t of cleared) { if (popped.has(t)) continue; const el = elFor(t); el.classList.add("gone"); sparks(el); }
       await sleep(230);
       for (const t of cleared) { const el = els.get(t.id); if (el) { el.remove(); els.delete(t.id); } }
       // 落とす＆補充
@@ -9546,7 +9565,7 @@ zoom|v2|ズームする・急上昇する`;
     maxCombo = Math.max(maxCombo, combo);
     if (isColor()) {
       let gained = 0;
-      const all = exact.size >= CCOL.length;
+      const all = exact.size >= cwords.length;
       if (combo > 0) {
         const mult = (1 + 0.25 * (combo - 1)) * (all ? 2 : 1);
         const smult = 1 + 0.1 * Math.min(streak, 10);
@@ -9560,7 +9579,8 @@ zoom|v2|ズームする・急上昇する`;
         await burstHide();
         streak++;
         setStatus(`<b>+${gained}点</b>　${combo}コンボ${all ? "　PERFECT!" : ""}`);
-        if (all) await perfectWipe();
+        if (isEnergy()) pfStreak = all ? pfStreak + 1 : 0;
+        if (all && await perfectWipe()) touched.clear();  // 次の盤面は「もう一度PERFECTできる並び」なので、色を置きなおさない
       } else { streak = 0; setStatus("どんな単語でもOK。同じ色の文字だけで作ると得点2倍"); }
       // ふつうの単語に色の文字が使われて消えた色も、新しい単語に入れかえる
       cwords.forEach((x, i) => { if (x && board.flat().filter(t => t.col === i).length < x.w.length) touched.add(i); });
@@ -9593,6 +9613,7 @@ zoom|v2|ズームする・急上昇する`;
       }
       if (turns % TURNS_PER_LEVEL === 0 && (isEnergy() || turns < COLOR_TURNS)) {
         level++; buzz([20, 50, 20]);
+        if (isEnergy()) addColorsForLevel();
         setStatus(`<b>レベルアップ！ Lv.${level}</b>　長い単語も出てくる`);
       }
       updateHud();
@@ -9621,15 +9642,21 @@ zoom|v2|ズームする・急上昇する`;
       else { streak = 0; setStatus("単語ができなかった…石が多めに落ちてくる"); }
       if (gotOdai) newOdai();
       // 石が落ちてくる：15ターンごとに1個ずつ増える。単語ができなかったターンは+2個
-      const add = stonesPerTurn() + (combo ? 0 : 2);
+      const add = turns <= GRACE_TURNS ? 0 : stonesPerTurn() + (combo ? 0 : 2);
+      const tierNow = scoreTier();
       await dropStones(add);
       const n = board.flat().filter(t => t.stone).length;
       if (turns % STONE_EVERY === 0) {
         level++; SFX.levelUp(); buzz([20, 50, 20]);
-        setStatus(stonesPerTurn() < STONE_MAX
+        setStatus(stonesPerTurn() < stoneMax()
           ? `<b>レベルアップ！ Lv.${level}</b>　石が毎ターン<b>${stonesPerTurn()}個</b>に増えた！`
-          : `<b>レベルアップ！ Lv.${level}</b>　石は毎ターン最大の<b>${STONE_MAX}個</b>`);
+          : `<b>レベルアップ！ Lv.${level}</b>　石は毎ターン最大の<b>${stoneMax()}個</b>`);
       }
+      else if (tierNow > lastTier) {
+        setStatus(`<b>${SCORE_TIERS[tierNow - 1].toLocaleString()}点突破！</b>　石が毎ターン<b>${stonesPerTurn()}個</b>に増えた！`);
+      }
+      lastTier = tierNow;
+      if (turns === GRACE_TURNS) setStatus("<b>ここから石が落ちてくる！</b>　石の近くで単語を作るとこわせる");
       updateHud();
       if (turns >= 50) achTry("survive50");
       if (n >= STONE_CAP) { await sleep(300); showEnd(); busy = false; return; }
@@ -9639,6 +9666,11 @@ zoom|v2|ズームする・急上昇する`;
       render();
       lastAction = performance.now();
       refreshHints();
+      // ピンチの救済：石が12個をこえたら、1ゲームに1回だけナビを無料で出す
+      if (!rescueUsed && n > 12 && !tut) {
+        const R = findRoutes()[0];
+        if (R) { rescueUsed = true; paidNav = R; drawPaidNav(); setStatus(`<b>ピンチ！</b>　今回だけナビを無料で出したよ。線のとおりになぞろう`); }
+      }
       busy = false;
       return;
     }
@@ -9708,8 +9740,49 @@ zoom|v2|ズームする・急上昇する`;
     gfx.burst(Math.min(10 + combo * 4, 40)); if (combo >= 3) { gfx.flash(combo >= 5 ? "#ff7a3a" : "#ffd84d", .16); gfx.shake(); }
     if (combo === 5 || combo === 8 || combo === 12) { SFX.bigCombo(combo); buzz([40, 30, 70]); shakeBoard(combo); }
   }
+  let lastCombo = 0;
+  async function popWord(f, combo, popped) {
+    const info = DICT.get(f.w), p = POS[info.pos];
+    const tiles = f.cells.map(x => board[x.r][x.c]);
+    const color = (isColor() && tiles[0].col !== undefined && tiles.every(t => t.col === tiles[0].col)) ? CCOL[tiles[0].col] : p.color;
+    tiles.forEach(t => { const el = elFor(t); el.style.setProperty("--mc", color); el.classList.remove("match"); el.classList.add("lit"); });
+    // 単語の上に、コンボ数・単語・意味を出す
+    const rs = f.cells.map(x => x.r), cs = f.cells.map(x => x.c);
+    const minR = Math.min(...rs), maxR = Math.max(...rs), cx = (Math.min(...cs) + Math.max(...cs) + 1) / 2 * S;
+    const below = minR <= 1 && maxR < ROWS - 1;
+    const lab = document.createElement("div");
+    lab.className = "wlabel" + (below ? " below" : "");
+    const tier = combo >= 5 ? "var(--fire)" : combo >= 3 ? "var(--orange)" : "var(--gold)";
+    lab.style.cssText = `--wc:${color};--bc:${tier};left:${Math.max(70, Math.min(COLS * S - 70, cx))}px;top:${below ? (maxR + 1) * S + 4 : minR * S - 4}px`;
+    lab.innerHTML = `<span class="wl-c"><b>${combo}</b> COMBO</span><span class="wl-w">${f.w}</span><span class="wl-m">${esc(info.m)}</span>`;
+    $("tiles").appendChild(lab);
+    lab.animate([{ transform: lab.style.transform || "", opacity: 0, scale: .5 }, { opacity: 1, scale: 1.08, offset: .6 }, { opacity: 1, scale: 1 }], { duration: 220, easing: "ease-out" });
+    SFX.word(combo); buzz(Math.min(14 + combo * 8, 70));
+    gfx.burst(Math.min(8 + combo * 3, 30)); if (combo >= 3) { gfx.flash(combo >= 5 ? "#ff7a3a" : "#ffd84d", .12); }
+    if (combo === 5 || combo === 8 || combo === 12) { SFX.bigCombo(combo); buzz([40, 30, 70]); shakeBoard(combo); gfx.shake(); }
+    await sleep(180);
+    // つづりの順に、1文字ずつはじけて消える
+    for (const t of tiles) {
+      if (popped.has(t)) continue;
+      popped.add(t);
+      const el = elFor(t); el.classList.add("popout"); sparks(el);
+      await sleep(55);
+    }
+    await sleep(170);
+    lab.animate([{ opacity: 1 }, { opacity: 0, translate: "0 -10px" }], { duration: 200, fill: "forwards" });
+    setTimeout(() => lab.remove(), 220);
+  }
   function burstDamage(mult, pts, gotOdai, smult) {
-    $("bDmg").innerHTML = `コンボ ×${mult.toFixed(2)}${smult > 1 ? `・連続 ×${smult.toFixed(1)}` : ""}${gotOdai ? "・お題" : ""}　<b>+${pts}</b> 点`;
+    // 最後にまとめて：何コンボで何点
+    burstShow();
+    const card = $("burstIn");
+    card.style.setProperty("--bc", lastCombo >= 5 ? "var(--fire)" : lastCombo >= 3 ? "var(--orange)" : "var(--gold)");
+    card.style.setProperty("--nsize", (34 + Math.min(lastCombo, 10) * 5) + "px");
+    $("bNum").textContent = lastCombo;
+    $("bWord").textContent = `+${pts.toLocaleString()}`; $("bWord").style.setProperty("--wc", "#fff");
+    $("bMean").innerHTML = "";
+    for (const [el, cls] of [[card, "bump"], [$("bNum"), "pop"], [$("bWord"), "in"]]) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+    $("bDmg").innerHTML = `コンボ ×${mult.toFixed(2)}${smult > 1 ? `・連続 ×${smult.toFixed(1)}` : ""}${gotOdai ? "・お題" : ""}`;
   }
 
   async function burstHide() {
@@ -9791,6 +9864,20 @@ zoom|v2|ズームする・急上昇する`;
     const [w, v] = pool[Math.floor(Math.random() * pool.length)];
     cwords[i] = { w, ...v };
   }
+  // カラー：レベルが上がると色が増える（Lv.5で6色、Lv.9で7色）
+  const colorsForLevel = () => level >= 9 ? 7 : level >= 5 ? 6 : 5;
+  function addColorsForLevel() {
+    let added = 0;
+    while (cwords.length < colorsForLevel()) {
+      const i = cwords.length; cshort[i] = true;
+      pickColorWord(i); placeColorWord(i); added++;
+    }
+    if (added) {
+      renderCwords(); render();
+      for (const t of board.flat()) if (t.col >= 5) { const el = elFor(t); el.classList.remove("cin"); void el.offsetWidth; el.classList.add("cin"); }
+      setTimeout(() => setStatus(`<b>新しい色が増えた！</b>　${cwords.length}色に`), 50);
+    }
+  }
   // 単語の文字を、近くのマス（2マス以内）にばらばらに置く。最初から完成していないようにする
   function placeColorWord(i) {
     const w = cwords[i].w, all = [];
@@ -9827,7 +9914,7 @@ zoom|v2|ズームする・急上昇する`;
   function setupColor() {
     cwords = [];
     cshort = [true, true, true, false, false].sort(() => Math.random() - 0.5);
-    for (let i = 0; i < CCOL.length; i++) { pickColorWord(i); placeColorWord(i); }
+    for (let i = 0; i < 5; i++) { pickColorWord(i); placeColorWord(i); }
     plant = null;
     if (isEnergy()) ensurePlant();
     renderCwords();
@@ -9894,7 +9981,13 @@ zoom|v2|ズームする・急上昇する`;
     }
     return false;
   }
-  const stonesPerTurn = () => Math.min(STONE_MAX, 1 + Math.floor(turns / STONE_EVERY));  // 15ターンごとに+1個（最大5個）
+  // エンドレスの難しさ：15ターンごと＋スコアが上がるごとに、毎ターン落ちる石が増える（最大5個）。最初の5ターンは石なし
+  const GRACE_TURNS = 5, SCORE_TIERS = [3000, 8000, 15000, 25000, 40000, 60000];
+  const scoreTier = () => SCORE_TIERS.filter(x => score >= x).length;
+  // 高得点になるほど上限も上がる（4万点で6個、6万点で7個）
+  const stoneMax = () => STONE_MAX + (score >= 40000 ? 1 : 0) + (score >= 60000 ? 1 : 0);
+  const stonesPerTurn = () => Math.min(stoneMax(), 1 + Math.floor(turns / STONE_EVERY) + scoreTier());
+  let rescueUsed = false, lastTier = 0;
   async function dropStones(k) {
     const odaiTiles = hints ? hints.odai : new Set();
     const free = board.flat().filter(t => !t.stone && !odaiTiles.has(t));
@@ -9923,11 +10016,38 @@ zoom|v2|ズームする・急上昇する`;
     if (isEnergy()) energy = ENERGY_MAX;
     // 色の単語は、このあと「消えた色は新しい単語に」の処理で5つとも置きなおされる（デイリーは次の問題に入れかわる）
     plant = null;
+    // カラー：PERFECTのあとは、もう一度PERFECTできる並び（1本の道で全部そろう）を出す。連続するほど、道が長く・色が多くなる
+    let puzzled = false;
+    if (isEnergy()) puzzled = buildPerfectPuzzle();
     measure(); render();
     board.flat().forEach((t, k) => { const el = elFor(t); el.querySelector(".face").style.animationDelay = (k * 18) + "ms"; el.classList.add("dropin"); setTimeout(() => el.classList.remove("dropin"), 1000); });
     maybeAskReview();
     setStatus(`<b>PERFECT!</b>　全消しボーナス +${PERFECT_BONUS}点${isEnergy() ? "　エネルギー満タン！" : ""}`);
     await sleep(600);
+    if (puzzled) setStatus(`<b>PERFECTチャンス！</b>（${pfStreak}連続）　この並びは、1回なぞるだけで全部消せる道がかくれているよ`);
+    return puzzled;
+  }
+  // PERFECTの連続数で難しさを決める：道の長さと色の数
+  let pfStreak = 0, pfRoute = null;
+  function buildPerfectPuzzle() {
+    const lv = Math.min(pfStreak, 5);
+    const ranges = [[6, 8], [6, 8], [8, 11], [10, 13], [12, 15], [14, 18]];
+    const [Lmin, Lmax] = ranges[lv];
+    const n = Math.min(8, colorsForLevel() + (pfStreak >= 3 ? 1 : 0) + (pfStreak >= 5 ? 1 : 0));
+    for (let tries = 0; tries < 12; tries++) {
+      cwords = [];
+      cshort = Array.from({ length: n }, (_, i) => i >= 2).sort(() => Math.random() - 0.5);
+      for (let i = 0; i < n; i++) pickColorWord(i);
+      if (cwords.some(x => x.w.length > COLS)) continue;
+      const route = buildDailyBoard(cwords.map(x => x.w), Lmin, Lmax);
+      if (route) { pfRoute = route; plant = { i: 0, route }; renderCwords(); return true; }
+    }
+    // うまく作れなかったら、ふつうの盤面にもどす
+    for (const t of board.flat()) { delete t.col; t.stone = false; }
+    board = freshBoard(); cwords = []; cshort = [true, true, true, false, false].sort(() => Math.random() - 0.5);
+    for (let i = 0; i < colorsForLevel(); i++) { pickColorWord(i); placeColorWord(i); }
+    renderCwords(); pfRoute = null;
+    return true;
   }
   function jackpot(lv, label) {
     if (!lv) return;
@@ -10038,7 +10158,7 @@ zoom|v2|ズームする・急上昇する`;
     nextId = 1; held = null; dragging = false; busy = false;
     if (typeof tutClear === "function" && tut) { tut = null; tutClear(); }
     $("tutCoach").hidden = true;
-    gameAch = []; energy = ENERGY_MAX; contUsed = 0;
+    gameAch = []; energy = ENERGY_MAX; contUsed = 0; rescueUsed = false; lastTier = 0; pfStreak = 0; pfRoute = null;
     score = 0; lives = LIVES; level = 1; streak = 0; turns = 0; loadBest(); maxCombo = 0; totalWords = 0; learned = new Map(); odai = null;
     $("overlay").hidden = true; $("burst").hidden = true;
     recent = []; renderRecent();
@@ -10364,15 +10484,60 @@ zoom|v2|ズームする・急上昇する`;
   }
   // デイリー：毎ターン、その日の決まったパズル（1本の道で5色ぜんぶ消せる）を出す。誰でも同じ盤面
   let dailyRoute = null;
+  // デイリー：8色・8つの単語をぎっしり並べてから、長い1本の道でごちゃまぜにする。逆になぞると8つ全部そろう（天才的な1手）
+  function buildDailyBoard(words, Lmin = 12, Lmax = 17) {
+    const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    for (let tries = 0; tries < 30000; tries++) {
+      for (const t of board.flat()) { delete t.col; t.stone = false; t.ch = randLetter(); }
+      const idx = words.map((w, i) => i);
+      const longs = idx.filter(i => words[i].length >= 4), shorts = idx.filter(i => words[i].length < 4).sort(() => Math.random() - 0.5);
+      const rows = longs.map(i => [i]);
+      for (let k = 0; k < shorts.length; k += 2) rows.push(shorts.slice(k, k + 2));
+      if (rows.length > ROWS) return null;
+      rows.sort(() => Math.random() - 0.5);
+      const cellsOf = [];
+      rows.forEach((grp, r) => {
+        let c = grp.length === 1 ? Math.floor(Math.random() * (COLS - words[grp[0]].length + 1)) : 0;
+        for (const wi of grp) {
+          const w = words[wi]; cellsOf[wi] = [];
+          [...w].forEach((ch, k) => { board[r][c + k].ch = ch; board[r][c + k].col = wi; cellsOf[wi].push(r * COLS + c + k); });
+          c += w.length;
+        }
+      });
+      // ぜんぶの単語を通る、重ならない長い道（たて・よこ）
+      let pos = { r: Math.floor(Math.random() * ROWS), c: Math.floor(Math.random() * COLS) };
+      const q = [pos], seen = new Set([pos.r * COLS + pos.c]);
+      const L = Lmin + Math.floor(Math.random() * (Lmax - Lmin + 1));
+      for (let k = 0; k < L; k++) {
+        const opts = N4.map(([dr, dc]) => ({ r: pos.r + dr, c: pos.c + dc })).filter(n => n.r >= 0 && n.r < ROWS && n.c >= 0 && n.c < COLS && !seen.has(n.r * COLS + n.c));
+        if (!opts.length) break;
+        pos = opts[Math.floor(Math.random() * opts.length)]; q.push(pos); seen.add(pos.r * COLS + pos.c);
+      }
+      if (!cellsOf.every(cs => cs.some(x => seen.has(x)))) continue;
+      const snap = board.map(row => row.slice());
+      for (let k = 1; k < q.length; k++) swap(q[k - 1], q[k]);
+      if (findWords(board).length) { board = snap; continue; }
+      const route = q.slice().reverse();
+      for (let k = 1; k < route.length; k++) swap(route[k - 1], route[k]);
+      const got = new Set(findWords(board).map(f => f.w));
+      for (let k = route.length - 1; k >= 1; k--) swap(route[k - 1], route[k]);
+      if (!words.every(w => got.has(w))) { board = snap; continue; }
+      return route;
+    }
+    return null;
+  }
+  function pickDailyWord(len, used) {
+    const pool = [...DICT.entries()].filter(([w, v]) => !NOSHOW.has(w) && (pack() ? inPack(w) : v.tier === 1) && w.length === len && !used.has(w) && [...w].every(ch => WEIGHTS[ch] >= 1));
+    const [w, v] = pool[Math.floor(Math.random() * pool.length)];
+    return { w, ...v };
+  }
   function buildDailyPuzzle(turnNo) {
     const unseed = seedRandom(`worddrop-${dayKey()}-t${turnNo}`);
     try {
-      for (let tries = 0; tries < 20; tries++) {
-        cwords = [];
-        cshort = [true, true, true, false, false].sort(() => Math.random() - 0.5);
-        for (let i = 0; i < CCOL.length; i++) pickColorWord(i);
-        if (cwords.some(x => x.w.length > COLS)) continue;
-        dailyRoute = buildRouteBoard(cwords.map(x => x.w), true);
+      for (let tries = 0; tries < 30; tries++) {
+        const used = new Set();
+        cwords = DAILY_LENS.slice().sort(() => Math.random() - 0.5).map(len => { const x = pickDailyWord(len, used); used.add(x.w); return x; });
+        dailyRoute = buildDailyBoard(cwords.map(x => x.w));
         if (dailyRoute) break;
       }
     } finally { unseed(); }
@@ -10638,7 +10803,7 @@ zoom|v2|ズームする・急上昇する`;
     }
     return used;
   }
-  function refreshHints() { hints = board && odai ? computeHints() : null; hintStage = 0; applyHintStage(); renderCanList(); }
+  function refreshHints() { paidNav = null; hints = board && odai ? computeHints() : null; hintStage = 0; applyHintStage(); renderCanList(); }
   // アシスト「しっかり」：最後までなぞる道すじを探す（チュートリアルと同じ線で見せる）
   function routeScore() {
     let v = 0; const words = [];
@@ -10710,6 +10875,7 @@ zoom|v2|ズームする・急上昇する`;
       : '<li class="none">今は作れる単語が見つからない。大きくなぞって並べ替えよう</li>';
   }
   function applyHintStage() {
+    if (paidNav) return;  // アイテムのナビを表示中は、自動のヒントで消さない（なぞっている途中も残す）
     navClear();
     if (!hints) return;
     hints.shown = null;  // 1マスだけの矢印はやめて、最後までなぞる線で見せる
@@ -10735,22 +10901,57 @@ zoom|v2|ズームする・急上昇する`;
     return true;
   }
   // 「ナビ」ボタン：チケットを1枚使う。0枚なら広告を見て1回
-  let navBusy = false, navK = 0;
+  let navBusy = false, navK = 0, paidNav = null;
+  // アイテムのナビ：カラーとデイリーは「5色ぜんぶ消える道」。カラーは盤面を並べかえて、その道を作る
+  function paidNavRoute() {
+    if (isDaily() && dailyRoute) return { path: dailyRoute, words: cwords.map(x => x.w) };
+    if (isEnergy() && pfRoute) {
+      const R = pfRoute; let ok = false;
+      for (let k = 1; k < R.length; k++) swap(R[k - 1], R[k]);
+      try { const got = new Set(findWords(board).map(f => f.w)); ok = cwords.every(c => got.has(c.w)); }
+      finally { for (let k = R.length - 1; k >= 1; k--) swap(R[k - 1], R[k]); }
+      if (ok) return { path: R, words: cwords.map(x => x.w) };
+    }
+    if (isEnergy()) {
+      const route = cwords.length > 5 ? buildDailyBoard(cwords.map(x => x.w)) : buildRouteBoard(cwords.map(x => x.w), true);
+      if (route) {
+        plant = null;
+        render();
+        for (const t of board.flat()) { const el = elFor(t); el.classList.remove("cin"); void el.offsetWidth; el.classList.add("cin"); }
+        return { path: route, words: cwords.map(x => x.w), rebuilt: true };
+      }
+    }
+    const R = findRoutes();
+    return R.length ? R[0] : null;
+  }
   async function useNav() {
     if (navBusy || !hints || busy || dragging || tut || !$("overlay").hidden) return;
-    // もう線が出ているときは、チケットを使わずに別の道を見せる
-    if ($("navRoute")) { navK++; showNavRoute(navK); return; }
+    // もう線が出ているときは、チケットを使わずにそのまま（同じ道をもう一度見せる）
+    if (paidNav) { drawPaidNav(); return; }
     navBusy = true;
     try {
       if (navTickets() <= 0) {
-        const ok = await askAd("ナビがありません", "広告を1回見ると、ナビを1回使えます。<br>たくさん消える道（デイリーなら5色ぜんぶ消える道）を線で見せます。");
+        const ok = await askAd("ナビがありません", "広告を1回見ると、ナビを1回使えます。<br>カラーとデイリーは<b>色の単語がぜんぶ消えてPERFECT!になる道</b>を、エンドレスはたくさん消える道を線で見せます。");
         if (!ok) return;
         addNav(1);
       }
       $("canSheet").hidden = true;
-      navK = 0;
-      if (showNavRoute(0)) { addNav(-1); SFX.levelUp(); }
+      const R = paidNavRoute();
+      if (!R) { setStatus("今は消える道が見つからない。大きくなぞって並べ替えよう"); return; }
+      paidNav = R; hintStage = 0;
+      drawPaidNav();
+      addNav(-1); SFX.levelUp();
     } finally { navBusy = false; }
+  }
+  function drawPaidNav() {
+    const R = paidNav; if (!R) return;
+    navClear();
+    elFor(board[R.path[0].r][R.path[0].c]).classList.add("navstart");
+    drawRoute(R.path, "nav");
+    const all5 = isColor() && cwords.length && cwords.every(c => R.words.includes(c.w));
+    setStatus(all5
+      ? `ナビ：${R.rebuilt ? "盤面を並べかえたよ。" : ""}光っている文字から線のとおりになぞると、<b>${cwords.length}色ぜんぶ消えて PERFECT!</b>`
+      : `ナビ：光っている文字から線のとおりになぞると ${R.words.map(w => `<b>${w}</b>`).join("・")}${R.words.length >= 2 ? `　${R.words.length}コンボ！` : ""}`);
   }
   function poke() { lastAction = performance.now(); if (hintStage) { hintStage = 0; applyHintStage(); } }
   setInterval(() => {
