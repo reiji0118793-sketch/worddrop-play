@@ -9242,6 +9242,9 @@ zoom|v2|ズームする・急上昇する`;
       // 色の単語（上に出ているお題とぴったり同じ）をいちばん先に成立させる。ほかの単語に文字を取られて消えないように
       const col0 = b[p.cells[0].r][p.cells[0].c].col;
       const pri = sameCol && cwords[col0] && cwords[col0].w === w ? 2 : sameCol ? 1 : 0;
+      // パズル（パーフェクト・単語トレーニング・デイリー）：色のついた文字は、その色のお題の単語でしか消えない
+      // （同じ色の別の単語や、色をまたいだ単語に文字を取られて、お題がそろわなくなるのを防ぐ）
+      if (pri < 2 && (isPuzzle() || isDaily()) && p.cells.some(x => b[x.r][x.c].col !== undefined)) continue;
       cands.push({ w, cells: p.cells, bent: p.bent, pri });
     }
     cands.sort((a, b2) => b2.pri - a.pri || b2.w.length - a.w.length || (a.bent - b2.bent));
