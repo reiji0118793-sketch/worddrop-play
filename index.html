@@ -562,7 +562,7 @@ body { margin: 0; }
 :root { --bannerH: 50px; }
 .app { grid-template-rows: minmax(0, 1fr) auto auto; }
 .adbanner { display: none; }
-body.has-banner .tabbar { padding-bottom: 0; margin-bottom: 8px; }
+body.has-banner .tabbar { padding-bottom: 0; margin-bottom: 2px; }
 body.has-banner .adbanner { display: grid; place-items: center; height: calc(var(--bannerH) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); background: #0b0e1c; border-top: 1px solid var(--line); color: #5b6285; font-size: 11px; letter-spacing: .1em; }
 body.has-banner .modescreen { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px + var(--bannerH)); }
 .view.game .ebar { width: 96px; }
@@ -9573,7 +9573,7 @@ zoom|v2|ズームする・急上昇する`;
         score += gained;
         burstDamage(mult, gained, false, smult);
         if (colorWords) $("bDmg").innerHTML += `<br>${all ? "PERFECT! ×2　" : ""}同じ色の単語 ${colorWords}個（得点2倍）${exact.size ? `・色のお題ぴったり ${exact.size}個（さらに2倍）` : ""}`;
-        bumpScore(); SFX.score(combo); jackpot(all ? 1 : combo >= 8 ? 3 : combo >= 5 ? 2 : combo >= 3 || exact.size >= 2 ? 1 : 0, null);  // 全色そろえは、このあと PERFECT! で大きく出す
+        bumpScore(); SFX.score(combo); jackpot(all ? 1 : combo >= 8 ? 3 : combo >= 5 ? 2 : combo >= 3 || exact.size >= 2 ? 1 : 0, null, all);  // 全色そろえは、このあと PERFECT! で大きく出す
         achTurn(combo, 0, all, false);
         await sleep(1100);
         await burstHide();
@@ -10006,7 +10006,7 @@ zoom|v2|ズームする・急上昇する`;
   const PERFECT_BONUS = 1000;
   async function perfectWipe() {
     const tiles = board.flat();
-    gfx.perfect(2600); SFX.bigCombo(14); buzz([30, 40, 30, 40, 80]);
+    gfx.perfect(2600); SFX.bigCombo(14); leverBuzz();
     await sleep(500);
     tiles.forEach((t, k) => { const el = elFor(t); el.style.animationDelay = ""; el.querySelector(".face").style.animationDelay = ((k % COLS) * 35 + Math.floor(k / COLS) * 35) + "ms"; el.classList.add("wipe"); });
     await sleep(700);
@@ -10049,12 +10049,27 @@ zoom|v2|ズームする・急上昇する`;
     renderCwords(); pfRoute = null;
     return true;
   }
-  function jackpot(lv, label) {
+  // PERFECT!の振動：パチンコのレバブルのように「ドドドドッ…ヴィーーーン！…ドン・ドン・ドン」
+  function leverBuzz() {
+    if (!$("vibeToggle").checked) return;
+    try {
+      const H = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics;
+      if (H) {
+        for (let i = 0; i < 12; i++) setTimeout(() => H.impact({ style: "HEAVY" }), i * 32);   // ドドドドッ（ため）
+        setTimeout(() => H.vibrate({ duration: 1400 }), 420);                                   // ヴィーーーン（いちばん強い連続振動）
+        setTimeout(() => { for (let i = 0; i < 3; i++) setTimeout(() => H.impact({ style: "HEAVY" }), i * 140); }, 1900);  // ドン・ドン・ドン
+        setTimeout(() => H.notification({ type: "SUCCESS" }), 2350);
+        return;
+      }
+      if (navigator.vibrate) navigator.vibrate([60, 30, 60, 30, 60, 30, 1400, 120, 120, 80, 120, 80, 200]);
+    } catch (e) {}
+  }
+  function jackpot(lv, label, quiet) {
     if (!lv) return;
     gfx.party(lv, label);
     if (lv >= 2) shakeBoard(lv * 4);
     if (lv >= 3) SFX.bigCombo(12);
-    if (!$("vibeToggle").checked) return;
+    if (quiet || !$("vibeToggle").checked) return;  // PERFECTのときは、このあとのレバブル振動にまかせる
     try {
       const H = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics;
       if (H) {
@@ -10385,7 +10400,7 @@ zoom|v2|ズームする・急上昇する`;
       try {
         if (on) {
           a.addListener("bannerAdSizeChanged", sz => { if (sz && sz.height) document.documentElement.style.setProperty("--bannerH", sz.height + "px"); });
-          await a.showBanner({ adId: ADS.banner, adSize: "ADAPTIVE_BANNER", position: "BOTTOM_CENTER", margin: 0, isTesting: ADS.TESTING });
+          await a.showBanner({ adId: ADS.banner, adSize: "BANNER", position: "BOTTOM_CENTER", margin: 0, isTesting: ADS.TESTING });
         } else await a.hideBanner();
       } catch (e) {}
     }
