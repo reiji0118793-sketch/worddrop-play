@@ -10123,7 +10123,7 @@ zoom|v2|ズームする・急上昇する`;
   const PERFECT_BONUS = 1000;
   async function perfectWipe() {
     const tiles = board.flat();
-    gfx.perfect(2600); SFX.perfect(); leverBuzz();
+    gfx.perfect(2600); SFX.perfect(); leverBuzz(lastCombo);
     await sleep(500);
     tiles.forEach((t, k) => { const el = elFor(t); el.style.animationDelay = ""; el.querySelector(".face").style.animationDelay = ((k % COLS) * 35 + Math.floor(k / COLS) * 35) + "ms"; el.classList.add("wipe"); });
     SFX.whoosh();
@@ -10169,18 +10169,29 @@ zoom|v2|ズームする・急上昇する`;
     return true;
   }
   // PERFECT!の振動：パチンコのレバブルのように「ドドドドッ…ヴィーーーン！…ドン・ドン・ドン」
-  function leverBuzz() {
+  // 強さはコンボ数で変える：少ないコンボのPERFECTは軽く、大コンボほどレバブルに近づく
+  //  〜3コンボ：ドン・ドン＋成功の合図 / 4〜5：短いため＋0.4秒 / 6〜7：ため＋0.9秒 / 8以上：フルのレバブル（1.4秒）
+  function leverBuzz(combo = 99) {
     if (!$("vibeToggle").checked) return;
+    const tier = combo >= 8 ? 3 : combo >= 6 ? 2 : combo >= 4 ? 1 : 0;
     try {
       const H = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics;
       if (H) {
-        for (let i = 0; i < 12; i++) setTimeout(() => H.impact({ style: "HEAVY" }), i * 32);   // ドドドドッ（ため）
-        setTimeout(() => H.vibrate({ duration: 1400 }), 420);                                   // ヴィーーーン（いちばん強い連続振動）
-        setTimeout(() => { for (let i = 0; i < 3; i++) setTimeout(() => H.impact({ style: "HEAVY" }), i * 140); }, 1900);  // ドン・ドン・ドン
-        setTimeout(() => H.notification({ type: "SUCCESS" }), 2350);
+        if (tier === 0) {
+          H.impact({ style: "HEAVY" }); setTimeout(() => H.impact({ style: "MEDIUM" }), 120);
+          setTimeout(() => H.notification({ type: "SUCCESS" }), 320);
+          return;
+        }
+        const taps = [0, 5, 8, 12][tier], gap = [0, 45, 38, 32][tier], long = [0, 400, 900, 1400][tier];
+        for (let i = 0; i < taps; i++) setTimeout(() => H.impact({ style: "HEAVY" }), i * gap);   // ドドドッ（ため）
+        const t1 = taps * gap + 40;
+        setTimeout(() => H.vibrate({ duration: long }), t1);                                       // ヴィーン
+        const t2 = t1 + long + 80;
+        if (tier >= 2) setTimeout(() => { for (let i = 0; i < (tier === 3 ? 3 : 2); i++) setTimeout(() => H.impact({ style: "HEAVY" }), i * 140); }, t2);  // ドン・ドン
+        setTimeout(() => H.notification({ type: "SUCCESS" }), t2 + (tier >= 2 ? 420 : 0));
         return;
       }
-      if (navigator.vibrate) navigator.vibrate([60, 30, 60, 30, 60, 30, 1400, 120, 120, 80, 120, 80, 200]);
+      if (navigator.vibrate) navigator.vibrate([[120, 60, 80], [50, 30, 50, 30, 400], [60, 30, 60, 30, 900, 120, 120], [60, 30, 60, 30, 60, 30, 1400, 120, 120, 80, 120, 80, 200]][tier]);
     } catch (e) {}
   }
   function jackpot(lv, label, quiet) {
