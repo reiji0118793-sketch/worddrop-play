@@ -417,6 +417,10 @@ body { margin: 0; }
 .cw span { font-size: 11px; color: var(--muted); max-width: 7em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .odai.color .cwords { gap: 4px; }
 .odai.color .cw { padding: 0 6px; gap: 4px; border-width: 1.5px; }
+.odai.color .cw.study { padding: 2px 10px; }
+.cw.study b { letter-spacing: .12em; }
+.cw.study span { font-size: 15px; font-weight: 700; }
+.cwhint { display: block; width: 100%; font-size: 11px; color: var(--muted); margin-top: 2px; }
 .odai.color .cw b { font-size: 14px; letter-spacing: .04em; }
 .odai.color .cw span { font-size: 10px; max-width: 4.6em; }
 .odai.color .bonus { font-size: 10px; }
@@ -734,7 +738,9 @@ body:not(.playing) .modescreen { padding-bottom: calc(env(safe-area-inset-bottom
       <label><input type="checkbox" id="fxToggle" checked> 派手な演出（紙吹雪・画面ゆれ）</label>
       <label>モード
         <select id="modeSel">
-          <option value="endless" selected>エンドレス（石がたまったら終わり）</option>
+          <option value="stage" selected>パーフェクト（一括消しパズル・ライフ3）</option>
+          <option value="study">単語トレーニング（意味→つづり・ライフ3）</option>
+          <option value="endless">エンドレス（石がたまったら終わり）</option>
           <option value="color">カラー（5色コンボ・エネルギー制）</option>
           <option value="daily">デイリー（今日の盤面・10問）</option>
         </select>
@@ -807,20 +813,20 @@ body:not(.playing) .modescreen { padding-bottom: calc(env(safe-area-inset-bottom
     <div class="ms-inner">
       <h1 class="ms-title">WORD DROP</h1>
       <p class="ms-sub">英単語ドロップ ・ モードをえらぶ</p>
-      <button type="button" class="mode-card" data-mode="endless" style="--mc:#9aa3b5">
-        <span class="mc-art" aria-hidden="true"><i class="mt">W</i><i class="mt st">O</i><i class="mt">R</i><i class="mt st">D</i></span>
+      <button type="button" class="mode-card" data-mode="stage" style="--mc:#e06aa8">
+        <span class="mc-art" aria-hidden="true"><i class="mt k0">P</i><i class="mt k1">E</i><i class="mt k2">R</i><i class="mt k3">F</i></span>
         <span class="mc-body">
-          <b class="mc-name">エンドレス</b>
-          <span class="mc-desc">毎ターン石が落ちてくる。石の文字も使って単語を作り、石をこわしながらどこまで続けられるか</span>
-          <span class="mc-meta"><span>詰んだら終わり</span><span class="mc-best">BEST <b data-best="endless">0</b></span></span>
+          <b class="mc-name">パーフェクト <small>一括消しパズル</small></b>
+          <span class="mc-desc">どの盤面にも、1回なぞるだけで全部の色が消える道がかならずある。ステージが進むほど色が増えて道が長くなり、ななめも登場</span>
+          <span class="mc-meta"><span>ライフ3つ・消し残すと−1</span><span class="mc-best">BEST <b data-best="stage">0</b></span></span>
         </span>
       </button>
-      <button type="button" class="mode-card" data-mode="color" style="--mc:#5b8fdc">
-        <span class="mc-art" aria-hidden="true"><i class="mt k0">P</i><i class="mt k1">L</i><i class="mt k2">A</i><i class="mt k3">Y</i></span>
+      <button type="button" class="mode-card" data-mode="study" style="--mc:#5fae5a">
+        <span class="mc-art" aria-hidden="true"><i class="mt k0">C</i><i class="mt k0">A</i><i class="mt k0">T</i><i class="mt">猫</i></span>
         <span class="mc-body">
-          <b class="mc-name">カラー <small>5色コンボ</small></b>
-          <span class="mc-desc">どんな単語でも消えてコンボ。エネルギーは毎ターン減り、単語を消すと回復。同じ色の文字だけで作ると大きく回復＆得点2倍</span>
-          <span class="mc-meta"><span>エネルギーが切れたら終わり</span><span class="mc-best">BEST <b data-best="color">0</b></span></span>
+          <b class="mc-name">単語トレーニング <small>意味→つづり</small></b>
+          <span class="mc-desc">日本語の意味を見て、その英単語を色の文字で作る。まちがえた単語はあとでまた出てくるから、遊びながら覚えられる</span>
+          <span class="mc-meta"><span>ライフ3つ・まちがえると−1</span><span class="mc-best">BEST <b data-best="study">0</b></span></span>
         </span>
       </button>
       <button type="button" class="mode-card" data-mode="daily" style="--mc:#d9b45a">
@@ -8994,12 +9000,15 @@ zoom|v2|ズームする・急上昇する`;
   // ---------- スコアアタックの設定 ----------
   const LIVES = 3, TURNS_PER_LEVEL = 5;
   const quotaOf = lv => [30, 60, 100, 150, 200][lv - 1] || 200 + (lv - 5) * 60;
-  const timeOf = lv => tut ? 40 : $("modeSel").value === "daily" ? 15 : Math.max(6, Number($("timeSel").value) - Math.max(0, lv - 3));
+  const timeOf = lv => tut ? 40 : $("modeSel").value === "daily" ? 15 : isPuzzle() ? Math.min(30, Math.max(10, 6 + (puzzleRoute ? puzzleRoute.length : 6))) : Math.max(6, Number($("timeSel").value) - Math.max(0, lv - 3));
   // ベストスコアは「モード × アシスト」ごとに別々に記録する（ランキングも別々にする前提）
   const STONE_CAP = 15, STONE_EVERY = 15, STONE_MAX = 5;  // 石は文字入り（t.stone = true）。動かせないが単語に使える
   const isEndless = () => $("modeSel").value === "endless";
   const isDaily = () => $("modeSel").value === "daily";
-  const isColor = () => $("modeSel").value === "color" || isDaily();
+  const isStage = () => $("modeSel").value === "stage";   // パーフェクト：1回なぞるだけで全色消せる盤面を、ステージごとに解く
+  const isStudy = () => $("modeSel").value === "study";   // 単語トレーニング：意味を見て、その英単語を作る
+  const isPuzzle = () => isStage() || isStudy();
+  const isColor = () => $("modeSel").value === "color" || isDaily() || isPuzzle();
   // デイリー：日付ごとに同じ盤面になるよう、ゲーム開始の準備だけ決まった乱数で行う
   const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   function seedRandom(str) {
@@ -9019,7 +9028,7 @@ zoom|v2|ズームする・急上昇する`;
     eiken3: { name: "英検3級レベル", words: new Set("ABLE ABOUT ABOVE ABROAD ACCEPT ACCESS ACROSS ACT ACTING ACTION ACTIVE ACTOR ADD ADULT ADVICE AFRAID AFTER AGAIN AGE AGENT AGO AGREE AGREED AHEAD AIR ALBUM ALIVE ALL ALLOW ALMOST ALONE ALONG ALSO ALWAYS AMONG AMOUNT AND ANGEL ANGER ANGRY ANIMAL ANSWER ANT ANY ANYWAY APART APPEAR APPLE APPLY ARE AREA ARM ARMY AROUND ARRIVE ARROW ART ARTIST ASIDE ASK ASLEEP ATE ATTACK ATTEND AUGUST AUTHOR AVENUE AVOID AWARD AWAY AWFUL BABY BACK BAD BADLY BAG BALL BAN BAND BANK BAR BASE BASIC BAT BATH BATTLE BAY BEACH BEAR BEAT BEAUTY BECOME BED BEE BEFORE BEGIN BEHIND BEING BELL BELOW BELT BENCH BEST BETTER BIG BILL BIRD BIRTH BIT BITE BLACK BLOCK BLOOD BLOW BLUE BOARD BOAT BODY BONE BOOK BOOM BORDER BORING BORN BOSS BOTH BOTHER BOTTLE BOTTOM BOWL BOX BOY BRAIN BRANCH BRAVE BREAD BREAK BREATH BRIDGE BRIGHT BRING BROKE BROKEN BROWN BUDDY BUILD BUILT BULL BURN BUS BUSH BUSY BUT BUTTER BUTTON BUY CAKE CALL CALM CAMERA CAMP CAN CAP CAR CARD CARE CAREER CARRY CASE CASH CASTLE CAT CATCH CAUSE CENT CENTER CHAIN CHAIR CHANCE CHANGE CHARGE CHART CHASE CHAT CHEAP CHECK CHEESE CHEST CHIEF CHILD CHINA CHOICE CHOOSE CHOSEN CHURCH CIRCLE CITY CLASS CLEAN CLEAR CLEVER CLICK CLIMB CLOCK CLOSE CLOUD CLUB COACH COAST COAT CODE COFFEE COIN COLD COLOR COME COMEDY COMIC COMING COMMON COOK COOL COPY CORNER COST COUNT COUPLE COURSE COURT COUSIN COVER COW CRACK CRASH CRAZY CREAM CREATE CREDIT CRIME CROSS CROWD CROWN CRY CRYING CUP CUT CUTE CYCLE DAD DAILY DAMAGE DANCE DANGER DARE DARK DATA DATE DAY DAYS DEAD DEAL DEAR DEATH DEBATE DECIDE DEEP DEEPLY DEER DESERT DESIGN DESK DETAIL DIE DIG DINNER DIRTY DOCTOR DOG DOLLAR DONE DOOR DOUBLE DOUBT DOWN DOZEN DRAGON DRAMA DRAW DRAWN DREAM DRESS DREW DRINK DRIVE DRIVEN DRIVER DROP DROVE DRY DUE DUST DUTY DYING EACH EAR EARLY EARN EARTH EASILY EAST EASY EAT EDGE EFFORT EGG EIGHT EITHER EMPIRE EMPTY END ENDING ENEMY ENERGY ENGAGE ENGINE ENJOY ENOUGH ENTER ENTRY EQUAL ERROR ESCAPE EVE EVEN EVENT EVER EVERY EVIL EXCEPT EXCUSE EXIT EXPECT EXTRA EYE FACE FACED FACING FACT FAIL FAIR FAIRLY FAITH FAKE FALL FALLEN FALSE FAMILY FAMOUS FAN FAR FARM FAST FAT FATHER FAVOR FEAR FED FEED FEEL FELL FELT FEW FIELD FIGHT FIGURE FILE FILL FILM FINAL FIND FINE FINGER FINISH FIRE FIRM FIRST FISH FIT FIVE FIX FLAG FLAT FLIGHT FLOOD FLOOR FLOW FLOWER FLY FLYING FOCUS FOLLOW FOOD FOOT FOR FORCE FORCED FOREST FORGET FORM FORMAL FOUND FOUR FOURTH FOX FREE FRESH FRIEND FROG FROM FRONT FROZEN FRUIT FULL FULLY FUN FUNNY FUTURE GAME GAMING GAP GARDEN GAS GATE GENTLE GET GHOST GIANT GIFT GIRL GIVE GIVEN GLAD GLASS GOAL GOING GOLD GOLDEN GOLF GONE GOOD GRAB GRADE GRAND GRASS GRAY GREAT GREEN GROUND GROUP GROW GROWN GROWTH GUARD GUESS GUEST GUIDE GUITAR GUN GUY GYM HAIR HALF HALL HAND HANG HAPPEN HAPPY HARD HARDLY HARM HAT HATE HAVE HEAD HEADED HEAL HEALTH HEAR HEARD HEART HEAT HEAVEN HEAVY HEIGHT HELD HELLO HELP HEN HER HERE HERO HIDDEN HIDE HIDING HIGH HIGHER HILL HIM HIS HIT HOCKEY HOLD HOLE HOLY HOME HONEST HONEY HONOR HOPE HORROR HORSE HOST HOT HOTEL HOUR HOUSE HOW HUGE HUMAN HUNGRY HUNT HURT ICE IDEA ILL IMAGE INCH INDEED INK INSIDE INTO INVITE IRON ISLAND ITS JACKET JAPAN JAZZ JEAN JOB JOIN JOKE JOY JUDGE JUICE JUMP JUNIOR JUST KEEP KEPT KEY KICK KID KIND KING KISS KIT KNEE KNIFE KNOCK KNOW KNOWN LAB LABEL LACK LADY LAID LAKE LAND LARGE LAST LATE LATER LATEST LAUGH LAW LAWYER LAY LEAD LEADER LEARN LEAST LEAVE LED LEFT LEG LEMON LEND LENGTH LESS LESSON LET LETTER LEVEL LIE LIFE LIFT LIGHT LIKE LIKELY LINE LINK LION LIP LIQUID LIST LISTEN LITTLE LIVE LIVING LOCAL LOCK LOG LONG LONGER LOOK LOSE LOSS LOST LOT LOUD LOVE LOVELY LOVING LOW LOWER LOWEST LUCK LUCKY LUNCH LYING MAD MADE MAGIC MAIL MAIN MAINLY MAKE MAKEUP MAN MANAGE MANY MAP MARCH MARK MARKET MARRY MASK MASTER MATCH MATTER MAY MAYBE MEAL MEAN MEANS MEAT MEDAL MEET MEMBER MEMORY MEN MESS METAL MID MIDDLE MIGHT MILE MILK MIND MINE MINUTE MIRROR MISS MIX MOBILE MODEL MODERN MOM MOMENT MONEY MONTH MOOD MOON MORE MOST MOSTLY MOTHER MOUSE MOUTH MOVE MOVIE MOVING MUCH MUSEUM MUSIC MUST NAME NATION NATURE NEAR NEARBY NEARLY NEAT NECK NEED NEEDS NEST NET NEVER NEW NEWS NEXT NICE NIGHT NINE NOBODY NOISE NONE NOON NORMAL NORTH NOSE NOT NOTE NOTICE NOW NUMBER NURSE OBJECT OCEAN OFF OFFER OFFICE OFTEN OIL OLD ONCE ONE ONLINE ONLY OPEN ORANGE ORDER OTHER OUR OUT OVER OWL OWN OWNER PACK PACKED PAGE PAID PAIN PAINT PAIR PALACE PANTS PAPER PARENT PARK PART PARTLY PARTY PASS PAST PATH PAY PEACE PEN PEOPLE PERSON PET PHONE PHOTO PIANO PICK PIE PIECE PIG PILOT PINK PIZZA PLACE PLACED PLAN PLANE PLANET PLANT PLATE PLAY PLAYER PLEASE PLUS POCKET POINT POLICE POOL POOR POP POST POWER PRAY PREFER PRESS PRETTY PRICE PRINCE PRINT PRIZE PRO PROUD PROVE PUBLIC PULL PUNCH PURPLE PUSH PUT QUEEN QUICK QUIET QUIT QUITE RACE RACING RADIO RAIN RAISE RANGE RARE RAT RATHER REACH READ READER READY REAL REALLY REASON RECENT RECORD RED REMIND REMOVE RENT REPAIR REPEAT REPLY REPORT RESCUE REST RESULT RETURN REVIEW RICE RICH RIDE RIDING RIGHT RING RISE RISING RISK RIVER ROAD ROCK ROCKET ROLE ROLL ROOF ROOM ROOT ROSE ROUND ROW RUGBY RULE RUN RUSH SAD SAFE SAFETY SAID SAIL SALE SALT SAME SAND SAT SAUCE SAVE SAVING SAW SAY SAYING SCENE SCHOOL SCORE SCREEN SEA SEARCH SEASON SEAT SECOND SECRET SEE SEED SEEING SEEM SELF SELL SEND SENSE SENT SERIES SERVE SERVER SET SEVEN SHADOW SHAKE SHAME SHAPED SHARE SHARP SHE SHEET SHELL SHIP SHIRT SHOCK SHOOT SHOP SHORT SHOT SHOW SHOWER SHUT SHY SICK SIDE SIGHT SIGN SILENT SILLY SILVER SIMPLE SIMPLY SINCE SING SINGER SINGLE SISTER SIT SITE SIX SIZE SKILL SKIN SKY SLEEP SLOW SLOWLY SMALL SMELL SMILE SMOKE SNAKE SNOW SOCCER SOCIAL SOFT SOLD SOLO SOLVE SOME SON SONG SOON SORRY SORT SOUL SOUND SOUTH SPACE SPEAK SPEECH SPEED SPELL SPEND SPENT SPIN SPOKE SPOKEN SPORT SPOT SPREAD SPRING SQUARE STAGE STAND STAR START STATE STATED STAY STEAL STEP STICK STILL STONE STOP STORE STORM STORY STREAM STREET STRONG STUDIO STUDY STUFF STUPID STYLE SUCH SUDDEN SUFFER SUGAR SUIT SUMMER SUN SUPER SURE SURELY SWEET SWIM SWING SWITCH SYSTEM TABLE TAIL TAKE TAKEN TAKING TALENT TALK TALL TANK TAPE TARGET TASK TASTE TAX TEA TEACH TEAM TEETH TELL TEMPLE TEN TENNIS TENT TEST TEXT THAN THANK THANKS THAT THE THEM THEN THERE THEY THICK THIN THING THINK THIRD THIRTY THIS THOUGH THREE THROW THROWN TICKET TIE TIGER TIME TIMES TINY TIP TIRED TITLE TODAY TOE TOILET TONGUE TOO TOOL TOP TOPIC TOTAL TOUCH TOUGH TOUR TOWER TOWN TOY TRAIN TRASH TRAVEL TREAT TREE TRICK TRIED TRIP TRUCK TRUE TRUST TRUTH TRY TRYING TURKEY TURN TWELVE TWENTY TWICE TWIN TWO TYPE UGLY UNCLE UNDER UNITED UNLIKE UNTIL USE USED USEFUL USER USUAL VALLEY VALUE VERY VIDEO VIEW VIRUS VISIT VOICE VOTE WAIT WAKE WALK WALKER WALL WANT WAR WARM WASH WATCH WATER WAVE WAY WEAK WEAR WEB WEEK WEEKLY WEIGHT WELL WEST WET WHEEL WHEN WHILE WHITE WHO WHOLE WHY WIDE WIFE WILD WILL WIN WIND WINDOW WING WINNER WINTER WISE WISH WITH WITHIN WOLF WOMAN WON WONDER WOOD WOODEN WORD WORK WORKER WORLD WORRY WORSE WORST WRITE WRITER WRONG YEAR YELLOW YES YET YOU YOUNG YOUTH ZERO ZONE".split(" ")) } };
   const pack = () => PACKS[$("packSel").value] || null;
   const inPack = w => !pack() || pack().words.has(w);
-  const MODE_NAME = { endless: "エンドレス", color: "カラー", daily: "デイリー", quota: "ノルマ" };
+  const MODE_NAME = { endless: "エンドレス", color: "カラー", daily: "デイリー", quota: "ノルマ", stage: "パーフェクト", study: "単語トレーニング" };
   // カラー（デイリー以外）はエネルギー制：毎ターン減り、単語を消すと回復。0で終わり
   const isEnergy = () => $("modeSel").value === "color";
   const ENERGY_MAX = 100;
@@ -9419,7 +9428,10 @@ zoom|v2|ズームする・急上昇する`;
     const target = cellAt(e.clientX, e.clientY);
     let guard = 0;
     while ((target.r !== heldPos.r || target.c !== heldPos.c) && guard++ < 12) {
-      const step = { r: heldPos.r + Math.sign(target.r - heldPos.r), c: heldPos.c + Math.sign(target.c - heldPos.c) };
+      const dr = Math.sign(target.r - heldPos.r), dc = Math.sign(target.c - heldPos.c);
+      let step = { r: heldPos.r + dr, c: heldPos.c + dc };
+      // ななめ移動がまだ解禁されていないステージでは、たて・よこだけ
+      if (dr && dc && !allowDiag()) step = Math.abs(target.r - heldPos.r) > Math.abs(target.c - heldPos.c) ? { r: heldPos.r + dr, c: heldPos.c } : { r: heldPos.r, c: heldPos.c + dc };
       if (board[step.r][step.c].stone) break;  // 石は通れない
       swap(heldPos, step);
       heldPos = step;
@@ -9569,6 +9581,62 @@ zoom|v2|ズームする・急上昇する`;
       for (const el of els.values()) el.classList.remove("fall");
     }
     maxCombo = Math.max(maxCombo, combo);
+    if (isPuzzle()) {
+      const all = cwords.length > 0 && exact.size >= cwords.length;
+      if (combo > 0) {
+        const mult = (1 + 0.25 * (combo - 1)) * (all ? 2 : 1);
+        const gained = Math.round(damage * mult);
+        score += gained;
+        burstDamage(mult, gained, false, 1);
+        bumpScore(); SFX.score(combo);
+        jackpot(all && isStage() ? 1 : combo >= 5 ? 2 : combo >= 3 ? 1 : 0, null, all && isStage());
+        achTurn(combo, 0, all && isStage(), false);
+        await sleep(1000);
+        await burstHide();
+      }
+      if (isStage()) {
+        if (all) {
+          streak++;
+          await perfectWipe();  // この中で次のステージへ
+          setStatus(level === DIAG_FROM
+            ? `<b>STAGE ${level}：ななめ解禁！</b>　指をななめに動かすと、ななめのマスと入れ替わる`
+            : `<b>STAGE ${level}</b>　${cwords.length}色を1回なぞって全部消そう`);
+        } else {
+          streak = 0; lives--;
+          SFX.stone(); buzz([80, 60, 120]); gfx.shake();
+          setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1${lives > 0 ? "　同じ盤面でもう一度！" : ""}`);
+          updateHud();
+          await sleep(900);
+          if (lives <= 0) { showEnd(); busy = false; return; }
+          restoreStage();
+        }
+      } else {
+        const x = cwords[0];
+        studyN++;
+        if (all) {
+          studyOK++; streak++; missDel(x.w);
+          const bonus = 50 * level; score += bonus; bumpScore(); SFX.levelUp(); buzz([20, 40, 20]);
+          setStatus(`<b>正解！</b>　${x.w}（${esc(x.m)}）　+${bonus}`);
+          if (studyOK % 5 === 0) { level++; setStatus(`<b>レベルアップ！ Lv.${level}</b>　${level === DIAG_FROM ? "ここから、ななめにも動かせる" : "少し長い単語も出てくる"}`); }
+          await sleep(500);
+        } else {
+          streak = 0; lives--; missAdd(x.w);
+          studyReveal = true; renderCwords();
+          SFX.stone(); buzz([80, 60, 120]); gfx.shake();
+          setStatus(`正解は <b>${x.w}</b>（${esc(x.m)}）　ライフ −1　この単語はあとでまた出るよ`);
+          updateHud();
+          await sleep(1800);
+          studyReveal = false;
+          if (lives <= 0) { showEnd(); busy = false; return; }
+        }
+        nextStudy();
+      }
+      updateHud(); resetTimerBar();
+      lastAction = performance.now();
+      refreshHints();
+      busy = false;
+      return;
+    }
     if (isColor()) {
       let gained = 0;
       const all = exact.size >= cwords.length;
@@ -9915,6 +9983,11 @@ zoom|v2|ズームする・急上昇する`;
     }
   }
   function renderCwords() {
+    if (isStudy()) {
+      const x = cwords[0];
+      $("cwords").innerHTML = x ? `<span class="cw study" style="--cc:${CCOL[0]}"><b>${studyReveal ? x.w : x.w.replace(/./g, "＿")}</b><span>${esc(x.m)}</span></span><span class="cwhint">この意味の英単語を、色の文字を並べて作ろう（${x.w.length}文字）</span>` : "";
+      return;
+    }
     $("cwords").innerHTML = cwords.map((x, i) => `<span class="cw" style="--cc:${CCOL[i]}"><b>${x.w}</b><span>${x.m}</span></span>`).join("");
   }
   function setupColor() {
@@ -10025,6 +10098,7 @@ zoom|v2|ズームする・急上昇する`;
     // カラー：PERFECTのあとは、もう一度PERFECTできる並び（1本の道で全部そろう）を出す。連続するほど、道が長く・色が多くなる
     let puzzled = false;
     if (isEnergy()) puzzled = buildPerfectPuzzle();
+    else if (isStage()) { level++; buildStagePuzzle(); }
     measure(); render();
     board.flat().forEach((t, k) => { const el = elFor(t); el.querySelector(".face").style.animationDelay = (k * 18) + "ms"; el.classList.add("dropin"); setTimeout(() => el.classList.remove("dropin"), 1000); });
     maybeAskReview();
@@ -10107,13 +10181,16 @@ zoom|v2|ズームする・急上昇する`;
   function updateHud() {
     $("score").textContent = score.toLocaleString();
     $("best").textContent = Math.max(bestScore, score).toLocaleString();
-    $("lvChip").textContent = `Lv.${level}`;
+    $("lvChip").textContent = isStage() ? `STAGE ${level}` : `Lv.${level}`;
     $("modeName").textContent = MODE_NAME[$("modeSel").value];
     if (isEndless()) {
       const n = board ? board.flat().filter(t => t.stone).length : 0;
       $("hearts").innerHTML = `<span class="gauge" aria-label="石 ${n}/${STONE_CAP}">${Array.from({ length: STONE_CAP }, (_, i) => `<i class="${i < n ? (n >= STONE_CAP - 3 ? "on danger" : "on") : ""}"></i>`).join("")}</span>`;
       $("quota").innerHTML = `石 <b>${n}</b>/${STONE_CAP}　毎ターン+${stonesPerTurn()}個`;
       $("lvFill").style.width = ((turns % STONE_EVERY) / STONE_EVERY * 100) + "%";
+    } else if (isPuzzle()) {
+      $("hearts").innerHTML = Array.from({ length: LIVES }, (_, i) => `<span class="${i < lives ? "on" : "off"}">♥</span>`).join("");
+      $("quota").innerHTML = isStage() ? `<b>${cwords.length}色</b>を1回で全部消す${allowDiag() ? "・ななめOK" : ""}` : `${studyN + 1}問目　正解 <b>${studyOK}</b>`;
     } else if (isEnergy()) {
       const pct = Math.round(energy / ENERGY_MAX * 100);
       $("hearts").innerHTML = `<span class="ebar${pct <= 25 ? " danger" : ""}" aria-label="エネルギー ${pct}"><i style="width:${pct}%"></i></span>`;
@@ -10126,7 +10203,8 @@ zoom|v2|ズームする・急上昇する`;
       $("quota").innerHTML = `ノルマ <b>${quotaOf(level)}</b>点／ターン`;
     }
     $("streak").textContent = streak >= 2 ? `連続 ${streak}回 ×${(1 + 0.1 * Math.min(streak, 10)).toFixed(1)}` : "";
-    if (isEnergy()) $("lvFill").style.width = ((turns % TURNS_PER_LEVEL) / TURNS_PER_LEVEL * 100) + "%";
+    if (isPuzzle()) $("lvFill").style.width = (isStudy() ? (studyOK % 5) / 5 * 100 : 100) + "%";
+    else if (isEnergy()) $("lvFill").style.width = ((turns % TURNS_PER_LEVEL) / TURNS_PER_LEVEL * 100) + "%";
     else if (isColor()) $("lvFill").style.width = (turns / COLOR_TURNS * 100) + "%";
     else if (!isEndless()) $("lvFill").style.width = ((turns % TURNS_PER_LEVEL) / TURNS_PER_LEVEL * 100) + "%";
     $("bestLabel").textContent = "BEST"; $("bestLabel").parentElement.title = `${MODE_NAME[$("modeSel").value]}・アシスト${ASSIST_NAME[assistLv()]}の最高点`;
@@ -10135,7 +10213,7 @@ zoom|v2|ズームする・急上昇する`;
     const rec = score > bestScore;
     if (rec) { bestScore = score; try { localStorage.setItem(bestKey(), String(score)); } catch (e) {} }
     if (rec) { SFX.record(); buzz([30, 60, 30, 60, 80], "SUCCESS"); } else SFX.over();
-    $("endTitle").textContent = isEndless() ? "詰み！" : isEnergy() ? "エネルギー切れ！" : isColor() ? "FINISH!" : "GAME OVER";
+    $("endTitle").textContent = isPuzzle() ? "GAME OVER" : isEndless() ? "詰み！" : isEnergy() ? "エネルギー切れ！" : isColor() ? "FINISH!" : "GAME OVER";
     $("endScore").textContent = score.toLocaleString();
     $("newRec").hidden = !rec;
     if (isEnergy() ? turns >= 30 : isColor() && turns >= COLOR_TURNS) achTry("colorDone");
@@ -10146,12 +10224,14 @@ zoom|v2|ズームする・急上昇する`;
       dailyText = `デイリー連続 ${d.streak}日目！ また明日、新しい盤面で。`;
     }
     $("endAch").textContent = [dailyText, gameAch.length ? `このゲームで解除した実績：${gameAch.join("・")}` : ""].filter(Boolean).join("　");
-    $("clearText").textContent = `${isEndless() ? `石が${STONE_CAP}個たまった。` : isEnergy() ? "エネルギーが切れた。" : ""}${MODE_NAME[$("modeSel").value]}・アシスト：${ASSIST_NAME[assistLv()]}　Lv.${level}・${turns}ターン。作った単語 ${totalWords}個（${learned.size}種類）。最大 ${maxCombo}コンボ`;
+    if (isPuzzle()) $("clearText").textContent = isStage() ? `STAGE ${level} まで到達。最大 ${maxCombo}コンボ` : `${studyN}問中 ${studyOK}問正解（Lv.${level}）。まちがえた単語は、次のトレーニングでまた出ます`;
+    else $("clearText").textContent = `${isEndless() ? `石が${STONE_CAP}個たまった。` : isEnergy() ? "エネルギーが切れた。" : ""}${MODE_NAME[$("modeSel").value]}・アシスト：${ASSIST_NAME[assistLv()]}　Lv.${level}・${turns}ターン。作った単語 ${totalWords}個（${learned.size}種類）。最大 ${maxCombo}コンボ`;
     navClear();
     $("bonusBtn").hidden = false; $("bonusBtn").disabled = false; $("bonusBtn").textContent = "▶ 広告を見てナビ＋1";
-    const canCont = (isEndless() || isEnergy()) && contUsed < CONT_MAX;
+    const canCont = isPuzzle() || ((isEndless() || isEnergy()) && contUsed < CONT_MAX);
     $("contBtn").hidden = !canCont;
-    if (canCont) $("contNote").textContent = `${isEndless() ? "石を5個こわして続ける" : "エネルギーを50回復して続ける"}（あと${CONT_MAX - contUsed}回）`;
+    if (isPuzzle()) $("contNote").textContent = isStage() ? "ライフを1つ回復して、同じステージから続ける" : "ライフを1つ回復して続ける";
+    else if (canCont) $("contNote").textContent = `${isEndless() ? "石を5個こわして続ける" : "エネルギーを50回復して続ける"}（あと${CONT_MAX - contUsed}回）`;
     updateHud();
     $("overlay").hidden = false;
   }
@@ -10159,7 +10239,11 @@ zoom|v2|ズームする・急上昇する`;
   function doContinue() {
     contUsed++;
     $("overlay").hidden = true;
-    if (isEndless()) {
+    if (isPuzzle()) {
+      lives = 1;
+      if (isStage()) restoreStage(); else nextStudy();
+      setStatus("<b>コンティニュー！</b>　ライフが1つ回復した");
+    } else if (isEndless()) {
       const st = board.flat().filter(t => t.stone).sort(() => Math.random() - 0.5).slice(0, 5);
       for (const t of st) { t.stone = false; const el = elFor(t); el.classList.remove("cin"); void el.offsetWidth; el.classList.add("cin"); }
       setStatus("<b>コンティニュー！</b>　石を5個こわした");
@@ -10190,9 +10274,10 @@ zoom|v2|ズームする・急上昇する`;
     document.querySelector(".odai").classList.toggle("color", color);
     boardEl.classList.toggle("colormode", color);
     $("cwords").hidden = !color;
-    $("bonusText").textContent = color ? "同じ色で作ると2倍" : "作ると得点3倍";
+    $("bonusText").textContent = isStage() ? "1回で全色消すとPERFECT!" : isStudy() ? "意味から英単語を作ろう" : color ? "同じ色で作ると2倍" : "作ると得点3倍";
     dailyRoute = null;
-    if (color) { odai = { w: "", m: "" }; if (isDaily()) buildDailyPuzzle(0); else setupColor(); } else newOdai();
+    puzzleRoute = null; studyN = 0; studyOK = 0; studyReveal = false;
+    if (color) { odai = { w: "", m: "" }; if (isDaily()) buildDailyPuzzle(0); else if (isStage()) buildStagePuzzle(); else if (isStudy()) buildStudyPuzzle(); else setupColor(); } else newOdai();
     if (unseed) unseed();
     updateAssistChip();
     measure(); updateHud(); resetTimerBar(); refreshHints();
@@ -10530,9 +10615,66 @@ zoom|v2|ズームする・急上昇する`;
   }
   // デイリー：毎ターン、その日の決まったパズル（1本の道で5色ぜんぶ消せる）を出す。誰でも同じ盤面
   let dailyRoute = null;
+  // ---------- パーフェクト（ステージ）と単語トレーニング ----------
+  const DIAG_FROM = 5;  // このステージ（レベル）から、ななめに動かせる
+  const allowDiag = () => !isPuzzle() || level >= DIAG_FROM;
+  let puzzleRoute = null, stageSnap = null, stageWords = null, studyN = 0, studyOK = 0, studyReveal = false, studyRecent = [];
+  // ステージの難しさ：単語の数（＝色の数）・答えの道の長さ・ななめ
+  function stageSpec(s) {
+    const T = [[[3, 3], 3, 5], [[4, 3], 4, 6], [[3, 3, 3], 5, 7], [[4, 3, 3], 6, 9], [[4, 3, 3, 3], 7, 10], [[4, 4, 3, 3], 8, 11],
+      [[4, 4, 3, 3, 3], 9, 12], [[5, 4, 3, 3, 3, 3], 10, 14], [[5, 4, 3, 3, 3, 3, 3], 12, 16], [[5, 4, 3, 3, 3, 3, 3, 3], 14, 18]];
+    const [lens, a, b] = T[Math.min(s - 1, T.length - 1)], extra = Math.max(0, s - T.length);
+    return { lens, Lmin: Math.min(20, a + extra), Lmax: Math.min(24, b + extra), diag: s >= DIAG_FROM };
+  }
+  function buildStagePuzzle() {
+    const sp = stageSpec(level);
+    for (let tries = 0; tries < 25; tries++) {
+      const used = new Set();
+      try { cwords = sp.lens.slice().sort(() => Math.random() - 0.5).map(len => { const x = pickDailyWord(len, used); used.add(x.w); return x; }); } catch (e) { continue; }
+      const route = buildDailyBoard(cwords.map(x => x.w), sp.Lmin, sp.Lmax, sp.diag);
+      if (route) { puzzleRoute = route; stageSnap = board.map(row => row.map(t => ({ ch: t.ch, col: t.col }))); stageWords = cwords.slice(); renderCwords(); return true; }
+    }
+    return false;
+  }
+  // まちがえた単語は覚えておいて、あとでまた出す
+  const MISS_KEY = "wordDrop.miss.v1";
+  const missList = () => { try { return JSON.parse(localStorage.getItem(MISS_KEY) || "[]"); } catch (e) { return []; } };
+  const missSave = l => { try { localStorage.setItem(MISS_KEY, JSON.stringify(l.slice(-200))); } catch (e) {} };
+  const missAdd = w => { const l = missList().filter(x => x !== w); l.push(w); missSave(l); };
+  const missDel = w => missSave(missList().filter(x => x !== w));
+  function buildStudyPuzzle() {
+    const lens = level <= 2 ? [3] : level <= 4 ? [3, 4] : level <= 6 ? [4, 5] : [4, 5, 6];
+    const miss = missList().filter(w => DICT.has(w) && w.length <= COLS && !studyRecent.slice(-5).includes(w));
+    for (let tries = 0; tries < 25; tries++) {
+      let x = null;
+      if (miss.length && Math.random() < 0.4) { const w = miss[Math.floor(Math.random() * miss.length)]; x = { w, ...DICT.get(w) }; }
+      if (!x) { try { x = pickDailyWord(lens[Math.floor(Math.random() * lens.length)], new Set(studyRecent.slice(-30))); } catch (e) { continue; } }
+      cwords = [x];
+      const L = Math.min(12, 2 + level + x.w.length);
+      const route = buildDailyBoard([x.w], L, L + 3, level >= DIAG_FROM);
+      if (route) { puzzleRoute = route; studyRecent.push(x.w); renderCwords(); return true; }
+    }
+    return false;
+  }
+  // 盤面をまるごと作りなおして、上から落ちてくるように見せる
+  function newPuzzleBoard(fill) {
+    for (const el of els.values()) el.remove();
+    els.clear();
+    board = freshBoard();
+    fill();
+    measure(); render();
+    board.flat().forEach((t, k) => { const el = elFor(t); el.querySelector(".face").style.animationDelay = (k * 14) + "ms"; el.classList.add("dropin"); setTimeout(() => el.classList.remove("dropin"), 1000); });
+  }
+  function restoreStage() {
+    newPuzzleBoard(() => {
+      board.forEach((row, r) => row.forEach((t, c) => { const x = stageSnap[r][c]; t.ch = x.ch; t.stone = false; if (x.col !== undefined) t.col = x.col; else delete t.col; }));
+      cwords = stageWords.slice(); renderCwords();
+    });
+  }
+  function nextStudy() { newPuzzleBoard(() => buildStudyPuzzle()); }
   // デイリー：8色・8つの単語をぎっしり並べてから、長い1本の道でごちゃまぜにする。逆になぞると8つ全部そろう（天才的な1手）
-  function buildDailyBoard(words, Lmin = 12, Lmax = 17) {
-    const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  function buildDailyBoard(words, Lmin = 12, Lmax = 17, diag = false) {
+    const N4 = diag ? [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1]];
     for (let tries = 0; tries < 30000; tries++) {
       for (const t of board.flat()) { delete t.col; t.stone = false; t.ch = randLetter(); }
       const idx = words.map((w, i) => i);
@@ -10560,6 +10702,7 @@ zoom|v2|ズームする・急上昇する`;
         pos = opts[Math.floor(Math.random() * opts.length)]; q.push(pos); seen.add(pos.r * COLS + pos.c);
       }
       if (!cellsOf.every(cs => cs.some(x => seen.has(x)))) continue;
+      if (diag && !q.some((p, k) => k && p.r !== q[k - 1].r && p.c !== q[k - 1].c)) continue;  // ななめのステージは、答えの道に必ずななめを入れる
       const snap = board.map(row => row.slice());
       for (let k = 1; k < q.length; k++) swap(q[k - 1], q[k]);
       if (findWords(board).length) { board = snap; continue; }
@@ -10668,7 +10811,11 @@ zoom|v2|ズームする・急上昇する`;
         ? `すごい！ <b>${got}コンボ！</b><br>一度のなぞりで単語をたくさん作るほど、<b>コンボ</b>で得点がどんどん増えるよ`
         : `ナイス！ <b>${got}コンボ！</b><br>一度のなぞりで単語をたくさん作るほど、<b>コンボ</b>で得点がどんどん増えるよ`, "つぎへ");
       await new Promise(r => $("tutBtn").onclick = r);
-      coach("遊び方 3/3", isColor()
+      coach("遊び方 3/3", isStage()
+        ? `パーフェクトは、上の色の単語を<b>1回なぞるだけで全部</b>そろえるパズル。どの盤面にも、かならずその道があるよ。<br>消し残すとライフ−1（同じ盤面でやりなおし）。ライフは3つ。困ったら「ナビ」で答えの道が見られるよ！`
+        : isStudy()
+        ? `単語トレーニングは、<b>日本語の意味</b>を見て、その英単語を色の文字を並べて作るモード。<br>まちがえるとライフ−1で、正解が出るよ。まちがえた単語はあとでまた出るから、自然に覚えられる！`
+        : isColor()
         ? `カラーモードも、<b>どんな単語でも</b>消えてコンボになるよ。<br>エネルギーは毎ターン減るけど、単語を消すと回復。<b>同じ色の文字だけ</b>で作ると大きく回復して得点も2倍。0になったら終わり！<br>上の5つのうち<b>1つは必ず、1回なぞるだけで作れる</b>よ。さがしてみて！`
         : `エンドレスは、毎ターン<b>石</b>が落ちてくる。石は動かせないけど、<b>文字は単語に使える</b>よ。<br>石が<b>15個</b>たまったら終わり。どこまで続けられるか挑戦！`, "はじめる！");
       await new Promise(r => $("tutBtn").onclick = r);
@@ -10809,7 +10956,7 @@ zoom|v2|ズームする・急上昇する`;
   const ASSIST_KEY = "wordDrop.assist.v1";
   const ASSIST_NAME = { 2: "しっかり", 1: "ちょっと", 0: "なし" };
   // 詰みのあるモード（エンドレス・カラー）はスコア勝負なので、アシストは「ちょっと」まで（ナビなし）
-  const assistMax = (mode = $("modeSel").value) => (mode === "endless" || mode === "color") ? 1 : 2;
+  const assistMax = (mode = $("modeSel").value) => (mode === "endless" || mode === "color" || mode === "stage" || mode === "study") ? 1 : 2;
   const assistLv = () => Math.min(Number($("assistSel").value), assistMax());
   const hintFirstMs = () => Number($("hintDelay").value) * 1000;
   try { const a = JSON.parse(localStorage.getItem(ASSIST_KEY) || "null"); if (a) { $("assistSel").value = String(a.lv); $("hintDelay").value = String(a.delay); } } catch (e) {}
@@ -10913,7 +11060,7 @@ zoom|v2|ズームする・急上昇する`;
     const show = !tut && !!hints;
     const was = box.hidden;
     box.hidden = !show;
-    $("canBtn").hidden = assistLv() !== 1;
+    $("canBtn").hidden = assistLv() !== 1 || isStudy();  // 単語トレーニングは答えが見えてしまうので出さない
     renderNavBtn();
     if (was !== box.hidden) fitBoard();
     if (!show || assistLv() !== 1) $("canSheet").hidden = true;
@@ -10960,6 +11107,7 @@ zoom|v2|ズームする・急上昇する`;
   let navBusy = false, navK = 0, paidNav = null;
   // アイテムのナビ：カラーとデイリーは「5色ぜんぶ消える道」。カラーは盤面を並べかえて、その道を作る
   function paidNavRoute() {
+    if (isPuzzle() && puzzleRoute) return { path: puzzleRoute, words: cwords.map(x => x.w) };
     if (isDaily() && dailyRoute) return { path: dailyRoute, words: cwords.map(x => x.w) };
     if (isEnergy() && pfRoute) {
       const R = pfRoute; let ok = false;
@@ -11015,7 +11163,7 @@ zoom|v2|ズームする・急上昇する`;
   try { const pk = localStorage.getItem("wordDrop.pack.v1"); if (pk && (pk === "all" || PACKS[pk])) $("packSel").value = pk; } catch (e) {}
   $("packSel").addEventListener("change", () => { try { localStorage.setItem("wordDrop.pack.v1", $("packSel").value); } catch (e) {} start(); bookDirty = true; });
   $("modeSel").addEventListener("change", () => { try { localStorage.setItem("wordDrop.mode.v1", $("modeSel").value); } catch (e) {} start(); });
-  try { const m = localStorage.getItem("wordDrop.mode.v1"); if (m === "endless" || m === "color" || m === "daily") $("modeSel").value = m; } catch (e) {}  // ノルマモードは試遊前に外した（コードは残してある）
+  try { const m = localStorage.getItem("wordDrop.mode.v1"); if (m === "stage" || m === "study" || m === "daily") $("modeSel").value = m; else if (m === "color" || m === "endless") $("modeSel").value = "stage"; } catch (e) {}  // ノルマモードは試遊前に外した（コードは残してある）
   $("hintDelay").addEventListener("change", assistChanged);
   $("assistChip").addEventListener("click", e => { e.stopPropagation(); const v = assistLv(); $("assistSel").value = String(v === 0 ? assistMax() : v - 1); assistChanged(); loadBest(); updateHud(); setStatus(`アシストを「${ASSIST_NAME[assistLv()]}」にしました`); });
   updateAssistChip();
