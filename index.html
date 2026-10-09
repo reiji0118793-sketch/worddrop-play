@@ -10339,7 +10339,15 @@ zoom|v2|ズームする・急上昇する`;
   const Ads = (() => {
     const A = () => window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
     let started = false, rewardReady = false, interReady = false;
-    const prepReward = async () => { const a = A(); if (!a) return; try { await a.prepareRewardVideoAd({ adId: ADS.rewarded, isTesting: ADS.TESTING }); rewardReady = true; } catch (e) { rewardReady = false; } };
+    // 読み込みは1本ずつ（同時に2回読み込まない）
+    let rewardLoading = null;
+    const prepReward = () => {
+      const a = A(); if (!a) return Promise.resolve();
+      if (!rewardLoading) rewardLoading = a.prepareRewardVideoAd({ adId: ADS.rewarded, isTesting: ADS.TESTING })
+        .then(() => { rewardReady = true; }, () => { rewardReady = false; })
+        .finally(() => { rewardLoading = null; });
+      return rewardLoading;
+    };
     const prepInter = async () => { const a = A(); if (!a) return; try { await a.prepareInterstitial({ adId: ADS.interstitial, isTesting: ADS.TESTING }); interReady = true; } catch (e) { interReady = false; } };
     async function init() {
       const a = A(); if (!a || started) return; started = true;
@@ -10365,13 +10373,21 @@ zoom|v2|ズームする・急上昇する`;
       const a = A();
       if (!a) return fake();
       if (!rewardReady) await prepReward();
+      if (!rewardReady) { await new Promise(r => setTimeout(r, 1200)); await prepReward(); }  // 1回だけ読み込みなおす
       if (!rewardReady) { setStatus("広告を読み込めませんでした。少し待ってからもう一度どうぞ"); return false; }
       return new Promise(res => {
         let earned = false, finished = false; const hs = [];
-        const finish = () => { if (finished) return; finished = true; hs.forEach(h => h.then(x => x.remove()).catch(() => {})); rewardReady = false; prepReward(); res(earned); };
+        const finish = () => {
+          if (finished) return; finished = true; clearTimeout(guard);
+          hs.forEach(h => Promise.resolve(h).then(x => x && x.remove()).catch(() => {}));
+          rewardReady = false; prepReward();  // 次の1本をすぐ読み込んでおく（何回でも見られるように）
+          res(earned);
+        };
+        const guard = setTimeout(finish, 180000);  // 閉じた合図が来なくても、ボタンが固まらないように
         hs.push(a.addListener("onRewardedVideoAdReward", () => { earned = true; }));
-        hs.push(a.addListener("onRewardedVideoAdDismissed", finish));
+        hs.push(a.addListener("onRewardedVideoAdDismissed", () => setTimeout(finish, 150)));
         hs.push(a.addListener("onRewardedVideoAdFailedToShow", finish));
+        rewardReady = false;
         a.showRewardVideoAd().then(() => { earned = true; }).catch(finish);
       });
     }
@@ -10747,8 +10763,9 @@ zoom|v2|ズームする・急上昇する`;
   $("bonusBtn").addEventListener("click", async () => {
     $("bonusBtn").disabled = true;
     const ok = await Ads.rewarded();
-    if (ok) { addNav(1); $("bonusBtn").textContent = `ナビを1枚もらった！（${navTickets()}枚）`; }
-    else $("bonusBtn").disabled = false;
+    // 何回でも見られる：見るたびにナビ＋1
+    if (ok) { addNav(1); SFX.levelUp(); $("bonusBtn").textContent = `ナビ＋1！（いま${navTickets()}枚）　▶ もう1回見て＋1`; }
+    $("bonusBtn").disabled = false;
   });
   $("contBtn").addEventListener("click", async () => {
     $("contBtn").disabled = true;
