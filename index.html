@@ -275,13 +275,13 @@ html, body { height: 100%; overflow: hidden; }
 .tabbar {
   display: grid; grid-template-columns: repeat(3, 1fr);
   background: var(--panel); border-top: 1px solid var(--line);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: var(--safeB);
 }
 .tabbar button { border: 0; border-radius: 0; background: none; padding: 12px 4px; font-size: 14px; font-weight: 700; color: var(--muted); }
 .tabbar button.on { color: var(--gold); box-shadow: inset 0 3px 0 var(--gold); }
 .badge { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); font-size: 11px; color: var(--fg); font-variant-numeric: tabular-nums; }
 /* ---------- モードをえらぶ画面 ---------- */
-.modescreen { position: fixed; inset: 0; z-index: 40; overflow-y: auto; background: radial-gradient(circle at 50% 0%, #25305a, var(--bg) 60%); padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px); }
+.modescreen { position: fixed; inset: 0; z-index: 40; overflow-y: auto; background: radial-gradient(circle at 50% 0%, #25305a, var(--bg) 60%); padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(var(--safeB) + 24px); }
 .ms-inner { max-width: 460px; margin: 0 auto; display: grid; gap: 12px; }
 .ms-title { font-family: var(--font-display); font-weight: 800; color: var(--gold); font-size: 34px; letter-spacing: .16em; text-align: center; margin: 8px 0 0; }
 .ms-sub { text-align: center; color: var(--muted); margin: 0 0 6px; font-size: 13px; letter-spacing: .1em; }
@@ -349,7 +349,7 @@ body { margin: 0; }
 .canbtn .cb-go { color: var(--gold); font-weight: 700; white-space: nowrap; }
 .cansheet { position: fixed; inset: 0; z-index: 60; background: rgba(8, 10, 20, .6); display: flex; align-items: flex-end; justify-content: center; }
 .cansheet[hidden] { display: none; }
-.cs-in { width: 100%; max-width: 520px; max-height: 70vh; overflow-y: auto; background: var(--panel); border-top: 2px solid var(--gold); border-radius: 16px 16px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 10px; }
+.cs-in { width: 100%; max-width: 520px; max-height: 70vh; overflow-y: auto; background: var(--panel); border-top: 2px solid var(--gold); border-radius: 16px 16px 0 0; padding: 14px 16px calc(16px + var(--safeB)); display: grid; gap: 10px; }
 .cs-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; }
 .cs-head button { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); color: var(--fg); font: inherit; font-size: 12px; }
 .cs-note { margin: 0; font-size: 11px; color: var(--muted); }
@@ -420,6 +420,7 @@ body { margin: 0; }
 .odai.color .cw.study { padding: 2px 10px; }
 .cw.study b { letter-spacing: .12em; }
 .cw.study span { font-size: 15px; font-weight: 700; }
+.cw.study.missed { box-shadow: 0 0 0 2px #fff inset; }
 .cwhint { display: block; width: 100%; font-size: 11px; color: var(--muted); margin-top: 2px; }
 .odai.color .cw b { font-size: 14px; letter-spacing: .04em; }
 .odai.color .cw span { font-size: 10px; max-width: 4.6em; }
@@ -563,7 +564,7 @@ body { margin: 0; }
 .view.game .tile .face { width: 93%; height: 93%; border-radius: 16%; }
 .view.game .board { margin-block: auto; }
 /* 下の常設広告（バナー）：タブとの間にすき間をあけて、押しまちがいを防ぐ */
-:root { --bannerH: 50px; }
+:root { --bannerH: 50px; --safeB: env(safe-area-inset-bottom, 0px); }
 .app { grid-template-rows: minmax(0, 1fr) auto auto; }
 .adbanner { display: none; }
 body.has-banner .tabbar { padding-bottom: 0; margin-bottom: 0; }
@@ -571,13 +572,13 @@ body.has-banner .tabbar { padding-bottom: 0; margin-bottom: 0; }
 body.has-banner .adbanner { margin-top: 14px; }
 /* 実際の広告がずれても重ならないよう、少し余分にあける */
 :root { --bannerPad: 8px; }
-body.has-banner .app .adbanner { height: calc(var(--bannerH) + var(--bannerPad) + env(safe-area-inset-bottom, 0px)); padding-top: var(--bannerPad); box-sizing: border-box; }
-body.has-banner .adbanner { display: grid; place-items: center; height: calc(var(--bannerH) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); background: #0b0e1c; border-top: 1px solid var(--line); color: #5b6285; font-size: 11px; letter-spacing: .1em; }
-body.has-banner .modescreen { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px + var(--bannerH)); }
+body.has-banner .app .adbanner { height: calc(var(--bannerH) + var(--bannerPad) + var(--safeB)); padding-top: var(--bannerPad); box-sizing: border-box; }
+body.has-banner .adbanner { display: grid; place-items: center; height: calc(var(--bannerH) + var(--safeB)); padding-bottom: var(--safeB); background: #0b0e1c; border-top: 1px solid var(--line); color: #5b6285; font-size: 11px; letter-spacing: .1em; }
+body.has-banner .modescreen { padding-bottom: calc(var(--safeB) + 24px + var(--bannerH)); }
 /* 下のタブは、タイトル画面・単語帳・設定のときだけ。プレイ中は出さない（盤面を広く） */
 body.playing .tabbar { display: none; }
 body:not(.playing) .tabbar { position: relative; z-index: 45; }
-body:not(.playing) .modescreen { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px + var(--bannerH)); }
+body:not(.playing) .modescreen { padding-bottom: calc(var(--safeB) + 80px + var(--bannerH)); }
 .view.game .ebar { width: 96px; }
 .tabbar button { padding: 9px 4px; }
 </style>
@@ -9238,9 +9239,12 @@ zoom|v2|ズームする・急上昇する`;
       if (w.length === 3 && $("short3").checked && DICT.get(w).tier > 1) continue;
       // 落ちコンは「基本の単語・4文字以上」だけ（スイッチでオフにできる）
       if (cascade && !sameCol && $("cascStrict").checked && (DICT.get(w).tier > 1 || w.length < 4)) continue;
-      cands.push({ w, cells: p.cells, bent: p.bent });
+      // 色の単語（上に出ているお題とぴったり同じ）をいちばん先に成立させる。ほかの単語に文字を取られて消えないように
+      const col0 = b[p.cells[0].r][p.cells[0].c].col;
+      const pri = sameCol && cwords[col0] && cwords[col0].w === w ? 2 : sameCol ? 1 : 0;
+      cands.push({ w, cells: p.cells, bent: p.bent, pri });
     }
-    cands.sort((a, b2) => b2.w.length - a.w.length || (a.bent - b2.bent));
+    cands.sort((a, b2) => b2.pri - a.pri || b2.w.length - a.w.length || (a.bent - b2.bent));
     // 同じ1文字を共有する単語（例：横のARTと縦のAIRがRで交差）は同時に成立させる。
     // ただし、長い単語にすっぽり含まれる単語（CATSの中のCAT）や、2文字以上重なる単語は除く。
     const found = [];
@@ -9649,21 +9653,25 @@ zoom|v2|ズームする・急上昇する`;
           restoreStage();
         }
       } else {
-        const x = cwords[0];
-        studyN++;
+        studyN += cwords.length; studyOK += exact.size;
+        cwords.forEach((x, i) => { if (exact.has(i)) missDel(x.w); else missAdd(x.w); });
         if (all) {
-          studyOK++; streak++; missDel(x.w);
-          const bonus = 50 * level; score += bonus; bumpScore(); SFX.levelUp(); buzz([20, 40, 20]);
-          setStatus(`<b>正解！</b>　${x.w}（${esc(x.m)}）　+${bonus}`);
-          if (studyOK % 5 === 0) { level++; setStatus(`<b>レベルアップ！ Lv.${level}</b>　${level === DIAG_FROM ? "ここから、ななめにも動かせる" : "少し長い単語も出てくる"}`); }
-          await sleep(500);
+          streak++; studyBoards++;
+          const bonus = 50 * level * cwords.length; score += bonus; bumpScore(); SFX.levelUp(); buzz([20, 40, 20]);
+          setStatus(`<b>正解！</b>　${cwords.map(x => `${x.w}（${esc(x.m)}）`).join("・")}　+${bonus}`);
+          if (studyBoards % 3 === 0) {
+            level++;
+            setStatus(`<b>レベルアップ！ Lv.${level}</b>　${level === DIAG_FROM ? "ここから、ななめにも動かせる" : studyCount() > cwords.length ? `次から${studyCount()}語いっしょに出るよ` : "少し長い単語も出てくる"}`);
+          }
+          await sleep(700);
         } else {
-          streak = 0; lives--; missAdd(x.w);
-          studyReveal = true; renderCwords();
+          streak = 0; lives--;
+          studyReveal = new Set(cwords.map((x, i) => i).filter(i => !exact.has(i))); renderCwords();
           SFX.fail(); buzz([80, 60, 120]); gfx.shake();
-          setStatus(`正解は <b>${x.w}</b>（${esc(x.m)}）　ライフ −1　この単語はあとでまた出るよ`);
+          const miss = cwords.filter((x, i) => !exact.has(i));
+          setStatus(`正解は ${miss.map(x => `<b>${x.w}</b>（${esc(x.m)}）`).join("・")}　ライフ −1　まちがえた単語はあとでまた出るよ`);
           updateHud();
-          await sleep(1800);
+          await sleep(2000);
           studyReveal = false;
           if (lives <= 0) { showEnd(); busy = false; return; }
         }
@@ -10022,8 +10030,8 @@ zoom|v2|ズームする・急上昇する`;
   }
   function renderCwords() {
     if (isStudy()) {
-      const x = cwords[0];
-      $("cwords").innerHTML = x ? `<span class="cw study" style="--cc:${CCOL[0]}"><b>${studyReveal ? x.w : x.w.replace(/./g, "＿")}</b><span>${esc(x.m)}</span></span><span class="cwhint">この意味の英単語を、色の文字を並べて作ろう（${x.w.length}文字）</span>` : "";
+      $("cwords").innerHTML = cwords.map((x, i) => `<span class="cw study${studyReveal && studyReveal.has(i) ? " missed" : ""}" style="--cc:${CCOL[i]}"><b>${studyReveal && studyReveal.has(i) ? x.w : x.w.replace(/./g, "＿")}</b><span>${esc(x.m)}</span></span>`).join("")
+        + `<span class="cwhint">意味の英単語を、同じ色の文字を並べて作ろう${cwords.length > 1 ? `（${cwords.length}語ぜんぶ1回で）` : ""}</span>`;
       return;
     }
     $("cwords").innerHTML = cwords.map((x, i) => `<span class="cw" style="--cc:${CCOL[i]}"><b>${x.w}</b><span>${x.m}</span></span>`).join("");
@@ -10240,7 +10248,7 @@ zoom|v2|ズームする・急上昇する`;
       $("lvFill").style.width = ((turns % STONE_EVERY) / STONE_EVERY * 100) + "%";
     } else if (isPuzzle()) {
       $("hearts").innerHTML = Array.from({ length: LIVES }, (_, i) => `<span class="${i < lives ? "on" : "off"}">♥</span>`).join("");
-      $("quota").innerHTML = isStage() ? `<b>${cwords.length}色</b>を1回で全部消す${allowDiag() ? "・ななめOK" : ""}` : `${studyN + 1}問目　正解 <b>${studyOK}</b>`;
+      $("quota").innerHTML = isStage() ? `<b>${cwords.length}色</b>を1回で全部消す${allowDiag() ? "・ななめOK" : ""}` : `正解 <b>${studyOK}</b>語　この盤面は${cwords.length}語`;
     } else if (isEnergy()) {
       const pct = Math.round(energy / ENERGY_MAX * 100);
       $("hearts").innerHTML = `<span class="ebar${pct <= 25 ? " danger" : ""}" aria-label="エネルギー ${pct}"><i style="width:${pct}%"></i></span>`;
@@ -10253,7 +10261,7 @@ zoom|v2|ズームする・急上昇する`;
       $("quota").innerHTML = `ノルマ <b>${quotaOf(level)}</b>点／ターン`;
     }
     $("streak").textContent = streak >= 2 ? `連続 ${streak}回 ×${(1 + 0.1 * Math.min(streak, 10)).toFixed(1)}` : "";
-    if (isPuzzle()) $("lvFill").style.width = (isStudy() ? (studyOK % 5) / 5 * 100 : 100) + "%";
+    if (isPuzzle()) $("lvFill").style.width = (isStudy() ? (studyBoards % 3) / 3 * 100 : 100) + "%";
     else if (isEnergy()) $("lvFill").style.width = ((turns % TURNS_PER_LEVEL) / TURNS_PER_LEVEL * 100) + "%";
     else if (isColor()) $("lvFill").style.width = (turns / COLOR_TURNS * 100) + "%";
     else if (!isEndless()) $("lvFill").style.width = ((turns % TURNS_PER_LEVEL) / TURNS_PER_LEVEL * 100) + "%";
@@ -10274,7 +10282,7 @@ zoom|v2|ズームする・急上昇する`;
       dailyText = `デイリー連続 ${d.streak}日目！ また明日、新しい盤面で。`;
     }
     $("endAch").textContent = [dailyText, gameAch.length ? `このゲームで解除した実績：${gameAch.join("・")}` : ""].filter(Boolean).join("　");
-    if (isPuzzle()) $("clearText").textContent = isStage() ? `STAGE ${level} まで到達。最大 ${maxCombo}コンボ` : `${studyN}問中 ${studyOK}問正解（Lv.${level}）。まちがえた単語は、次のトレーニングでまた出ます`;
+    if (isPuzzle()) $("clearText").textContent = isStage() ? `STAGE ${level} まで到達。最大 ${maxCombo}コンボ` : `${studyN}語中 ${studyOK}語正解（Lv.${level}）。まちがえた単語は、次のトレーニングでまた出ます`;
     else $("clearText").textContent = `${isEndless() ? `石が${STONE_CAP}個たまった。` : isEnergy() ? "エネルギーが切れた。" : ""}${MODE_NAME[$("modeSel").value]}・アシスト：${ASSIST_NAME[assistLv()]}　Lv.${level}・${turns}ターン。作った単語 ${totalWords}個（${learned.size}種類）。最大 ${maxCombo}コンボ`;
     navClear();
     $("bonusBtn").hidden = false; $("bonusBtn").disabled = false; $("bonusBtn").textContent = "▶ 広告を見てナビ＋1";
@@ -10326,7 +10334,7 @@ zoom|v2|ズームする・急上昇する`;
     $("cwords").hidden = !color;
     $("bonusText").textContent = isStage() ? "1回で全色消すとPERFECT!" : isStudy() ? "意味から英単語を作ろう" : color ? "同じ色で作ると2倍" : "作ると得点3倍";
     dailyRoute = null;
-    puzzleRoute = null; studyN = 0; studyOK = 0; studyReveal = false;
+    puzzleRoute = null; studyN = 0; studyOK = 0; studyBoards = 0; studyReveal = false;
     if (color) { odai = { w: "", m: "" }; if (isDaily()) buildDailyPuzzle(0); else if (isStage()) buildStagePuzzle(); else if (isStudy()) buildStudyPuzzle(); else setupColor(); } else newOdai();
     if (unseed) unseed();
     updateAssistChip();
@@ -10550,7 +10558,19 @@ zoom|v2|ズームする・急上昇する`;
     }
     // バナー広告：チュートリアルが終わってから、画面のいちばん下にずっと出す
     let bannerOn = false;
+    // iPhoneの下の余白（ホームバー）の高さ。アプリの中で env() が 0 になる端末では、画面の高さから決める
+    function fixSafeArea() {
+      try {
+        const probe = document.createElement("div");
+        probe.style.cssText = "position:fixed;left:0;bottom:0;width:1px;height:env(safe-area-inset-bottom, 0px);pointer-events:none;visibility:hidden";
+        document.body.appendChild(probe);
+        const h = probe.getBoundingClientRect().height; probe.remove();
+        const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === "ios");
+        if (h < 1 && ios && Math.max(screen.height, screen.width) >= 812) document.documentElement.style.setProperty("--safeB", "34px");
+      } catch (e) {}
+    }
     async function banner(on) {
+      fixSafeArea();
       document.body.classList.toggle("has-banner", on);
       const a = A();
       if (a) $("adBannerTxt").textContent = "";
@@ -10668,7 +10688,7 @@ zoom|v2|ズームする・急上昇する`;
   // ---------- パーフェクト（ステージ）と単語トレーニング ----------
   const DIAG_FROM = 5;  // このステージ（レベル）から、ななめに動かせる
   const allowDiag = () => !isPuzzle() || level >= DIAG_FROM;
-  let puzzleRoute = null, stageSnap = null, stageWords = null, studyN = 0, studyOK = 0, studyReveal = false, studyRecent = [];
+  let puzzleRoute = null, stageSnap = null, stageWords = null, studyN = 0, studyOK = 0, studyBoards = 0, studyReveal = false, studyRecent = [];
   // ステージの難しさ：単語の数（＝色の数）・答えの道の長さ・ななめ
   function stageSpec(s) {
     const T = [[[3, 3], 3, 5], [[4, 3], 4, 6], [[3, 3, 3], 5, 7], [[4, 3, 3], 6, 9], [[4, 3, 3, 3], 7, 10], [[4, 4, 3, 3], 8, 11],
@@ -10692,17 +10712,26 @@ zoom|v2|ズームする・急上昇する`;
   const missSave = l => { try { localStorage.setItem(MISS_KEY, JSON.stringify(l.slice(-200))); } catch (e) {} };
   const missAdd = w => { const l = missList().filter(x => x !== w); l.push(w); missSave(l); };
   const missDel = w => missSave(missList().filter(x => x !== w));
+  // レベルが上がるほど、1つの盤面で作る単語が増える（盤面を広く使う）：Lv1〜2は1語、Lv3〜4は2語、Lv5〜6は3語、Lv7〜は4語
+  const studyCount = () => level <= 2 ? 1 : level <= 4 ? 2 : level <= 6 ? 3 : 4;
   function buildStudyPuzzle() {
-    const lens = level <= 2 ? [3] : level <= 4 ? [3, 4] : level <= 6 ? [4, 5] : [4, 5, 6];
-    const miss = missList().filter(w => DICT.has(w) && w.length <= COLS && !studyRecent.slice(-5).includes(w));
+    const k = studyCount();
+    const lens = level <= 2 ? [3, 4] : level <= 4 ? [3, 4] : level <= 6 ? [3, 4, 5] : [4, 5, 6];
     for (let tries = 0; tries < 25; tries++) {
-      let x = null;
-      if (miss.length && Math.random() < 0.4) { const w = miss[Math.floor(Math.random() * miss.length)]; x = { w, ...DICT.get(w) }; }
-      if (!x) { try { x = pickDailyWord(lens[Math.floor(Math.random() * lens.length)], new Set(studyRecent.slice(-30))); } catch (e) { continue; } }
-      cwords = [x];
-      const L = Math.min(12, 2 + level + x.w.length);
-      const route = buildDailyBoard([x.w], L, L + 3, level >= DIAG_FROM);
-      if (route) { puzzleRoute = route; studyRecent.push(x.w); renderCwords(); return true; }
+      const used = new Set(studyRecent.slice(-30)), list = [];
+      const miss = missList().filter(w => DICT.has(w) && w.length <= COLS && !used.has(w));
+      for (let i = 0; i < k; i++) {
+        let x = null;
+        if (miss.length && Math.random() < 0.4) { const w = miss.splice(Math.floor(Math.random() * miss.length), 1)[0]; x = { w, ...DICT.get(w) }; }
+        if (!x) { try { x = pickDailyWord(lens[Math.floor(Math.random() * lens.length)], used); } catch (e) { x = null; } }
+        if (!x) break;
+        used.add(x.w); list.push(x);
+      }
+      if (list.length < k) continue;
+      cwords = list;
+      const L = Math.min(18, 3 + level + k * 2);
+      const route = buildDailyBoard(list.map(x => x.w), L, L + 3, level >= DIAG_FROM);
+      if (route) { puzzleRoute = route; list.forEach(x => studyRecent.push(x.w)); renderCwords(); return true; }
     }
     return false;
   }
