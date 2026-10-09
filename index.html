@@ -562,7 +562,9 @@ body { margin: 0; }
 :root { --bannerH: 50px; }
 .app { grid-template-rows: minmax(0, 1fr) auto auto; }
 .adbanner { display: none; }
-body.has-banner .tabbar { padding-bottom: 0; margin-bottom: 2px; }
+body.has-banner .tabbar { padding-bottom: 0; margin-bottom: 0; }
+/* タブと広告のあいだに12pxのすき間（広告の押しまちがいを防ぐ。AdMobの規約でも、ボタンのすぐ横に広告を置かないことが求められる） */
+body.has-banner .adbanner { margin-top: 12px; }
 body.has-banner .adbanner { display: grid; place-items: center; height: calc(var(--bannerH) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); background: #0b0e1c; border-top: 1px solid var(--line); color: #5b6285; font-size: 11px; letter-spacing: .1em; }
 body.has-banner .modescreen { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px + var(--bannerH)); }
 .view.game .ebar { width: 96px; }
@@ -10399,7 +10401,7 @@ zoom|v2|ズームする・急上昇する`;
       bannerOn = on;
       try {
         if (on) {
-          a.addListener("bannerAdSizeChanged", sz => { if (sz && sz.height) document.documentElement.style.setProperty("--bannerH", sz.height + "px"); });
+          a.addListener("bannerAdSizeChanged", sz => { if (sz && sz.height) document.documentElement.style.setProperty("--bannerH", Math.max(50, Math.ceil(sz.height)) + 2 + "px"); });
           await a.showBanner({ adId: ADS.banner, adSize: "BANNER", position: "BOTTOM_CENTER", margin: 0, isTesting: ADS.TESTING });
         } else await a.hideBanner();
       } catch (e) {}
