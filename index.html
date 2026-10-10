@@ -9013,7 +9013,7 @@ zoom|v2|ズームする・急上昇する`;
   // ---------- スコアアタックの設定 ----------
   const LIVES = 3, TURNS_PER_LEVEL = 5;
   const quotaOf = lv => [30, 60, 100, 150, 200][lv - 1] || 200 + (lv - 5) * 60;
-  const timeOf = lv => tut ? 40 : $("modeSel").value === "daily" ? 15 : isPuzzle() ? Math.min(30, Math.max(10, 6 + (puzzleRoute ? puzzleRoute.length : 6))) : Math.max(6, Number($("timeSel").value) - Math.max(0, lv - 3));
+  const timeOf = lv => tut ? 40 : $("modeSel").value === "daily" ? Math.max(15, 4 + (dailyRoute ? dailyRoute.length : 0)) : isPuzzle() ? Math.min(30, Math.max(10, 6 + (puzzleRoute ? puzzleRoute.length : 6))) : Math.max(6, Number($("timeSel").value) - Math.max(0, lv - 3));
   // ベストスコアは「モード × アシスト」ごとに別々に記録する（ランキングも別々にする前提）
   const STONE_CAP = 15, STONE_EVERY = 15, STONE_MAX = 5;  // 石は文字入り（t.stone = true）。動かせないが単語に使える
   const isEndless = () => $("modeSel").value === "endless";
@@ -9658,7 +9658,7 @@ zoom|v2|ズームする・急上昇する`;
           if (heal) { lives++; SFX.levelUp(); buzz([20, 40, 20]); }
           setStatus(level === diagFrom()
             ? `<b>STAGE ${level}：ななめ解禁！</b>　指をななめに動かすと、ななめのマスと入れ替わる`
-            : `${heal ? "<b>ノーミス3連続！ ライフ+1</b>　" : ""}<b>STAGE ${level}</b>　${cwords.length}色を1回なぞって全部消そう`);
+            : `${heal ? "<b>ノーミス3連続！ ライフ+1</b>　" : ""}<b>STAGE ${level}</b>　${isFullStage(level) ? "<b>全面ボーナス！</b> 白いマスなし。全部消せたら盤面まるごとPERFECT" : `${cwords.length}色を1回なぞって全部消そう`}`);
         } else {
           streak = 0; lives--; noMiss = 0;
           SFX.fail(); buzz([80, 60, 120]); gfx.shake();
@@ -10726,13 +10726,26 @@ zoom|v2|ズームする・急上昇する`;
       i -= count;
     }
   }
+  // 並べ方：STAGE 1〜4は横だけ。そのあとは横・縦・まぜをいろいろ。15・25・35…ステージは「全面ボーナス」（白いマスなし）
+  let stageRecent = [];
+  const isFullStage = s => s >= 15 && s % 10 === 5;
+  function stageLayout(s, lens) {
+    if (s <= 4) return "h";
+    const opts = ["h", "mix", "mix"];
+    if (lens.length <= COLS && lens.every(L => L <= ROWS)) opts.push("v", "v");
+    return opts[Math.floor(Math.random() * opts.length)];
+  }
   function buildStagePuzzle() {
-    const sp = stageSpec(level);
+    const sp = stageSpec(level), full = isFullStage(level);
     for (let tries = 0; tries < 25; tries++) {
-      const used = new Set();
-      try { cwords = sp.lens.slice().sort(() => Math.random() - 0.5).map(len => { const x = pickDailyWord(len, used); used.add(x.w); return x; }); } catch (e) { continue; }
-      const route = buildDailyBoard(cwords.map(x => x.w), sp.Lmin, sp.Lmax, sp.diag);
-      if (route) { puzzleRoute = route; stageSnap = board.map(row => row.map(t => ({ ch: t.ch, col: t.col }))); stageWords = cwords.slice(); renderCwords(); return true; }
+      const used = new Set(stageRecent.slice(-40));
+      // 全面ボーナス：前半は5文字×6語を縦に、後半は6文字×2＋3文字×6を横に（30マスぴったり）
+      const lens = full ? (level < 35 ? [5, 5, 5, 5, 5, 5] : [6, 6, 3, 3, 3, 3, 3, 3]) : sp.lens;
+      const layout = full ? (level < 35 ? "v" : "h") : stageLayout(level, lens);
+      try { cwords = lens.slice().sort(() => Math.random() - 0.5).map(len => { const x = pickDailyWord(len, used); used.add(x.w); return x; }); } catch (e) { continue; }
+      const route = buildDailyBoard(cwords.map(x => x.w), full ? Math.max(sp.Lmin, 14) : sp.Lmin, full ? Math.max(sp.Lmax, 19) : sp.Lmax, sp.diag, layout);
+      if (route) {
+        cwords.forEach(x => stageRecent.push(x.w)); puzzleRoute = route; stageSnap = board.map(row => row.map(t => ({ ch: t.ch, col: t.col }))); stageWords = cwords.slice(); renderCwords(); return true; }
     }
     return false;
   }
@@ -10762,7 +10775,8 @@ zoom|v2|ズームする・急上昇する`;
       if (list.length < k) continue;
       cwords = list;
       const L = Math.min(18, 3 + level + k * 2);
-      const route = buildDailyBoard(list.map(x => x.w), L, L + 3, diagMax());
+      const lay = level <= 3 ? "h" : ["h", "mix", "v"][Math.floor(Math.random() * 3)];
+      const route = buildDailyBoard(list.map(x => x.w), L, L + 3, diagMax(), list.every(x => x.w.length <= ROWS) ? lay : (lay === "v" ? "h" : lay));
       if (route) { puzzleRoute = route; list.forEach(x => studyRecent.push(x.w)); renderCwords(); return true; }
     }
     return false;
@@ -10785,25 +10799,61 @@ zoom|v2|ズームする・急上昇する`;
   function nextStudy() { newPuzzleBoard(() => buildStudyPuzzle()); }
   // デイリー：8色・8つの単語をぎっしり並べてから、長い1本の道でごちゃまぜにする。逆になぞると8つ全部そろう（天才的な1手）
   // diag：答えの道に入れてよい「ななめ」の最大回数（0ならたて・よこだけ）。ななめはむずかしいので、入っても1〜2回まで
-  function buildDailyBoard(words, Lmin = 12, Lmax = 17, diag = 0) {
+  // 単語の並べ方（layout）
+  //  "h"：横に並べる（1段に1語、3文字は2語まで）　"v"：縦に並べる（1列に1語・5文字まで）
+  //  "mix"：横と縦をまぜて、空いているところにばらばらに置く
+  //  6文字×2＋3文字×6を "h" で並べると、または5文字×6を "v" で並べると、30マス全部が埋まる（全面）
+  function placeWords(words, layout) {
+    const cellsOf = [], put = (wi, cells) => { cellsOf[wi] = []; cells.forEach(([r, c], k) => { board[r][c].ch = words[wi][k]; board[r][c].col = wi; cellsOf[wi].push(r * COLS + c); }); };
+    const idx = words.map((w, i) => i);
+    if (layout === "v") {
+      if (words.length > COLS || words.some(w => w.length > ROWS)) return null;
+      const cols = [...Array(COLS).keys()].sort(() => Math.random() - 0.5);
+      idx.forEach((wi, k) => { const c = cols[k], r0 = Math.floor(Math.random() * (ROWS - words[wi].length + 1)); put(wi, [...words[wi]].map((_, j) => [r0 + j, c])); });
+      return cellsOf;
+    }
+    if (layout === "mix") {
+      const used = new Set(), order = idx.slice().sort((a, b) => words[b].length - words[a].length);
+      let vCount = 0;
+      for (const wi of order) {
+        const L = words[wi].length, spots = [];
+        for (const dir of ["h", "v"]) {
+          const dr = dir === "v" ? 1 : 0, dc = dir === "h" ? 1 : 0;
+          for (let r = 0; r + dr * (L - 1) < ROWS; r++) for (let c = 0; c + dc * (L - 1) < COLS; c++) {
+            const cells = [...Array(L).keys()].map(j => [r + dr * j, c + dc * j]);
+            if (cells.every(([a, b]) => !used.has(a * COLS + b))) spots.push({ dir, cells });
+          }
+        }
+        if (!spots.length) return null;
+        // 縦と横がだいたい半々になるように選ぶ
+        const want = vCount * 2 < order.indexOf(wi) + 1 ? "v" : "h";
+        const pref = spots.filter(x => x.dir === want), pool = pref.length && Math.random() < 0.75 ? pref : spots;
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        if (pick.dir === "v") vCount++;
+        pick.cells.forEach(([a, b]) => used.add(a * COLS + b));
+        put(wi, pick.cells);
+      }
+      return cellsOf;
+    }
+    const longs = idx.filter(i => words[i].length >= 4), shorts = idx.filter(i => words[i].length < 4).sort(() => Math.random() - 0.5);
+    const rows = longs.map(i => [i]);
+    for (let k = 0; k < shorts.length; k += 2) rows.push(shorts.slice(k, k + 2));
+    if (rows.length > ROWS) return null;
+    rows.sort(() => Math.random() - 0.5);
+    const rowAt = [...Array(ROWS).keys()].sort(() => Math.random() - 0.5).slice(0, rows.length).sort((a, b) => a - b);
+    rows.forEach((grp, k) => {
+      const r = rowAt[k];
+      let c = grp.length === 1 ? Math.floor(Math.random() * (COLS - words[grp[0]].length + 1)) : 0;
+      for (const wi of grp) { put(wi, [...words[wi]].map((_, j) => [r, c + j])); c += words[wi].length; }
+    });
+    return cellsOf;
+  }
+  function buildDailyBoard(words, Lmin = 12, Lmax = 17, diag = 0, layout = "h") {
     const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], ND = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
     for (let tries = 0; tries < 30000; tries++) {
       for (const t of board.flat()) { delete t.col; t.stone = false; t.ch = randLetter(); }
-      const idx = words.map((w, i) => i);
-      const longs = idx.filter(i => words[i].length >= 4), shorts = idx.filter(i => words[i].length < 4).sort(() => Math.random() - 0.5);
-      const rows = longs.map(i => [i]);
-      for (let k = 0; k < shorts.length; k += 2) rows.push(shorts.slice(k, k + 2));
-      if (rows.length > ROWS) return null;
-      rows.sort(() => Math.random() - 0.5);
-      const cellsOf = [];
-      rows.forEach((grp, r) => {
-        let c = grp.length === 1 ? Math.floor(Math.random() * (COLS - words[grp[0]].length + 1)) : 0;
-        for (const wi of grp) {
-          const w = words[wi]; cellsOf[wi] = [];
-          [...w].forEach((ch, k) => { board[r][c + k].ch = ch; board[r][c + k].col = wi; cellsOf[wi].push(r * COLS + c + k); });
-          c += w.length;
-        }
-      });
+      const cellsOf = placeWords(words, layout);
+      if (!cellsOf) { if (layout === "v" || tries > 400) return null; continue; }
       // ぜんぶの単語を通る、重ならない長い道（たて・よこ）
       let pos = { r: Math.floor(Math.random() * ROWS), c: Math.floor(Math.random() * COLS) };
       let dUsed = 0;
@@ -10840,8 +10890,11 @@ zoom|v2|ズームする・急上昇する`;
     try {
       for (let tries = 0; tries < 30; tries++) {
         const used = new Set();
-        cwords = DAILY_LENS.slice().sort(() => Math.random() - 0.5).map(len => { const x = pickDailyWord(len, used); used.add(x.w); return x; });
-        dailyRoute = buildDailyBoard(cwords.map(x => x.w));
+        // 1〜3問目は横、4〜9問目は横と縦のまぜ、10問目は「全面フィナーレ」（白いマスなし・8色で30マス全部）
+        const last = turnNo === COLOR_TURNS - 1;
+        const lens = last ? [6, 6, 3, 3, 3, 3, 3, 3] : DAILY_LENS;
+        cwords = lens.slice().sort(() => Math.random() - 0.5).map(len => { const x = pickDailyWord(len, used); used.add(x.w); return x; });
+        dailyRoute = buildDailyBoard(cwords.map(x => x.w), last ? 16 : 12, last ? 21 : 17, 0, last ? "h" : turnNo < 3 ? "h" : "mix");
         if (dailyRoute) break;
       }
     } finally { unseed(); }
