@@ -571,7 +571,16 @@ body.has-banner .tabbar { padding-bottom: 0; margin-bottom: 0; }
 /* タブと広告のあいだに12pxのすき間（広告の押しまちがいを防ぐ。AdMobの規約でも、ボタンのすぐ横に広告を置かないことが求められる） */
 body.has-banner .adbanner { margin-top: 14px; }
 /* 実際の広告がずれても重ならないよう、少し余分にあける */
-:root { --bannerPad: 8px; }
+:root { --bannerPad: 16px; }
+/* アプリ版は body の上に「ノッチ・ダイナミックアイランド分の余白」が付く。高さ100%に余白を含めないと、画面全体が下にずれて
+   いちばん下（タブや広告の場所）がはみ出して重なる。余白も含めて100%に収める */
+body { box-sizing: border-box; }
+/* 広告が出ているときは、下から出てくるシートや終了画面も広告の上までにする */
+body.has-banner .cansheet { padding-bottom: calc(var(--safeB) + var(--bannerH) + 10px); }
+body.has-banner .cs-in { padding-bottom: 16px; border-radius: 16px; }
+body.has-banner .overlay { padding-bottom: calc(24px + var(--safeB) + var(--bannerH) + 10px); }
+/* パズル系モードは上の表示をすっきり（連続ボーナスとアシスト表示を出さない） */
+body.puzzle #streak, body.puzzle .odai .bonus { display: none; }
 body.has-banner .app .adbanner { height: calc(var(--bannerH) + var(--bannerPad) + var(--safeB)); padding-top: var(--bannerPad); box-sizing: border-box; }
 body.has-banner .adbanner { display: grid; place-items: center; height: calc(var(--bannerH) + var(--safeB)); padding-bottom: var(--safeB); background: #0b0e1c; border-top: 1px solid var(--line); color: #5b6285; font-size: 11px; letter-spacing: .1em; }
 body.has-banner .modescreen { padding-bottom: calc(var(--safeB) + 24px + var(--bannerH)); }
@@ -9056,8 +9065,8 @@ zoom|v2|ズームする・急上昇する`;
     let verb = null;
     function ensure() {
       try {
-        // iPhoneのマナーモードでも鳴るように（効果音は設定でオフにできる）
-        try { if (navigator.audioSession && navigator.audioSession.type !== "playback") navigator.audioSession.type = "playback"; } catch (e) {}
+        // iPhoneのマナーモード（消音スイッチ）のときは鳴らさない。ほかのアプリの音楽とは一緒に鳴る
+        try { if (navigator.audioSession && navigator.audioSession.type !== "ambient") navigator.audioSession.type = "ambient"; } catch (e) {}
         if (!ctx) {
           ctx = new (window.AudioContext || window.webkitAudioContext)();
           const comp = ctx.createDynamicsCompressor();
@@ -9641,13 +9650,17 @@ zoom|v2|ズームする・急上昇する`;
       }
       if (isStage()) {
         if (all) {
-          streak++;
+          streak++; noMiss++;
+          // ノーミスで3ステージ続けてクリアするとライフ+1（最大3）
+          const heal = noMiss >= 3 && lives < LIVES;
+          if (noMiss >= 3) noMiss = 0;
           await perfectWipe();  // この中で次のステージへ
-          setStatus(level === DIAG_FROM
+          if (heal) { lives++; SFX.levelUp(); buzz([20, 40, 20]); }
+          setStatus(level === diagFrom()
             ? `<b>STAGE ${level}：ななめ解禁！</b>　指をななめに動かすと、ななめのマスと入れ替わる`
-            : `<b>STAGE ${level}</b>　${cwords.length}色を1回なぞって全部消そう`);
+            : `${heal ? "<b>ノーミス3連続！ ライフ+1</b>　" : ""}<b>STAGE ${level}</b>　${cwords.length}色を1回なぞって全部消そう`);
         } else {
-          streak = 0; lives--;
+          streak = 0; lives--; noMiss = 0;
           SFX.fail(); buzz([80, 60, 120]); gfx.shake();
           setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1${lives > 0 ? "　同じ盤面でもう一度！" : ""}`);
           updateHud();
@@ -9664,7 +9677,7 @@ zoom|v2|ズームする・急上昇する`;
           setStatus(`<b>正解！</b>　${cwords.map(x => `${x.w}（${esc(x.m)}）`).join("・")}　+${bonus}`);
           if (studyBoards >= studyNeed()) {
             level++; studyBoards = 0;
-            setStatus(`<b>レベルアップ！ Lv.${level}</b>　${level === DIAG_FROM ? "ここから、ななめにも動かせる" : studyCount() > cwords.length ? `次から${studyCount()}語いっしょに出るよ` : "少し長い単語も出てくる"}`);
+            setStatus(`<b>レベルアップ！ Lv.${level}</b>　${level === diagFrom() ? "ここから、ななめにも動かせる（たまにだけ出るよ）" : studyCount() > cwords.length ? `次から${studyCount()}語いっしょに出るよ` : "少し長い単語も出てくる"}`);
           }
           await sleep(700);
         } else {
@@ -10337,7 +10350,8 @@ zoom|v2|ズームする・急上昇する`;
     $("cwords").hidden = !color;
     $("bonusText").textContent = isStage() ? "1回で全色消すとPERFECT!" : isStudy() ? "意味から英単語を作ろう" : color ? "同じ色で作ると2倍" : "作ると得点3倍";
     dailyRoute = null;
-    puzzleRoute = null; studyN = 0; studyOK = 0; studyBoards = 0; studyReveal = false;
+    puzzleRoute = null; noMiss = 0; studyN = 0; studyOK = 0; studyBoards = 0; studyReveal = false;
+    document.body.classList.toggle("puzzle", isPuzzle());
     if (color) { odai = { w: "", m: "" }; if (isDaily()) buildDailyPuzzle(0); else if (isStage()) buildStagePuzzle(); else if (isStudy()) buildStudyPuzzle(); else setupColor(); } else newOdai();
     if (unseed) unseed();
     updateAssistChip();
@@ -10689,15 +10703,28 @@ zoom|v2|ズームする・急上昇する`;
   // デイリー：毎ターン、その日の決まったパズル（1本の道で5色ぜんぶ消せる）を出す。誰でも同じ盤面
   let dailyRoute = null;
   // ---------- パーフェクト（ステージ）と単語トレーニング ----------
-  const DIAG_FROM = 5;  // このステージ（レベル）から、ななめに動かせる
-  const allowDiag = () => !isPuzzle() || level >= DIAG_FROM;
-  let puzzleRoute = null, stageSnap = null, stageWords = null, studyN = 0, studyOK = 0, studyBoards = 0, studyReveal = false, studyRecent = [];
+  // ななめは終盤だけ：パーフェクトはSTAGE 28（8色）から、単語トレーニングはLv.10から。それまでは指もたて・よこにしか動かない
+  const DIAG_STAGE = 28, DIAG_STUDY = 10;
+  const diagFrom = () => isStudy() ? DIAG_STUDY : DIAG_STAGE;
+  const allowDiag = () => !isPuzzle() || level >= diagFrom();
+  // 答えの道に入れてよいななめの回数：解禁直後は1回まで、さらに10段階進むと2回まで
+  const diagMax = () => level < diagFrom() ? 0 : level < diagFrom() + 10 ? 1 : 2;
+  let noMiss = 0, puzzleRoute = null, stageSnap = null, stageWords = null, studyN = 0, studyOK = 0, studyBoards = 0, studyReveal = false, studyRecent = [];
   // ステージの難しさ：単語の数（＝色の数）・答えの道の長さ・ななめ
+  // 色の数ごとに何ステージ続けるか：2色×2・3色×4・4色×5・5色×6・6色×5・7色×5・そのあとは8色
+  // 同じ色の数のあいだも、ステージが進むほど答えの道が少しずつ長くなる
+  const STAGE_BANDS = [[2, 2, [[3, 3], [4, 3]]], [3, 4, [[3, 3, 3], [4, 3, 3]]], [4, 5, [[4, 3, 3, 3], [4, 4, 3, 3]]],
+    [5, 6, [[4, 3, 3, 3, 3], [4, 4, 3, 3, 3]]], [6, 5, [[4, 4, 3, 3, 3, 3], [5, 4, 3, 3, 3, 3]]], [7, 5, [[5, 4, 3, 3, 3, 3, 3]]], [8, Infinity, [[5, 4, 3, 3, 3, 3, 3, 3]]]];
   function stageSpec(s) {
-    const T = [[[3, 3], 3, 5], [[4, 3], 4, 6], [[3, 3, 3], 5, 7], [[4, 3, 3], 6, 9], [[4, 3, 3, 3], 7, 10], [[4, 4, 3, 3], 8, 11],
-      [[4, 4, 3, 3, 3], 9, 12], [[5, 4, 3, 3, 3, 3], 10, 14], [[5, 4, 3, 3, 3, 3, 3], 12, 16], [[5, 4, 3, 3, 3, 3, 3, 3], 14, 18]];
-    const [lens, a, b] = T[Math.min(s - 1, T.length - 1)], extra = Math.max(0, s - T.length);
-    return { lens, Lmin: Math.min(20, a + extra), Lmax: Math.min(24, b + extra), diag: s >= DIAG_FROM };
+    let i = s - 1;
+    for (const [n, count, sets] of STAGE_BANDS) {
+      if (i < count) {
+        const lens = sets[Math.min(sets.length - 1, Math.floor(i / Math.max(1, Math.ceil(Math.min(count, 6) / sets.length))))];
+        const Lmin = Math.min(20, Math.round(1.5 * n) + i);
+        return { lens, Lmin, Lmax: Math.min(24, Lmin + 3), diag: s >= DIAG_STAGE ? (s < DIAG_STAGE + 10 ? 1 : 2) : 0, n };
+      }
+      i -= count;
+    }
   }
   function buildStagePuzzle() {
     const sp = stageSpec(level);
@@ -10735,7 +10762,7 @@ zoom|v2|ズームする・急上昇する`;
       if (list.length < k) continue;
       cwords = list;
       const L = Math.min(18, 3 + level + k * 2);
-      const route = buildDailyBoard(list.map(x => x.w), L, L + 3, level >= DIAG_FROM);
+      const route = buildDailyBoard(list.map(x => x.w), L, L + 3, diagMax());
       if (route) { puzzleRoute = route; list.forEach(x => studyRecent.push(x.w)); renderCwords(); return true; }
     }
     return false;
@@ -10757,8 +10784,9 @@ zoom|v2|ズームする・急上昇する`;
   }
   function nextStudy() { newPuzzleBoard(() => buildStudyPuzzle()); }
   // デイリー：8色・8つの単語をぎっしり並べてから、長い1本の道でごちゃまぜにする。逆になぞると8つ全部そろう（天才的な1手）
-  function buildDailyBoard(words, Lmin = 12, Lmax = 17, diag = false) {
-    const N4 = diag ? [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  // diag：答えの道に入れてよい「ななめ」の最大回数（0ならたて・よこだけ）。ななめはむずかしいので、入っても1〜2回まで
+  function buildDailyBoard(words, Lmin = 12, Lmax = 17, diag = 0) {
+    const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], ND = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
     for (let tries = 0; tries < 30000; tries++) {
       for (const t of board.flat()) { delete t.col; t.stone = false; t.ch = randLetter(); }
       const idx = words.map((w, i) => i);
@@ -10778,15 +10806,18 @@ zoom|v2|ズームする・急上昇する`;
       });
       // ぜんぶの単語を通る、重ならない長い道（たて・よこ）
       let pos = { r: Math.floor(Math.random() * ROWS), c: Math.floor(Math.random() * COLS) };
+      let dUsed = 0;
       const q = [pos], seen = new Set([pos.r * COLS + pos.c]);
       const L = Lmin + Math.floor(Math.random() * (Lmax - Lmin + 1));
       for (let k = 0; k < L; k++) {
-        const opts = N4.map(([dr, dc]) => ({ r: pos.r + dr, c: pos.c + dc })).filter(n => n.r >= 0 && n.r < ROWS && n.c >= 0 && n.c < COLS && !seen.has(n.r * COLS + n.c));
+        const free = n => n.r >= 0 && n.r < ROWS && n.c >= 0 && n.c < COLS && !seen.has(n.r * COLS + n.c);
+        let opts = N4.map(([dr, dc]) => ({ r: pos.r + dr, c: pos.c + dc })).filter(free);
+        // ななめは「たまに」だけ（1歩ごとに3.5%）、決めた回数まで
+        if (dUsed < diag && Math.random() < 0.035) { const d = ND.map(([dr, dc]) => ({ r: pos.r + dr, c: pos.c + dc, d: 1 })).filter(free); if (d.length) opts = d; }
         if (!opts.length) break;
-        pos = opts[Math.floor(Math.random() * opts.length)]; q.push(pos); seen.add(pos.r * COLS + pos.c);
+        pos = opts[Math.floor(Math.random() * opts.length)]; if (pos.d) { dUsed++; pos = { r: pos.r, c: pos.c }; } q.push(pos); seen.add(pos.r * COLS + pos.c);
       }
       if (!cellsOf.every(cs => cs.some(x => seen.has(x)))) continue;
-      if (diag && !q.some((p, k) => k && p.r !== q[k - 1].r && p.c !== q[k - 1].c)) continue;  // ななめのステージは、答えの道に必ずななめを入れる
       const snap = board.map(row => row.slice());
       for (let k = 1; k < q.length; k++) swap(q[k - 1], q[k]);
       if (findWords(board).length) { board = snap; continue; }
