@@ -9244,13 +9244,13 @@ zoom|v2|ズームする・急上昇する`;
       let w = "";
       for (const x of p.cells) w += b[x.r][x.c].ch;
       if (!DICT.has(w)) continue;
-      // 3文字の単語は「基本」の単語だけ（SOU のような知らない3文字語で勝手にコンボしないように）
-      if (w.length === 3 && $("short3").checked && DICT.get(w).tier > 1) continue;
-      // 落ちコンは「基本の単語・4文字以上」だけ（スイッチでオフにできる）
-      if (cascade && !sameCol && $("cascStrict").checked && (DICT.get(w).tier > 1 || w.length < 4)) continue;
       // 色の単語（上に出ているお題とぴったり同じ）をいちばん先に成立させる。ほかの単語に文字を取られて消えないように
       const col0 = b[p.cells[0].r][p.cells[0].c].col;
       const pri = sameCol && cwords[col0] && cwords[col0].w === w ? 2 : sameCol ? 1 : 0;
+      // 3文字の単語は「基本」の単語だけ（SOU のような知らない3文字語で勝手にコンボしないように）。お題の単語は別（英検2級などのパックの3文字語も消える）
+      if (pri < 2 && w.length === 3 && $("short3").checked && DICT.get(w).tier > 1) continue;
+      // 落ちコンは「基本の単語・4文字以上」だけ（スイッチでオフにできる）
+      if (pri < 2 && cascade && !sameCol && $("cascStrict").checked && (DICT.get(w).tier > 1 || w.length < 4)) continue;
       // パズル（パーフェクト・単語トレーニング・デイリー）：色のついた文字は、その色のお題の単語でしか消えない
       // （同じ色の別の単語や、色をまたいだ単語に文字を取られて、お題がそろわなくなるのを防ぐ）
       if (pri < 2 && (isPuzzle() || isDaily()) && p.cells.some(x => b[x.r][x.c].col !== undefined)) continue;
@@ -10738,6 +10738,7 @@ zoom|v2|ズームする・急上昇する`;
   function buildStagePuzzle() {
     const sp = stageSpec(level), full = isFullStage(level);
     for (let tries = 0; tries < 25; tries++) {
+      forceBasic = tries >= 6;
       const used = new Set(stageRecent.slice(-40));
       // 全面ボーナス：前半は5文字×6語を縦に、後半は6文字×2＋3文字×6を横に（30マスぴったり）
       const lens = full ? (level < 35 ? [5, 5, 5, 5, 5, 5] : [6, 6, 3, 3, 3, 3, 3, 3]) : sp.lens;
@@ -10763,6 +10764,7 @@ zoom|v2|ズームする・急上昇する`;
     const k = studyCount();
     const lens = level <= 2 ? [3, 4] : level <= 4 ? [3, 4] : level <= 6 ? [3, 4, 5] : [4, 5, 6];
     for (let tries = 0; tries < 25; tries++) {
+      forceBasic = tries >= 6;
       const used = new Set(studyRecent.slice(-30)), list = [];
       const miss = missList().filter(w => DICT.has(w) && w.length <= COLS && !used.has(w));
       for (let i = 0; i < k; i++) {
@@ -10850,7 +10852,9 @@ zoom|v2|ズームする・急上昇する`;
   }
   function buildDailyBoard(words, Lmin = 12, Lmax = 17, diag = 0, layout = "h") {
     const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], ND = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+    const until = isDaily() ? Infinity : performance.now() + 400;  // 作れない組み合わせで固まらないよう、1回の挑戦は0.4秒まで（デイリーはみんな同じ盤面にするため制限なし）
     for (let tries = 0; tries < 30000; tries++) {
+      if ((tries & 31) === 31 && performance.now() > until) return null;
       for (const t of board.flat()) { delete t.col; t.stone = false; t.ch = randLetter(); }
       const cellsOf = placeWords(words, layout);
       if (!cellsOf) { if (layout === "v" || tries > 400) return null; continue; }
@@ -10880,8 +10884,15 @@ zoom|v2|ズームする・急上昇する`;
     }
     return null;
   }
+  // 単語パックに、その長さの単語が少ないとき（英検2級の3文字語など）は、基本の単語で補う。どんなときも必ず1語返す
+  let entriesCache = null, forceBasic = false;  // forceBasic：何度も作れなかったときは、基本の単語で作りなおす
   function pickDailyWord(len, used) {
-    const pool = [...DICT.entries()].filter(([w, v]) => !NOSHOW.has(w) && (pack() ? inPack(w) : v.tier === 1) && w.length === len && !used.has(w) && [...w].every(ch => WEIGHTS[ch] >= 1));
+    const all = entriesCache || (entriesCache = [...DICT.entries()]);
+    const ok = ([w]) => !NOSHOW.has(w) && w.length === len && !used.has(w) && [...w].every(ch => WEIGHTS[ch] >= 1);
+    let pool = all.filter(e => ok(e) && (pack() && !forceBasic ? inPack(e[0]) : e[1].tier === 1));
+    if (pool.length < 8) pool = pool.concat(all.filter(e => ok(e) && e[1].tier === 1 && !(pack() && inPack(e[0]))));
+    if (!pool.length) pool = all.filter(e => ok(e));
+    if (!pool.length) pool = all.filter(([w]) => w.length === len);
     const [w, v] = pool[Math.floor(Math.random() * pool.length)];
     return { w, ...v };
   }
