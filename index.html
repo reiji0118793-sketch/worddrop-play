@@ -9600,7 +9600,9 @@ zoom|v2|ズームする・急上昇する`;
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   async function resolveTurn() {
     busy = true; turns++;
-    if (paidNav) { paidNav = null; navClear(); }  // アイテムのナビは、指をはなしたら消す
+    // ナビの線（自動・アイテムどちらも）は、指をはなしたら消す
+    paidNav = null; hintStage = 0; navClear();
+    document.querySelectorAll(".navstart").forEach(e => e.classList.remove("navstart"));
     pfRoute = null;
     setStatus("判定中…");
     let combo = 0, damage = 0, gotOdai = false, broke = 0;
