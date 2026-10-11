@@ -281,7 +281,7 @@ html, body { height: 100%; overflow: hidden; }
 .tabbar button.on { color: var(--gold); box-shadow: inset 0 3px 0 var(--gold); }
 .badge { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); font-size: 11px; color: var(--fg); font-variant-numeric: tabular-nums; }
 /* ---------- モードをえらぶ画面 ---------- */
-.modescreen { position: fixed; inset: 0; z-index: 40; overflow-y: auto; background: radial-gradient(circle at 50% 0%, #25305a, var(--bg) 60%); padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(var(--safeB) + 24px); }
+.modescreen { position: fixed; inset: 0; z-index: 40; overflow-y: auto; background: radial-gradient(circle at 50% 0%, var(--mshi, #25305a), var(--bg) 60%); padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(var(--safeB) + 24px); }
 .ms-inner { max-width: 460px; margin: 0 auto; display: grid; gap: 12px; }
 .ms-title { font-family: var(--font-display); font-weight: 800; color: var(--gold); font-size: 34px; letter-spacing: .16em; text-align: center; margin: 8px 0 0; }
 .ms-sub { text-align: center; color: var(--muted); margin: 0 0 6px; font-size: 13px; letter-spacing: .1em; }
@@ -302,6 +302,23 @@ html, body { height: 100%; overflow: hidden; }
 .mc-desc { font-size: 12.5px; line-height: 1.5; color: var(--muted); }
 .mc-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
 .mc-best b { font-family: var(--font-display); color: var(--gold); font-size: 14px; }
+.season { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 14px; border-radius: 14px; border: 2px dashed var(--gold); background: color-mix(in srgb, var(--gold) 12%, var(--panel)); color: var(--fg); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.season b { color: var(--gold); }
+.season .sgo { flex: none; padding: 4px 10px; border-radius: 999px; background: var(--gold); color: #1a1426; font-weight: 900; font-size: 12px; }
+.season.on .sgo { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
+.ms-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 2px 0 0; }
+.ms-badges span { padding: 2px 10px; border-radius: 999px; border: 1px solid var(--gold); color: var(--gold); font-size: 11.5px; font-weight: 700; }
+.theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; margin-top: 8px; }
+.theme-sw { display: grid; gap: 6px; justify-items: center; padding: 10px 6px; border-radius: 12px; border: 2px solid var(--line); background: var(--panel-2); color: var(--fg); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.theme-sw.on { border-color: var(--gold); box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 40%, transparent); }
+.theme-sw i { width: 100%; height: 34px; border-radius: 8px; background: var(--sw); border: 1px solid rgba(255,255,255,.12); }
+.theme-sw small { color: var(--muted); font-size: 11px; font-weight: 500; }
+.sharebtn { background: linear-gradient(#7cc4ff, #3f86d9); color: #061a33; border: 0; font-weight: 900; }
+body[data-theme="sakura"] { --bg: #26161f; --panel: #36202d; --panel-2: #43283a; --line: #6a3d58; --gold: #f2a6c6; --boardbg: #1d1018; --boardline: #43283a; --mshi: #4a2a3d; }
+body[data-theme="ocean"] { --bg: #0b1d2a; --panel: #112c40; --panel-2: #16384f; --line: #245272; --gold: #6fd3e8; --boardbg: #081620; --boardline: #16384f; --mshi: #174060; }
+body[data-theme="forest"] { --bg: #0f1f17; --panel: #173023; --panel-2: #1d3b2b; --line: #2f5a41; --gold: #b9e07a; --boardbg: #0a1710; --boardline: #1d3b2b; --mshi: #21452f; }
+body[data-theme="sunset"] { --bg: #24140f; --panel: #361f17; --panel-2: #43271c; --line: #6b3f2b; --gold: #ffb35c; --boardbg: #1a0e0a; --boardline: #43271c; --mshi: #4f2b1c; }
+body[data-theme="royal"] { --bg: #1a1230; --panel: #271b45; --panel-2: #302155; --line: #4b3680; --gold: #e0c36a; --boardbg: #120c24; --boardline: #302155; --mshi: #3a2766; }
 .ms-note { text-align: center; font-size: 11.5px; color: var(--muted); margin: 4px 0 0; }
 .modechip { --c: #7fb7ff; cursor: pointer; font: inherit; font-size: 12px; }
 .modechip::after { content: " ▾"; font-size: 10px; }
@@ -560,7 +577,7 @@ body { margin: 0; }
 .view.game .odai .timer { margin: 4px -4px 0; height: 5px; border-radius: 3px; }
 .view.game .recent { display: none; }
 .view.game .status { min-height: 2.4em; font-size: 12px; line-height: 1.3; }
-.view.game .board { border-width: 0; border-radius: 10px; padding: 0; background: #0e1326; box-shadow: inset 0 0 0 2px #232b4d; }
+.view.game .board { border-width: 0; border-radius: 10px; padding: 0; background: var(--boardbg, #0e1326); box-shadow: inset 0 0 0 2px var(--boardline, #232b4d); }
 .view.game .tile .face { width: 93%; height: 93%; border-radius: 16%; }
 .view.game .board { margin-block: auto; }
 /* 下の常設広告（バナー）：タブとの間にすき間をあけて、押しまちがいを防ぐ */
@@ -652,6 +669,7 @@ body:not(.playing) .modescreen { padding-bottom: calc(var(--safeB) + 80px + var(
           <div class="end-actions">
             <button id="contBtn" class="adbtn" type="button" hidden>▶ 広告を見てコンティニュー<small id="contNote"></small></button>
             <button id="bonusBtn" class="adbtn" type="button" hidden>▶ 広告を見てナビ＋1</button>
+            <button id="shareBtn" class="sharebtn" type="button">結果をシェア</button>
             <button id="againBtn" class="primary" type="button">もう一度遊ぶ</button>
             <button id="toModeBtn" type="button">モードをえらぶ</button>
             <button id="toBookBtn" type="button">単語帳を見る</button>
@@ -764,6 +782,10 @@ body:not(.playing) .modescreen { padding-bottom: calc(var(--safeB) + 80px + var(
           <option value="eiken3">英検3級レベル（中学卒業程度）</option>
           <option value="eikenp2">英検準2級レベル（高校中級程度）</option>
           <option value="eiken2">英検2級レベル（高校卒業程度）</option>
+          <option value="spring">期間限定：春の単語</option>
+          <option value="summer">期間限定：夏の単語</option>
+          <option value="autumn">期間限定：秋・ハロウィンの単語</option>
+          <option value="winter">期間限定：冬・クリスマスの単語</option>
         </select>
       </label>
       <label>アシスト
@@ -797,6 +819,11 @@ body:not(.playing) .modescreen { padding-bottom: calc(var(--safeB) + 80px + var(
       </div>
     </div>
     <div class="card">
+      <h2>盤面のテーマ</h2>
+      <p class="sub">広告を1回見ると、そのテーマがずっと使えるようになります</p>
+      <div class="theme-grid" id="themeGrid"></div>
+    </div>
+    <div class="card">
       <h2>ルール（試作版）</h2>
       <ol class="rules">
         <li>文字をつかんでなぞる。<b>最初に動かした瞬間から時間が減る</b></li>
@@ -826,6 +853,8 @@ body:not(.playing) .modescreen { padding-bottom: calc(var(--safeB) + 80px + var(
     <div class="ms-inner">
       <h1 class="ms-title">WORD DROP</h1>
       <p class="ms-sub">英単語ドロップ ・ モードをえらぶ</p>
+      <div class="ms-badges" id="msBadges"></div>
+      <button type="button" class="season" id="seasonBtn" hidden></button>
       <button type="button" class="mode-card" data-mode="stage" style="--mc:#e06aa8">
         <span class="mc-art" aria-hidden="true"><i class="mt k0">P</i><i class="mt k1">E</i><i class="mt k2">R</i><i class="mt k3">F</i></span>
         <span class="mc-body">
@@ -846,8 +875,16 @@ body:not(.playing) .modescreen { padding-bottom: calc(var(--safeB) + 80px + var(
         <span class="mc-art" aria-hidden="true"><i class="mt k3">D</i><i class="mt k0">A</i><i class="mt k1">Y</i><i class="mt k4">!</i></span>
         <span class="mc-body">
           <b class="mc-name">デイリー <small id="dailyDate"></small></b>
-          <span class="mc-desc">8色の単語がごちゃまぜの盤面に、1回なぞるだけで全部消える「天才の1手」がかくれている（全10問）。問題は毎日0時に入れかわり、みんな同じ。今日のベストを目指そう</span>
+          <span class="mc-desc">8色の単語がごちゃまぜの盤面に、1回なぞるだけで全部消える「天才の1手」がかくれている。10問のあとは<b>エクストラ</b>がずっと続く。問題は毎日0時に入れかわり、みんな同じ</span>
           <span class="mc-meta"><span id="dailyStreak">連続 0日</span><span class="mc-best">今日のBEST <b data-best="daily">0</b></span></span>
+        </span>
+      </button>
+      <button type="button" class="mode-card" data-mode="review" id="reviewCard" style="--mc:#2bb3a6" hidden>
+        <span class="mc-art" aria-hidden="true"><i class="mt k1">R</i><i class="mt k1">E</i><i class="mt k1">V</i><i class="mt">復</i></span>
+        <span class="mc-body">
+          <b class="mc-name">復習 <small>まちがえた単語だけ</small></b>
+          <span class="mc-desc">単語トレーニングでまちがえた単語だけが出てくる。全部正解すると「復習コンプリート！」</span>
+          <span class="mc-meta"><span id="reviewCount">0語</span><span>ライフ3つ</span></span>
         </span>
       </button>
       <p class="ms-note" id="msNote"></p>
@@ -9036,10 +9073,24 @@ zoom|v2|ズームする・急上昇する`;
   const dailyInfo = () => { try { return JSON.parse(localStorage.getItem(DAILY_KEY) || "null") || { last: "", streak: 0 }; } catch (e) { return { last: "", streak: 0 }; } };
   // 単語パック：お題・色の単語をこの中から出す。英検3級レベルは独自に選んだ中学卒業程度の単語（公式の単語リストではない）
   const PACKS = {
+    spring: { name: "期間限定：春の単語", season: true, words: new Set("SPRING BLOOM FLOWER ROSE LILY TULIP DAISY SEED GROW GREEN GRASS LEAF BUD RAIN CLOUD SUN SUNNY WARM BIRD NEST EGG BEE WING FLY FRESH NEW START SCHOOL CLASS FRIEND MEET PICNIC PARK WALK BREEZE WIND KITE PINK PEACH CHERRY GARDEN PLANT FARM LAMB SHEEP RABBIT BUNNY FROG POND STREAM RIVER SKY BLUE LIGHT DAWN SMILE HAPPY HOPE LIFE BIRTH BABY CHICK DUCK SWAN SING SONG DANCE APRIL MARCH MAY MORNING EASTER BASKET BRIGHT GENTLE CALM DREAM BEGIN FIELD MEADOW BLOSSOM PETAL SPROUT ROBIN LADDER CLEAN OPEN DESK PENCIL TEACHER LESSON".split(" ")) },
+    summer: { name: "期間限定：夏の単語", season: true, words: new Set("SUMMER SUN HOT HEAT BEACH SEA SAND WAVE SURF SWIM POOL SHIP BOAT SAIL ISLAND SHELL FISH CRAB SHARK WHALE CORAL OCEAN BLUE SKY CLOUD STORM RAIN CAMP TENT FIRE STAR NIGHT MOON FAN ICE JUICE MELON LEMON LIME MANGO PEACH FRUIT HAT CAP TOWEL TRIP TRAVEL TRAIN MAP ROAD HIKE HILL LAKE RIVER BUG BEE ANT FROG DIVE SPLASH WET DRY TAN SWEAT THIRST SODA COLA SNACK PARTY DRUM DANCE JULY AUGUST HOLIDAY SUNSET SHORE TIDE SEAGULL DOLPHIN PALM TROPIC SHADE COOL SPARK FLASH THUNDER CANDY PICNIC GRILL CORN".split(" ")) },
+    autumn: { name: "期間限定：秋・ハロウィンの単語", season: true, words: new Set("GHOST WITCH MAGIC SPELL CANDY TRICK TREAT MASK SCARY SPOOKY BAT CAT OWL MOON NIGHT DARK SHADOW BONE SKULL GRAVE HAUNT MONSTER PUMPKIN COSTUME PARTY FALL LEAF MAPLE HARVEST APPLE CORN NUT ACORN BROWN ORANGE RED GOLD WIND COOL CHILL FOG MIST HOOD CLOAK BROOM POT FIRE CANDLE FEAST PIE GRAPE PEAR RICE CROP FARM HAY BARN SCARE SCREAM HOWL WOLF SPIDER WEB CROW RAVEN CAVE TOMB CURSE POTION WIZARD BLACK MOVIE READ BOOK SPORT RUN AUTUMN OCTOBER BAKE CIDER".split(" ")) },
+    winter: { name: "期間限定：冬・クリスマスの単語", season: true, words: new Set("SNOW ICE COLD FROST STAR BELL GIFT TREE CAKE SANTA SLED SKI SKATE SCARF GLOVE COAT BOOT WARM FIRE HOT COCOA TEA MILK CANDLE LIGHT ANGEL CAROL SING SONG JOY PEACE LOVE WISH HOPE DREAM NIGHT HOLY CHURCH NEW YEAR WREATH RIBBON BOX TOY DOLL BEAR DEER PINE NORTH POLE WHITE RED GREEN GOLD SILVER SHINE GLOW SWEET COOKIE BAKE PARTY FEAST TURKEY HAM MERRY JOLLY SOCK STOVE ICY WINTER FREEZE CHILL BLANKET SLEIGH ELF KING CROWN FAMILY HOME STORY QUIET SILENT".split(" ")) },
     eiken2: { name: "英検2級レベル", words: new Set("ABIDE ABSENT ABSORB ABSURD ACCORD ACCUSE ACNE ACRE ADAPT ADHERE ADMIRE ADORE ADVENT AERIAL AIDE AISLE ALAS ALGAE ALIGN ALLEY ALLOY ALMOND ALOUD ALTAR AMAZED AMBER AMBUSH AMEND AMPLE AMUSED ANALOG ANKLE ANNEX ANTHEM APEX APT ARCADE ARCHER ARISE ARK ARMOR ARTERY ASHORE ASSERT ASSIGN ASTHMA ATLAS ATOM ATOMIC ATOP ATTACH ATTAIN ATTIC AURA AVAIL AVATAR AVID AWAIT AWE AWHILE AXE BAIT BAKE BAKERY BAKING BALD BALLET BAMBOO BANKER BARBER BARGE BARK BARN BARON BASH BASICS BASIL BATON BATTER BEACON BEAN BEAVER BEETLE BENIGN BENT BERRY BEWARE BINARY BIND BINGE BINGO BIRCH BITING BLAND BLAZE BLEACH BLEED BLEND BLINK BLISS BLITZ BLOND BLOOM BLUFF BLUNT BLUR BLUSH BOAST BODILY BOIL BOILER BORE BOUNTY BOXER BRACE BRAKE BRAVO BRAWL BREEZE BREW BREWER BRIBE BRIDAL BRINK BROKER BROOK BROW BROWSE BUCKLE BUFF BUFFER BUFFET BULB BULLY BUMP BUMPER BUN BUNDLE BUNKER BUNNY BURNER BURY BYPASS CAB CACHE CALF CALLER CALMLY CAMEL CANDLE CANE CANNED CANOE CANOPY CANVAS CANYON CARROT CART CATER CAVITY CEDAR CELLAR CEMENT CEREAL CHALK CHAMP CHANT CHEEK CHEEKY CHEESY CHESS CHEW CHIC CHILI CHILLY CHOIR CHOKE CHOP CHORD CHORUS CHROME CHUNK CIDER CIRCUS CITE CITRUS CLAN CLAP CLASH CLASSY CLAUSE CLAW CLERGY CLIMAX CLOAK CLONE CLOUDY CLOWN CLUTCH COBRA COCOA COIL COLA COLON COMB COMBO COMET CONE CONSUL CONVEY CONVOY COOLER CORAL CORD CORK CORTEX COSMIC COSMOS COSTLY COUGH COUPON COVE COVERT COWARD COWBOY COZY CRAB CRADLE CRANE CRANK CRATER CRAWL CREED CREEP CREST CRINGE CRISP CRITIC CROW CRUNCH CRUST CUBE CUBIC CUE CUFF CURB CURL CURLY CURRY CUTTER DAISY DAMP DANCER DARING DART DEAF DEBIT DEBRIS DECAY DECOR DECREE DEED DEFECT DELUXE DEMISE DENIAL DENIM DENSE DENT DEPART DEPLOY DEPOT DEVOTE DEW DIAL DICE DIGEST DIGIT DIM DIME DIRE DITCH DOCK DODGE DOME DONKEY DONOR DOOM DOSAGE DOUGH DOVE DRAWER DREAD DRIFT DRIP DROWN DRYER DUCT DUEL DULL DUMMY DUNK DUSTY DWARF DWELL DYE EDIBLE EIGHTY ELBOW ELDEST ELF EMBLEM EMERGE EMPLOY ENDURE ENVY ENZYME EQUIP ERASE ERECT ESTEEM ETHIC EVENLY EVOLVE EXCEED EXCEL EXILE EXODUS EXOTIC EXPIRE EXPOSE FADE FADED FAINT FALCON FAMINE FANDOM FARE FATTY FAULTY FAUNA FEAST FEAT FETCH FEUD FIERCE FIERY FIN FINCH FINELY FINITE FIST FLANK FLARE FLAW FLEE FLEX FLICK FLINT FLIRT FLOAT FLOCK FLOP FLORA FLORAL FLU FLUENT FLUFFY FLUSH FLUTE FLUX FLYER FOAM FOCAL FOE FOG FOIL FOLDER FOND FONT FORBID FORE FORGE FOSSIL FRINGE FROST FRY FUNGUS FURRY FURY FUSE FUSS FUZZY GAG GALE GALLON GAMBLE GAMMA GARLIC GARNER GAZE GEL GEM GIFTED GIG GILL GINGER GLADLY GLANCE GLOVE GLOW GLUE GLUTEN GOOFY GOOSE GOSSIP GOVERN GOWN GRAM GRANNY GRAPE GRASP GRAVEL GREASE GREEDY GREET GRILL GRIM GRIN GRIND GROOM GROOVE GROVE GUILD GUM GURU HAIL HAIRY HALO HALT HAMLET HANDY HARDEN HARDY HARE HASH HASSLE HATCH HAUL HAUNT HAVOC HAWK HAY HAZARD HAZEL HEADER HEAP HEATER HEDGE HEEL HEIR HELM HERALD HERB HERD HEREBY HEROIC HIKE HIKING HITTER HIVE HOAX HOBBY HOG HOLLOW HOLLY HOMAGE HOOKED HOSE HOURLY HUMANE HUMID HUSTLE HUT HYMN ICY IDLE IDOL IMPLY IMPOSE INDUCE INFANT INFLUX INLAND INNING INSECT INSULT INTACT INTAKE INTERN INVADE INVENT IRIS IRONIC IRONY ISLE IVORY IVY JADE JAGUAR JAR JAW JEEP JELLY JEWEL JOCKEY JOKER JOLLY JUICY JUMPER KARMA KERNEL KETTLE KINDLE KITE KITTEN KITTY KNIT KNOT LACE LAD LADEN LAG LANCE LASTLY LAUREL LAVA LAWFUL LAWN LEAP LEGGED LEGION LENDER LEVER LEVY LIABLE LICK LID LIKING LILY LIMB LIME LINEN LINER LINING LITTER LIVELY LIZARD LOCATE LOCKER LOFT LONE LORE LOTUS LOUDLY LOUNGE LUMBER LUMP LUNAR LURE LUSH LYRIC MADAM MAGNET MAID MAIDEN MANGO MANLY MANOR MANTLE MANTRA MAPLE MARBLE MARINA MARKER MARROW MARSH MART MASCOT MASH MASKED MAST MAT MAZE MEADOW MELODY MELT MEMO MEMOIR MENACE MENTOR MERGER MERRY MESH MESSY METEOR METRIC MIDST MIDWAY MILKY MINER MINT MIST MISTER MISUSE MIXER MOCK MODIFY MODULE MOIST MOLD MOLE MOMMY MOODY MOOSE MORALE MORTAL MORTAR MOSAIC MOSS MOTEL MOTH MOTIVE MOTTO MOUND MUDDY MUG MUMMY MUSE MUTANT MUTE MYSTIC NAIVE NANNY NAP NEEDLE NEEDY NEURAL NICHE NICKEL NIECE NINETY NOD NODE NOISY NORM NOTCH NOTIFY NOUN NULL NUMB OASIS OATH OBEY OCCUPY ODDLY OFFEND OFFSET OMEGA ONION ONSET OPENER OPPOSE OPTIC OPTICS ORACLE ORPHAN OUNCE OUTING OUTLAW OVAL OVERLY OWING OXIDE OYSTER PACKET PACT PADDY PAL PANDA PAPA PARCEL PARDON PARODY PAROLE PASTA PASTE PASTRY PATRON PATTY PAVED PAWN PAYDAY PEA PEACH PEANUT PEDAL PEEK PEEL PENCIL PEST PICKUP PICNIC PIER PIERCE PIGEON PILLAR PILLOW PINCH PINT PIRACY PIRATE PITY PIVOT PLAQUE PLASMA PLAZA PLEA PLEAD PLUM PLURAL PODIUM POETIC POKE POKER POLAR POLITE POLO POND PONY POPPY PORCH PORTER POSTAL POTENT PRANK PREACH PREY PRIMER PROBE PROM PROMPT PRONE PROP PROSE PROXY PUFF PULP PUN PUNISH PUP PUPIL PUPPET PURGE PURITY PURSE PUZZLE QUARRY QUARTZ QUERY QUEUE QUIZ QUOTA RACK RADIUS RAG RAINY RAMP RANGER RANT RASH RAVE RAVEN RAZOR REAP RECESS RECKON REDEEM REEF REEL REFUGE REFUND REGAIN RELAY REMAKE REMARK REMEDY RENDER RENEW REPAY REPEAL REPLAY RESET RESIDE RESIGN RESIN REVIVE REVOLT RHYME RIB RIBBON RICHES RIFT RIG RIGID RIM RIPE RISKY RITE ROAR ROAST ROBE ROBUST ROGUE ROLLER ROOTED ROT ROTARY ROTATE ROTTEN ROVER RUB RUBY RUG RUGGED RULER RUMOR RUNOFF RUNWAY RUST RUSTY SACK SADDLE SAFARI SAGA SAGE SAILOR SALON SALTY SALUTE SANE SATIRE SAVIOR SAVVY SCAM SCAR SCARCE SCARF SCENIC SCENT SCOOP SCORER SCOUT SCRAP SCROLL SCRUB SEDAN SEIZE SELDOM SENSOR SEQUEL SERMON SERUM SEWAGE SEWER SEWING SHADY SHAFT SHAVE SHIN SHINY SHOVE SHOVEL SHRIMP SHRINE SHRINK SIEGE SIGH SIP SIXTY SKATE SKIING SKINNY SKIRT SLACK SLANG SLAP SLASH SLATE SLEEPY SLEEVE SLICK SLOGAN SLOPE SLOPPY SMACK SNACK SNAIL SNATCH SNEAK SNEAKY SOAK SOAKED SOBER SOCK SOCKET SODIUM SOFA SOFTLY SONIC SORE SORROW SOUR SOY SPA SPARK SPEAR SPEC SPEEDY SPHERE SPICE SPICY SPIKE SPILL SPINAL SPINE SPIRAL SPIT SPLASH SPOIL SPONGE SPOOKY SPOON SPOUSE SPREE SPRINT SPUR SQUASH STAIN STALL STAPLE STARE STARVE STEAK STEEP STEER STEREO STERN STICKY STIFF STIGMA STING STIR STITCH STOOL STOVE STRAIT STRAND STRAP STRAW STRAY STRIPE STRIVE STROLL STUNT SUBSET SUBURB SUMMON SUPERB SUPPER SURF SURGE SWAMP SWAN SWAP SWAY SWEEP SWELL SWIPE SYRUP TAB TACO TAILOR TALLY TAME TANDEM TANGO TASTY TAVERN TEASE TEMPER TEMPO TENANT TENSE TENTH TENURE THIEF THIGH THIRST THRILL THRIVE THRUST TICK TIDAL TIDY TILE TILT TIMELY TIMER TOAST TOKEN TOMATO TORCH TOSS TOW TOWEL TRACT TRADER TRAIT TRAY TREAD TREK TRENCH TRICKY TRIM TRIO TROLL TROOP TROUT TRUCE TUB TUCK TUG TUNA TURF TURTLE TUTOR TWITCH UNDO UNEVEN UNFIT UNITE UNLOCK UNPAID UNREAL UNREST UNSAFE UNSEEN UNSURE UNUSED UPBEAT UPHOLD UPWARD USABLE USHER UTMOST UTTER VACANT VAGUE VAIN VANITY VAPOR VASE VASTLY VAULT VECTOR VEGAN VEIL VEIN VELVET VENDOR VENOM VENT VERB VERBAL VERGE VERIFY VEST VET VETO VIABLE VIEWER VILE VINE VIOLA VIOLET VIOLIN VIRTUE VISTA VIVID VOGUE VOW VOYAGE WADE WAGON WAIST WAITER WALNUT WANDER WARDEN WARMTH WARP WARY WATT WAX WEARY WEAVE WEAVER WED WEDGE WEIGH WHALE WHOLLY WICKED WIG WILDLY WILLOW WINDY WINK WIRING WISELY WIT WITTY WIZARD WOO WOODY WOOL WORM WRATH WRECK YACHT YARN YEARLY YEAST YELL YOGURT YUMMY ZINC ZIP ZOMBIE ZOOM".split(" ")) },
     eikenp2: { name: "英検準2級レベル", words: new Set("ABOARD ACCENT ACE ACID ACTUAL ACUTE ADJUST ADMIT ADOPT ADVISE AFFAIR AFFECT AFFORD AGED AGENCY AGENDA AGING AID AIM ALARM ALERT ALIEN ALIKE ALLIED ALLY ALPHA ALTER ANCHOR ANGLE ANNUAL ANTI APPEAL ARC ARCH ARCTIC ARENA ARGUE ARMED ARMS ARRAY ARREST ASH ASPECT ASSESS ASSET ASSIST ASSUME ASSURE AUDIO AUDIT AUNT AUTUMN AWAKE AWARE AXIS BACKUP BACON BADGE BAKER BALLOT BANANA BANG BANNER BARE BARELY BARREL BASIN BASIS BASKET BASS BEAM BEARD BEAST BEATEN BEEF BEG BEHALF BEHAVE BELIEF BELLY BELONG BEND BET BETA BEYOND BIAS BID BIN BITTER BLADE BLAME BLANK BLAST BLESS BLIND BOLD BOLT BOND BONUS BOOST BOOT BOOTH BORROW BOUNCE BOUND BOUT BOW BOXING BRAND BRASS BREACH BREED BRICK BRIDE BRIEF BROAD BRONZE BRUSH BRUTAL BUBBLE BUCK BUCKET BUD BUDGET BUG BULK BUNCH BURDEN BUREAU BURNT BURST BUYER BUZZ CABIN CABLE CAFE CAGE CAMPUS CANAL CANCEL CANDY CANNON CAPE CARBON CARGO CAROL CARPET CAST CASUAL CATTLE CAVE CEASE CELL CENSUS CHAOS CHAPEL CHARM CHEAT CHEER CHEF CHERRY CHILL CHIN CHIP CINEMA CIVIC CIVIL CLAIM CLAY CLERK CLIENT CLIFF CLINIC CLIP CLOSET CLOTH CLUE COAL COLLAR COLONY COLUMN COMBAT COMMIT COMPLY CON COOKIE COPE COPPER CORE CORN CORPS COTTON COUCH COUNTY CRAFT CREEK CREW CRISIS CROP CRUEL CRUISE CRUSH CURE CURVE CUSTOM DAIRY DAM DASH DATED DAWN DEADLY DEALER DEBT DEBUT DECADE DECENT DECK DEFEAT DEFEND DEFINE DEGREE DELAY DELTA DEMAND DEN DENTAL DENY DEPEND DEPTH DEPUTY DESIRE DETECT DEVICE DIARY DIESEL DIET DIFFER DIP DIRECT DIRT DISC DISH DISK DIVE DIVIDE DIVINE DIVING DOLL DOMAIN DOSE DOT DRAFT DRAG DRAIN DRIED DRILL DRONE DRUM DUAL DUCK DUMP DUO EAGER EAGLE EASE ECHO EDIT EDITOR EFFECT EIGHTH ELDER ELECT ELEVEN ELITE ENABLE ENSURE ENTIRE ENTITY EPIC EQUITY ERA ESCORT ESSAY ESTATE ETHICS ETHNIC EXACT EXAM EXCESS EXIST EXPAND EXPERT EXPORT EXTEND EXTENT FABRIC FACIAL FACTOR FAIRY FAME FANCY FARMER FATE FAULT FEE FELLOW FEMALE FENCE FERRY FEVER FIBER FIFTH FIFTY FIG FILING FILTER FINALE FIRING FIRMLY FISCAL FISHER FITTED FIXED FLAME FLASH FLAVOR FLEET FLESH FLIP FLOUR FLUID FOLD FOLK FOOL FORK FORMAT FORMER FORT FORTH FORTY FORUM FOSTER FOUL FRAME FREELY FREEZE FRIDGE FRIED FUEL FUND FUR FUSION GAIN GALAXY GARAGE GATHER GAUGE GEAR GENDER GENE GENIUS GENRE GENTLY GLOBAL GLOBE GLORY GOAT GOSPEL GRACE GRAIN GRANT GRAPH GRAVE GRID GRIEF GRIP GROSS GUILT GUILTY GULF GUT HABIT HACK HAM HAMMER HANDLE HARBOR HARSH HAVEN HEATED HELMET HENCE HIGHLY HINT HIP HIRE HOLDER HOOD HOOK HOP HORN HUB HUG HULL HUMBLE HUMOR HUNGER HUNTER HURRY HYBRID HYPE ICON IDEAL IGNORE IMMUNE IMPORT INCOME INDEX INDOOR INFORM INJURY INN INNER INPUT INSERT INSIST INTEND INTENT INVEST ISSUE ITEM JAM JET JOINT JUNGLE JUNK JURY KEEN KEEPER KIDNEY KINDLY KNIGHT LABOR LADDER LAMB LAMP LANE LAP LASER LATELY LATTER LAUNCH LAYER LAZY LEAF LEAGUE LEAK LEAN LEASE LEGACY LEGAL LEGEND LENS LESSER LIAR LIMIT LINEAR LINEUP LIVER LOAD LOADED LOAN LOBBY LODGE LOGIC LONELY LOOP LOOSE LORD LOSER LOYAL LUNG LUXURY MAJOR MAKER MALE MALL MAMA MANNER MANUAL MARGIN MARINE MARKED MARVEL MASS MATE MATRIX MATURE MAYOR MEDIAN MEDIUM MENTAL MENU MERCY MERE MERELY MERIT METER METHOD METRO MIGHTY MILD MILL MINI MINING MINOR MINUS MIXED MOB MODE MODEST MONKEY MORAL MOTION MOTOR MOUNT MUD MUSCLE MUTUAL MYTH NAIL NAMELY NARROW NATIVE NAVAL NAVY NEPHEW NERVE NEWLY NICELY NINTH NOBLE NOTED NOTION NOVEL OAK OBTAIN OCCUR ODD ODDS OLIVE OPENLY OPERA OPTION ORAL ORBIT ORE ORGAN ORIGIN OUTER OUTFIT OUTLET OUTPUT OVEN OWE OXYGEN PACE PAD PALE PALM PANEL PANIC PAR PARADE PATCH PATENT PATROL PAUSE PEAK PEARL PEER PENNY PEPPER PERIOD PERMIT PETTY PHASE PHRASE PILE PILL PINE PIPE PITCH PLAIN PLEDGE PLENTY PLOT PLUG POEM POET POETRY POISON POLE POLICY POLISH POLL POORLY PORK PORT PORTAL POSE POSTER POT POTATO POUND POUR POWDER PRAISE PRAYER PRIDE PRIEST PRIME PRIOR PROFIT PROOF PROPER PROVEN PULSE PUMP PUPPY PURE PURELY PURSUE QUOTE RABBIT RADAR RAGE RAID RAIL RALLY RANCH RANDOM RANK RAP RAPID RARELY RATE RATING RATIO RAW RAY REACT REALM REAR REBEL RECALL REDUCE REED REFER REFORM REFUSE REGARD REGIME REGION REGRET REIGN REJECT RELATE RELAX RELIEF RELY REMAIN REMOTE RENTAL RESIST RESORT RESUME RETAIL RETAIN RETIRE REVEAL REWARD RHYTHM RIDER RIDGE RIP RITUAL RIVAL ROB ROBOT ROCKY ROD ROOKIE ROPE ROSTER ROUGH ROUTE ROYAL RUBBER RUDE RUIN RUINED RULING RUNNER RURAL SACRED SADLY SAFELY SAINT SAKE SALAD SALARY SALMON SAMPLE SANDY SCALE SCAN SCARE SCARY SCHEME SCOPE SCREAM SCRIPT SEAL SEALED SECTOR SECURE SEEK SELECT SELLER SENATE SENIOR SERIAL SETTLE SETUP SEVERE SHADE SHARK SHED SHEEP SHEER SHELF SHIELD SHIFT SHINE SHOE SHORE SHORTS SHOUT SIGNAL SILK SINK SIXTH SKETCH SKI SKIP SKULL SLAM SLICE SLIDE SLIGHT SLIM SLIP SLOT SMASH SMOOTH SNAP SOAP SODA SOIL SOLAR SOLE SOLELY SOLID SOUP SOURCE SPAM SPAN SPARE SPIDER SPIRIT SPITE SPLIT SPRAY SPY SQUAD STABLE STACK STAFF STAIR STAKE STAMP STANCE STARK STATIC STATUE STATUS STEADY STEAM STEEL STEM STOCK STRAIN STREAK STRESS STRICT STRIKE STRING STRIP STROKE STUCK SUBMIT SUBTLE SUBWAY SUE SUITE SUM SUMMIT SUNNY SUNSET SUPPLY SURVEY SWEAT SWIFT SWORD SYMBOL TABLET TACKLE TAG TALE TAN TAP TAXI TEAR TEENS TEND TENDER TERM THEME THEORY THESIS THREAD THREAT THROAT THRONE THUMB THUS TIDE TIER TIGHT TILL TIMBER TIMING TIN TIRE TISSUE TITLED TOLL TON TONE TOOTH TORN TRACE TRACK TRADE TRAIL TRAP TREATY TREND TRIAL TRIBAL TRIBE TRIPLE TROPHY TRULY TRUNK TUBE TUNE TUNNEL TWEET TWIST UNABLE UNFAIR UNION UNIQUE UNIT UNITY UPDATE UPPER UPSET UPSIDE URBAN URGE URGENT USAGE VACUUM VALID VALUED VALVE VAN VARIED VARY VAST VENUE VERSE VESSEL VICE VICTOR VILLA VINYL VIRAL VISA VISION VISUAL VITAL VOCAL VOID VOLUME VOTER WAGE WALLET WARD WARN WASTE WEALTH WEIRD WHEAT WHIP WIDELY WIDTH WIPE WIRE WISDOM WITCH WOODS WORN WORTH WORTHY WOUND WRAP WRIST YARD YIELD YOGA ZOO".split(" ")) },
     eiken3: { name: "英検3級レベル", words: new Set("ABLE ABOUT ABOVE ABROAD ACCEPT ACCESS ACROSS ACT ACTING ACTION ACTIVE ACTOR ADD ADULT ADVICE AFRAID AFTER AGAIN AGE AGENT AGO AGREE AGREED AHEAD AIR ALBUM ALIVE ALL ALLOW ALMOST ALONE ALONG ALSO ALWAYS AMONG AMOUNT AND ANGEL ANGER ANGRY ANIMAL ANSWER ANT ANY ANYWAY APART APPEAR APPLE APPLY ARE AREA ARM ARMY AROUND ARRIVE ARROW ART ARTIST ASIDE ASK ASLEEP ATE ATTACK ATTEND AUGUST AUTHOR AVENUE AVOID AWARD AWAY AWFUL BABY BACK BAD BADLY BAG BALL BAN BAND BANK BAR BASE BASIC BAT BATH BATTLE BAY BEACH BEAR BEAT BEAUTY BECOME BED BEE BEFORE BEGIN BEHIND BEING BELL BELOW BELT BENCH BEST BETTER BIG BILL BIRD BIRTH BIT BITE BLACK BLOCK BLOOD BLOW BLUE BOARD BOAT BODY BONE BOOK BOOM BORDER BORING BORN BOSS BOTH BOTHER BOTTLE BOTTOM BOWL BOX BOY BRAIN BRANCH BRAVE BREAD BREAK BREATH BRIDGE BRIGHT BRING BROKE BROKEN BROWN BUDDY BUILD BUILT BULL BURN BUS BUSH BUSY BUT BUTTER BUTTON BUY CAKE CALL CALM CAMERA CAMP CAN CAP CAR CARD CARE CAREER CARRY CASE CASH CASTLE CAT CATCH CAUSE CENT CENTER CHAIN CHAIR CHANCE CHANGE CHARGE CHART CHASE CHAT CHEAP CHECK CHEESE CHEST CHIEF CHILD CHINA CHOICE CHOOSE CHOSEN CHURCH CIRCLE CITY CLASS CLEAN CLEAR CLEVER CLICK CLIMB CLOCK CLOSE CLOUD CLUB COACH COAST COAT CODE COFFEE COIN COLD COLOR COME COMEDY COMIC COMING COMMON COOK COOL COPY CORNER COST COUNT COUPLE COURSE COURT COUSIN COVER COW CRACK CRASH CRAZY CREAM CREATE CREDIT CRIME CROSS CROWD CROWN CRY CRYING CUP CUT CUTE CYCLE DAD DAILY DAMAGE DANCE DANGER DARE DARK DATA DATE DAY DAYS DEAD DEAL DEAR DEATH DEBATE DECIDE DEEP DEEPLY DEER DESERT DESIGN DESK DETAIL DIE DIG DINNER DIRTY DOCTOR DOG DOLLAR DONE DOOR DOUBLE DOUBT DOWN DOZEN DRAGON DRAMA DRAW DRAWN DREAM DRESS DREW DRINK DRIVE DRIVEN DRIVER DROP DROVE DRY DUE DUST DUTY DYING EACH EAR EARLY EARN EARTH EASILY EAST EASY EAT EDGE EFFORT EGG EIGHT EITHER EMPIRE EMPTY END ENDING ENEMY ENERGY ENGAGE ENGINE ENJOY ENOUGH ENTER ENTRY EQUAL ERROR ESCAPE EVE EVEN EVENT EVER EVERY EVIL EXCEPT EXCUSE EXIT EXPECT EXTRA EYE FACE FACED FACING FACT FAIL FAIR FAIRLY FAITH FAKE FALL FALLEN FALSE FAMILY FAMOUS FAN FAR FARM FAST FAT FATHER FAVOR FEAR FED FEED FEEL FELL FELT FEW FIELD FIGHT FIGURE FILE FILL FILM FINAL FIND FINE FINGER FINISH FIRE FIRM FIRST FISH FIT FIVE FIX FLAG FLAT FLIGHT FLOOD FLOOR FLOW FLOWER FLY FLYING FOCUS FOLLOW FOOD FOOT FOR FORCE FORCED FOREST FORGET FORM FORMAL FOUND FOUR FOURTH FOX FREE FRESH FRIEND FROG FROM FRONT FROZEN FRUIT FULL FULLY FUN FUNNY FUTURE GAME GAMING GAP GARDEN GAS GATE GENTLE GET GHOST GIANT GIFT GIRL GIVE GIVEN GLAD GLASS GOAL GOING GOLD GOLDEN GOLF GONE GOOD GRAB GRADE GRAND GRASS GRAY GREAT GREEN GROUND GROUP GROW GROWN GROWTH GUARD GUESS GUEST GUIDE GUITAR GUN GUY GYM HAIR HALF HALL HAND HANG HAPPEN HAPPY HARD HARDLY HARM HAT HATE HAVE HEAD HEADED HEAL HEALTH HEAR HEARD HEART HEAT HEAVEN HEAVY HEIGHT HELD HELLO HELP HEN HER HERE HERO HIDDEN HIDE HIDING HIGH HIGHER HILL HIM HIS HIT HOCKEY HOLD HOLE HOLY HOME HONEST HONEY HONOR HOPE HORROR HORSE HOST HOT HOTEL HOUR HOUSE HOW HUGE HUMAN HUNGRY HUNT HURT ICE IDEA ILL IMAGE INCH INDEED INK INSIDE INTO INVITE IRON ISLAND ITS JACKET JAPAN JAZZ JEAN JOB JOIN JOKE JOY JUDGE JUICE JUMP JUNIOR JUST KEEP KEPT KEY KICK KID KIND KING KISS KIT KNEE KNIFE KNOCK KNOW KNOWN LAB LABEL LACK LADY LAID LAKE LAND LARGE LAST LATE LATER LATEST LAUGH LAW LAWYER LAY LEAD LEADER LEARN LEAST LEAVE LED LEFT LEG LEMON LEND LENGTH LESS LESSON LET LETTER LEVEL LIE LIFE LIFT LIGHT LIKE LIKELY LINE LINK LION LIP LIQUID LIST LISTEN LITTLE LIVE LIVING LOCAL LOCK LOG LONG LONGER LOOK LOSE LOSS LOST LOT LOUD LOVE LOVELY LOVING LOW LOWER LOWEST LUCK LUCKY LUNCH LYING MAD MADE MAGIC MAIL MAIN MAINLY MAKE MAKEUP MAN MANAGE MANY MAP MARCH MARK MARKET MARRY MASK MASTER MATCH MATTER MAY MAYBE MEAL MEAN MEANS MEAT MEDAL MEET MEMBER MEMORY MEN MESS METAL MID MIDDLE MIGHT MILE MILK MIND MINE MINUTE MIRROR MISS MIX MOBILE MODEL MODERN MOM MOMENT MONEY MONTH MOOD MOON MORE MOST MOSTLY MOTHER MOUSE MOUTH MOVE MOVIE MOVING MUCH MUSEUM MUSIC MUST NAME NATION NATURE NEAR NEARBY NEARLY NEAT NECK NEED NEEDS NEST NET NEVER NEW NEWS NEXT NICE NIGHT NINE NOBODY NOISE NONE NOON NORMAL NORTH NOSE NOT NOTE NOTICE NOW NUMBER NURSE OBJECT OCEAN OFF OFFER OFFICE OFTEN OIL OLD ONCE ONE ONLINE ONLY OPEN ORANGE ORDER OTHER OUR OUT OVER OWL OWN OWNER PACK PACKED PAGE PAID PAIN PAINT PAIR PALACE PANTS PAPER PARENT PARK PART PARTLY PARTY PASS PAST PATH PAY PEACE PEN PEOPLE PERSON PET PHONE PHOTO PIANO PICK PIE PIECE PIG PILOT PINK PIZZA PLACE PLACED PLAN PLANE PLANET PLANT PLATE PLAY PLAYER PLEASE PLUS POCKET POINT POLICE POOL POOR POP POST POWER PRAY PREFER PRESS PRETTY PRICE PRINCE PRINT PRIZE PRO PROUD PROVE PUBLIC PULL PUNCH PURPLE PUSH PUT QUEEN QUICK QUIET QUIT QUITE RACE RACING RADIO RAIN RAISE RANGE RARE RAT RATHER REACH READ READER READY REAL REALLY REASON RECENT RECORD RED REMIND REMOVE RENT REPAIR REPEAT REPLY REPORT RESCUE REST RESULT RETURN REVIEW RICE RICH RIDE RIDING RIGHT RING RISE RISING RISK RIVER ROAD ROCK ROCKET ROLE ROLL ROOF ROOM ROOT ROSE ROUND ROW RUGBY RULE RUN RUSH SAD SAFE SAFETY SAID SAIL SALE SALT SAME SAND SAT SAUCE SAVE SAVING SAW SAY SAYING SCENE SCHOOL SCORE SCREEN SEA SEARCH SEASON SEAT SECOND SECRET SEE SEED SEEING SEEM SELF SELL SEND SENSE SENT SERIES SERVE SERVER SET SEVEN SHADOW SHAKE SHAME SHAPED SHARE SHARP SHE SHEET SHELL SHIP SHIRT SHOCK SHOOT SHOP SHORT SHOT SHOW SHOWER SHUT SHY SICK SIDE SIGHT SIGN SILENT SILLY SILVER SIMPLE SIMPLY SINCE SING SINGER SINGLE SISTER SIT SITE SIX SIZE SKILL SKIN SKY SLEEP SLOW SLOWLY SMALL SMELL SMILE SMOKE SNAKE SNOW SOCCER SOCIAL SOFT SOLD SOLO SOLVE SOME SON SONG SOON SORRY SORT SOUL SOUND SOUTH SPACE SPEAK SPEECH SPEED SPELL SPEND SPENT SPIN SPOKE SPOKEN SPORT SPOT SPREAD SPRING SQUARE STAGE STAND STAR START STATE STATED STAY STEAL STEP STICK STILL STONE STOP STORE STORM STORY STREAM STREET STRONG STUDIO STUDY STUFF STUPID STYLE SUCH SUDDEN SUFFER SUGAR SUIT SUMMER SUN SUPER SURE SURELY SWEET SWIM SWING SWITCH SYSTEM TABLE TAIL TAKE TAKEN TAKING TALENT TALK TALL TANK TAPE TARGET TASK TASTE TAX TEA TEACH TEAM TEETH TELL TEMPLE TEN TENNIS TENT TEST TEXT THAN THANK THANKS THAT THE THEM THEN THERE THEY THICK THIN THING THINK THIRD THIRTY THIS THOUGH THREE THROW THROWN TICKET TIE TIGER TIME TIMES TINY TIP TIRED TITLE TODAY TOE TOILET TONGUE TOO TOOL TOP TOPIC TOTAL TOUCH TOUGH TOUR TOWER TOWN TOY TRAIN TRASH TRAVEL TREAT TREE TRICK TRIED TRIP TRUCK TRUE TRUST TRUTH TRY TRYING TURKEY TURN TWELVE TWENTY TWICE TWIN TWO TYPE UGLY UNCLE UNDER UNITED UNLIKE UNTIL USE USED USEFUL USER USUAL VALLEY VALUE VERY VIDEO VIEW VIRUS VISIT VOICE VOTE WAIT WAKE WALK WALKER WALL WANT WAR WARM WASH WATCH WATER WAVE WAY WEAK WEAR WEB WEEK WEEKLY WEIGHT WELL WEST WET WHEEL WHEN WHILE WHITE WHO WHOLE WHY WIDE WIFE WILD WILL WIN WIND WINDOW WING WINNER WINTER WISE WISH WITH WITHIN WOLF WOMAN WON WONDER WOOD WOODEN WORD WORK WORKER WORLD WORRY WORSE WORST WRITE WRITER WRONG YEAR YELLOW YES YET YOU YOUNG YOUTH ZERO ZONE".split(" ")) } };
   const pack = () => PACKS[$("packSel").value] || null;
+  const seasonNow = () => { const m = new Date().getMonth() + 1; return m >= 3 && m <= 5 ? "spring" : m <= 8 && m >= 6 ? "summer" : m >= 9 && m <= 11 ? "autumn" : "winter"; };
+  // 期間限定パックは、今の季節のものだけ選べる（季節が変わったら「すべての単語」にもどす）
+  function setupSeasonPacks() {
+    const now = seasonNow();
+    for (const k of ["spring", "summer", "autumn", "winter"]) {
+      const o = $("packSel").querySelector(`option[value="${k}"]`); if (o) { o.hidden = k !== now; o.disabled = k !== now; }
+      PACKS[k].words = new Set([...PACKS[k].words].filter(w => DICT.has(w)));
+    }
+    if (PACKS[$("packSel").value] && PACKS[$("packSel").value].season && $("packSel").value !== now) $("packSel").value = "all";
+  }
   const inPack = w => !pack() || pack().words.has(w);
   const MODE_NAME = { endless: "エンドレス", color: "カラー", daily: "デイリー", quota: "ノルマ", stage: "パーフェクト", study: "単語トレーニング" };
   // カラー（デイリー以外）はエネルギー制：毎ターン減り、単語を消すと回復。0で終わり
@@ -9635,7 +9686,7 @@ zoom|v2|ズームする・急上昇する`;
       for (const el of els.values()) el.classList.remove("fall");
     }
     maxCombo = Math.max(maxCombo, combo);
-    if (isPuzzle()) {
+    if (isPuzzle() && !tut) {
       const all = cwords.length > 0 && exact.size >= cwords.length;
       if (combo > 0) {
         const mult = (1 + 0.25 * (combo - 1)) * (all ? 2 : 1);
@@ -9649,6 +9700,7 @@ zoom|v2|ズームする・急上昇する`;
         await burstHide();
       }
       if (isStage()) {
+        runLog.push(all ? 1 : 0);
         if (all) {
           streak++; noMiss++;
           // ノーミスで3ステージ続けてクリアするとライフ+1（最大3）
@@ -9656,6 +9708,7 @@ zoom|v2|ズームする・急上昇する`;
           if (noMiss >= 3) noMiss = 0;
           await perfectWipe();  // この中で次のステージへ
           if (heal) { lives++; SFX.levelUp(); buzz([20, 40, 20]); }
+          if (level >= 20) achTry("stage20"); if (level >= 40) achTry("stage40");
           setStatus(level === diagFrom()
             ? `<b>STAGE ${level}：ななめ解禁！</b>　指をななめに動かすと、ななめのマスと入れ替わる`
             : `${heal ? "<b>ノーミス3連続！ ライフ+1</b>　" : ""}<b>STAGE ${level}</b>　${isFullStage(level) ? "<b>全面ボーナス！</b> 白いマスなし。全部消せたら盤面まるごとPERFECT" : `${cwords.length}色を1回なぞって全部消そう`}`);
@@ -9669,7 +9722,8 @@ zoom|v2|ズームする・急上昇する`;
           restoreStage();
         }
       } else {
-        studyN += cwords.length; studyOK += exact.size;
+        studyN += cwords.length; studyOK += exact.size; runLog.push(all ? 1 : 0);
+        achData.s.studyOK += exact.size; achSave(); if (achData.s.studyOK >= 100) achTry("study100");
         cwords.forEach((x, i) => { if (exact.has(i)) missDel(x.w); else missAdd(x.w); });
         if (all) {
           streak++; studyBoards++;
@@ -9691,6 +9745,7 @@ zoom|v2|ズームする・急上昇する`;
           studyReveal = false;
           if (lives <= 0) { showEnd(); busy = false; return; }
         }
+        if (reviewMode && !missList().some(w => DICT.has(w) && w.length <= COLS)) { reviewDone = true; achTry("review"); await sleep(300); showEnd(); busy = false; return; }
         nextStudy();
       }
       updateHud(); resetTimerBar();
@@ -9723,7 +9778,12 @@ zoom|v2|ズームする・急上昇する`;
       // デイリーは、毎ターン次のパズル（その日・そのターンで決まった盤面）に入れかえる
       if (isDaily()) {
         touched.clear();
-        if (turns < COLOR_TURNS) {
+        if (!tut) { runLog.push(all ? 1 : 0); if (runLog.slice(COLOR_TURNS).filter(Boolean).length >= 10) achTry("extra10"); }
+        // 10問のあとは「エクストラ」：ずっと続く。全消しできないとライフ−1（ライフ3）
+        if (turns > COLOR_TURNS && !all) { lives--; noMiss = 0; SFX.fail(); buzz([80, 60, 120]); gfx.shake(); setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1`); }
+        if (turns === COLOR_TURNS && !tut) markDaily();
+        if (turns === COLOR_TURNS) { lives = LIVES; setTimeout(() => setStatus("<b>ここからエクストラ！</b>　ずっと続くよ。全部消せないとライフ−1（ライフ3）"), 900); }
+        if (lives > 0) {
           buildDailyPuzzle(turns);
           render();
           for (const t of board.flat()) if (t.col !== undefined) { const el = elFor(t); el.classList.remove("cin"); void el.offsetWidth; el.classList.add("cin"); }
@@ -9753,7 +9813,7 @@ zoom|v2|ズームする・急上昇する`;
         setStatus(`<b>レベルアップ！ Lv.${level}</b>　長い単語も出てくる`);
       }
       updateHud();
-      if (isEnergy() ? energy <= 0 : turns >= COLOR_TURNS) { await sleep(300); showEnd(); busy = false; return; }
+      if (isEnergy() ? energy <= 0 : isDaily() ? lives <= 0 : turns >= COLOR_TURNS) { await sleep(300); showEnd(); busy = false; return; }
       resetTimerBar();
       lastAction = performance.now();
       refreshHints();
@@ -10045,7 +10105,7 @@ zoom|v2|ズームする・急上昇する`;
     }
   }
   function renderCwords() {
-    if (isStudy()) {
+    if (isStudy() && !tut) {
       $("cwords").innerHTML = cwords.map((x, i) => `<span class="cw study${studyReveal && studyReveal.has(i) ? " missed" : ""}" style="--cc:${CCOL[i]}"><b>${studyReveal && studyReveal.has(i) ? x.w : x.w.replace(/./g, "＿")}</b><span>${esc(x.m)}</span></span>`).join("")
         + `<span class="cwhint">意味の英単語を、同じ色の文字を並べて作ろう${cwords.length > 1 ? `（${cwords.length}語ぜんぶ1回で）` : ""}</span>`;
       return;
@@ -10256,7 +10316,7 @@ zoom|v2|ズームする・急上昇する`;
     $("score").textContent = score.toLocaleString();
     $("best").textContent = Math.max(bestScore, score).toLocaleString();
     $("lvChip").textContent = isStage() ? `STAGE ${level}` : `Lv.${level}`;
-    $("modeName").textContent = MODE_NAME[$("modeSel").value];
+    $("modeName").textContent = reviewMode && isStudy() ? "復習" : MODE_NAME[$("modeSel").value];
     if (isEndless()) {
       const n = board ? board.flat().filter(t => t.stone).length : 0;
       $("hearts").innerHTML = `<span class="gauge" aria-label="石 ${n}/${STONE_CAP}">${Array.from({ length: STONE_CAP }, (_, i) => `<i class="${i < n ? (n >= STONE_CAP - 3 ? "on danger" : "on") : ""}"></i>`).join("")}</span>`;
@@ -10271,7 +10331,10 @@ zoom|v2|ズームする・急上昇する`;
       $("quota").innerHTML = `エネルギー <b>${energy}</b>　毎ターン−${energyDrain()}`;
     } else if (isColor()) {
       $("hearts").innerHTML = "";
-      $("quota").innerHTML = `残り <b>${Math.max(0, COLOR_TURNS - turns)}</b>ターン`;
+      if (isDaily() && turns >= COLOR_TURNS) {
+        $("hearts").innerHTML = Array.from({ length: LIVES }, (_, i) => `<span class="${i < lives ? "on" : "off"}">♥</span>`).join("");
+        $("quota").innerHTML = `エクストラ <b>${turns - COLOR_TURNS + 1}</b>問目`;
+      } else $("quota").innerHTML = `残り <b>${Math.max(0, COLOR_TURNS - turns)}</b>問`;
     } else {
       $("hearts").innerHTML = Array.from({ length: LIVES }, (_, i) => `<span class="${i < lives ? "on" : "off"}">♥</span>`).join("");
       $("quota").innerHTML = `ノルマ <b>${quotaOf(level)}</b>点／ターン`;
@@ -10293,27 +10356,61 @@ zoom|v2|ズームする・急上昇する`;
     if (isEnergy() ? turns >= 30 : isColor() && turns >= COLOR_TURNS) achTry("colorDone");
     let dailyText = "";
     if (isDaily()) {
-      const d = dailyInfo(), today = dayKey(), y = new Date(); y.setDate(y.getDate() - 1);
-      if (d.last !== today) { d.streak = d.last === dayKey(y) ? d.streak + 1 : 1; d.last = today; try { localStorage.setItem(DAILY_KEY, JSON.stringify(d)); } catch (e) {} }
-      dailyText = `デイリー連続 ${d.streak}日目！ また明日、新しい盤面で。`;
+      const d = markDaily(), next = [3, 7, 30, 100].find(n => n > d.streak);
+      dailyText = `デイリー連続 ${d.streak}日目！${next ? `あと${next - d.streak}日で「連続${next}日」` : ""} また明日、新しい盤面で。`;
     }
+    if (reviewDone) $("endTitle").textContent = "復習コンプリート！";
+    else if (isDaily()) $("endTitle").textContent = turns > COLOR_TURNS ? "エクストラ終了！" : "GAME OVER";
+    $("shareBtn").textContent = "結果をシェア"; $("shareBtn").disabled = false;
     $("endAch").textContent = [dailyText, gameAch.length ? `このゲームで解除した実績：${gameAch.join("・")}` : ""].filter(Boolean).join("　");
-    if (isPuzzle()) $("clearText").textContent = isStage() ? `STAGE ${level} まで到達。最大 ${maxCombo}コンボ` : `${studyN}語中 ${studyOK}語正解（Lv.${level}）。まちがえた単語は、次のトレーニングでまた出ます`;
+    if (isDaily()) $("clearText").textContent = turns > COLOR_TURNS ? `10問クリア＋エクストラ ${turns - COLOR_TURNS}問目まで到達。最大 ${maxCombo}コンボ` : `${runLog.filter(Boolean).length}/${COLOR_TURNS}問 PERFECT。最大 ${maxCombo}コンボ`;
+    else if (reviewDone) $("clearText").textContent = `まちがえた単語を全部覚えなおした！（${studyN}語中 ${studyOK}語正解）`;
+    else if (isPuzzle()) $("clearText").textContent = isStage() ? `STAGE ${level} まで到達。最大 ${maxCombo}コンボ` : `${studyN}語中 ${studyOK}語正解（Lv.${level}）。まちがえた単語は${reviewMode ? "残っているので、また復習しよう" : "、次のトレーニングや「復習」でまた出ます"}`;
     else $("clearText").textContent = `${isEndless() ? `石が${STONE_CAP}個たまった。` : isEnergy() ? "エネルギーが切れた。" : ""}${MODE_NAME[$("modeSel").value]}・アシスト：${ASSIST_NAME[assistLv()]}　Lv.${level}・${turns}ターン。作った単語 ${totalWords}個（${learned.size}種類）。最大 ${maxCombo}コンボ`;
     navClear();
     $("bonusBtn").hidden = false; $("bonusBtn").disabled = false; $("bonusBtn").textContent = "▶ 広告を見てナビ＋1";
-    const canCont = isStudy() || ((isStage() || isEndless() || isEnergy()) && contUsed < CONT_MAX);  // パーフェクトは1ゲーム2回まで
-    $("contBtn").hidden = !canCont;
-    if (isPuzzle()) $("contNote").textContent = isStage() ? `ライフを1つ回復して、同じステージから続ける（あと${CONT_MAX - contUsed}回）` : "ライフを1つ回復して続ける";
+    const canCont = isStudy() || ((isStage() || isEndless() || isEnergy() || isDaily()) && contUsed < CONT_MAX);  // パーフェクトは1ゲーム2回まで
+    $("contBtn").hidden = !canCont || reviewDone;
+    if (isDaily()) $("contNote").textContent = `ライフを1つ回復して、エクストラを続ける（あと${CONT_MAX - contUsed}回）`;
+    else if (isPuzzle()) $("contNote").textContent = isStage() ? `ライフを1つ回復して、同じステージから続ける（あと${CONT_MAX - contUsed}回）` : "ライフを1つ回復して続ける";
     else if (canCont) $("contNote").textContent = `${isEndless() ? "石を5個こわして続ける" : "エネルギーを50回復して続ける"}（あと${CONT_MAX - contUsed}回）`;
     updateHud();
     $("overlay").hidden = false;
   }
+  // デイリーの連続記録（10問を遊びきった日 or ゲームオーバーになった日に1回だけ数える）
+  function markDaily() {
+    const d = dailyInfo(), today = dayKey(), y = new Date(); y.setDate(y.getDate() - 1);
+    if (d.last !== today) { d.streak = d.last === dayKey(y) ? d.streak + 1 : 1; d.last = today; try { localStorage.setItem(DAILY_KEY, JSON.stringify(d)); } catch (e) {} }
+    if (d.streak >= 3) achTry("daily3"); if (d.streak >= 7) achTry("daily7"); if (d.streak >= 30) achTry("daily30");
+    return d;
+  }
+  // 結果をシェア（色の四角で1問ごとの結果を見せる）
+  function shareText() {
+    const sq = runLog.slice(-30).map(x => x ? "🟩" : "🟥"), rows = [];
+    for (let i = 0; i < sq.length; i += 10) rows.push(sq.slice(i, i + 10).join(""));
+    const d = new Date();
+    const head = isDaily()
+      ? `WORD DROP デイリー ${d.getMonth() + 1}/${d.getDate()}\n${turns > COLOR_TURNS ? `エクストラ ${turns - COLOR_TURNS}問目まで到達！` : `${runLog.filter(Boolean).length}/${COLOR_TURNS}問 PERFECT`}`
+      : isStage() ? `WORD DROP パーフェクト\nSTAGE ${level} まで到達！`
+      : reviewDone ? `WORD DROP 復習コンプリート！\n${studyOK}語を覚えなおした`
+      : isStudy() ? `WORD DROP 単語トレーニング\nLv.${level}・${studyN}語中${studyOK}語正解`
+      : "WORD DROP";
+    return `${head}\n${rows.join("\n")}${rows.length ? "\n" : ""}${score.toLocaleString()}点・最大${maxCombo}コンボ\n#WORDDROP #英単語パズル`;
+  }
+  $("shareBtn").addEventListener("click", async () => {
+    const text = shareText(); achTry("share");
+    try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+    try { await navigator.clipboard.writeText(text); $("shareBtn").textContent = "コピーしました！ SNSに貼りつけてね"; }
+    catch (e) { $("shareBtn").textContent = "この端末ではシェアできませんでした"; }
+  });
   // 広告を見てコンティニュー
   function doContinue() {
     contUsed++;
     $("overlay").hidden = true;
-    if (isPuzzle()) {
+    if (isDaily()) {
+      lives = 1;
+      setStatus("<b>コンティニュー！</b>　ライフが1つ回復した");
+    } else if (isPuzzle()) {
       lives = 1;
       if (isStage()) restoreStage(); else nextStudy();
       setStatus("<b>コンティニュー！</b>　ライフが1つ回復した");
@@ -10337,6 +10434,7 @@ zoom|v2|ズームする・急上昇する`;
     nextId = 1; held = null; dragging = false; busy = false;
     if (typeof tutClear === "function" && tut) { tut = null; tutClear(); }
     $("tutCoach").hidden = true;
+    runLog = []; reviewDone = false;
     gameAch = []; energy = ENERGY_MAX; contUsed = 0; rescueUsed = false; lastTier = 0; pfStreak = 0; pfRoute = null;
     score = 0; lives = LIVES; level = 1; streak = 0; turns = 0; loadBest(); maxCombo = 0; totalWords = 0; learned = new Map(); odai = null;
     $("overlay").hidden = true; $("burst").hidden = true;
@@ -10434,9 +10532,18 @@ zoom|v2|ズームする・急上昇する`;
     ["score50k", "5万点プレイヤー", "1ゲームで50,000点", "5万"],
     ["book100", "単語コレクター", "単語帳に100語", "100"],
     ["book500", "単語マスター", "単語帳に500語", "500"],
+    ["daily3", "三日坊主じゃない", "デイリーを3日連続", "3日"],
+    ["daily7", "1週間皆勤", "デイリーを7日連続", "7日"],
+    ["daily30", "デイリーの達人", "デイリーを30日連続", "30日"],
+    ["extra10", "天才の一手 10連発", "デイリーのエクストラで10問PERFECT", "天"],
+    ["stage20", "パーフェクト上級", "パーフェクトでSTAGE 20に到達", "20"],
+    ["stage40", "パーフェクト名人", "パーフェクトでSTAGE 40に到達", "40"],
+    ["study100", "単語トレーニング100", "単語トレーニングで合計100語正解", "100"],
+    ["review", "復習コンプリート", "まちがえた単語を全部覚えなおす", "復"],
+    ["share", "はじめてのシェア", "結果をシェアする", "↗"],
   ];
-  let achData = { u: {}, s: { stones: 0, odai: 0 } };
-  try { const a = JSON.parse(localStorage.getItem(ACH_KEY) || "null"); if (a && a.u) achData = { u: a.u, s: Object.assign({ stones: 0, odai: 0 }, a.s) }; } catch (e) {}
+  let achData = { u: {}, s: { stones: 0, odai: 0, studyOK: 0 } };
+  try { const a = JSON.parse(localStorage.getItem(ACH_KEY) || "null"); if (a && a.u) achData = { u: a.u, s: Object.assign({ stones: 0, odai: 0, studyOK: 0 }, a.s) }; } catch (e) {}
   const achSave = () => { try { localStorage.setItem(ACH_KEY, JSON.stringify(achData)); } catch (e) {} };
   let gameAch = [], achQueue = [], achShowing = false;
   function achTry(id) {
@@ -10466,7 +10573,7 @@ zoom|v2|ズームする・急上昇する`;
   function renderAch() {
     const got = ACH.filter(a => achData.u[a[0]]).length;
     $("achCount").textContent = `${got} / ${ACH.length}`;
-    $("achGrid").innerHTML = ACH.map(a => `<div class="ach-item${achData.u[a[0]] ? " got" : ""}"><div class="m">${achData.u[a[0]] ? "★" : "？"}</div><div><b>${a[1]}</b><span>${a[2]}${a[0] === "stones100" ? `（${Math.min(achData.s.stones, 100)}/100）` : a[0] === "odai30" ? `（${Math.min(achData.s.odai, 30)}/30）` : ""}</span></div></div>`).join("");
+    $("achGrid").innerHTML = ACH.map(a => `<div class="ach-item${achData.u[a[0]] ? " got" : ""}"><div class="m">${achData.u[a[0]] ? "★" : "？"}</div><div><b>${a[1]}</b><span>${a[2]}${a[0] === "stones100" ? `（${Math.min(achData.s.stones, 100)}/100）` : a[0] === "odai30" ? `（${Math.min(achData.s.odai, 30)}/30）` : a[0] === "study100" ? `（${Math.min(achData.s.studyOK, 100)}/100）` : ""}</span></div></div>`).join("");
   }
   renderAch();
 
@@ -10731,7 +10838,7 @@ zoom|v2|ズームする・急上昇する`;
   const isFullStage = s => s >= 15 && s % 10 === 5;
   function stageLayout(s, lens) {
     if (s <= 4) return "h";
-    const opts = ["h", "mix", "mix"];
+    const opts = ["h", "mix", "mix", "ring", "center"];
     if (lens.length <= COLS && lens.every(L => L <= ROWS)) opts.push("v", "v");
     return opts[Math.floor(Math.random() * opts.length)];
   }
@@ -10751,6 +10858,10 @@ zoom|v2|ズームする・急上昇する`;
     return false;
   }
   // まちがえた単語は覚えておいて、あとでまた出す
+  // 1問ごとの結果（シェア用）。1 = 全部消せた、0 = 消し残し
+  let runLog = [];
+  // 復習：単語トレーニングで、まちがえた単語だけを出す
+  let reviewMode = false, reviewDone = false;
   const MISS_KEY = "wordDrop.miss.v1";
   const missList = () => { try { return JSON.parse(localStorage.getItem(MISS_KEY) || "[]"); } catch (e) { return []; } };
   const missSave = l => { try { localStorage.setItem(MISS_KEY, JSON.stringify(l.slice(-200))); } catch (e) {} };
@@ -10761,6 +10872,21 @@ zoom|v2|ズームする・急上昇する`;
   // レベルアップまでに必要な正解の盤面数：はじめはテンポよく（Lv.2までは1回）、中盤からはゆっくり
   const studyNeed = () => [1, 2, 2, 3, 4, 4][level - 1] || 5;
   function buildStudyPuzzle() {
+    if (reviewMode && !missList().some(w => DICT.has(w) && w.length <= COLS)) reviewMode = false;  // 復習する単語がなければ、ふつうのトレーニング
+    if (reviewMode) {
+      for (let tries = 0; tries < 25; tries++) {
+        forceBasic = false;
+        const miss = missList().filter(w => DICT.has(w) && w.length <= COLS).sort(() => Math.random() - 0.5);
+        const k = Math.min(miss.length, Math.max(2, studyCount()));
+        const list = miss.slice(0, k).map(w => ({ w, ...DICT.get(w) }));
+        cwords = list;
+        const L = Math.min(18, 4 + level + k * 2);
+        const lay = ["h", "mix", "ring", "center"][Math.floor(Math.random() * 4)];
+        const route = buildDailyBoard(list.map(x => x.w), L, L + 3, 0, lay);
+        if (route) { puzzleRoute = route; renderCwords(); return true; }
+      }
+      reviewMode = false;
+    }
     const k = studyCount();
     const lens = level <= 2 ? [3, 4] : level <= 4 ? [3, 4] : level <= 6 ? [3, 4, 5] : [4, 5, 6];
     for (let tries = 0; tries < 25; tries++) {
@@ -10777,7 +10903,7 @@ zoom|v2|ズームする・急上昇する`;
       if (list.length < k) continue;
       cwords = list;
       const L = Math.min(18, 3 + level + k * 2);
-      const lay = level <= 3 ? "h" : ["h", "mix", "v"][Math.floor(Math.random() * 3)];
+      const lay = level <= 3 ? "h" : ["h", "mix", "v", "ring", "center"][Math.floor(Math.random() * 5)];
       const route = buildDailyBoard(list.map(x => x.w), L, L + 3, diagMax(), list.every(x => x.w.length <= ROWS) ? lay : (lay === "v" ? "h" : lay));
       if (route) { puzzleRoute = route; list.forEach(x => studyRecent.push(x.w)); renderCwords(); return true; }
     }
@@ -10814,7 +10940,9 @@ zoom|v2|ズームする・急上昇する`;
       idx.forEach((wi, k) => { const c = cols[k], r0 = Math.floor(Math.random() * (ROWS - words[wi].length + 1)); put(wi, [...words[wi]].map((_, j) => [r0 + j, c])); });
       return cellsOf;
     }
-    if (layout === "mix") {
+    if (layout === "mix" || layout === "ring" || layout === "center") {
+      // ring：盤面のふちに沿って並べる　center：まん中に寄せて並べる
+      const edge = cells => cells.filter(([r, c]) => r === 0 || c === 0 || r === ROWS - 1 || c === COLS - 1).length / cells.length;
       const used = new Set(), order = idx.slice().sort((a, b) => words[b].length - words[a].length);
       let vCount = 0;
       for (const wi of order) {
@@ -10829,7 +10957,12 @@ zoom|v2|ズームする・急上昇する`;
         if (!spots.length) return null;
         // 縦と横がだいたい半々になるように選ぶ
         const want = vCount * 2 < order.indexOf(wi) + 1 ? "v" : "h";
-        const pref = spots.filter(x => x.dir === want), pool = pref.length && Math.random() < 0.75 ? pref : spots;
+        let pref = spots.filter(x => x.dir === want), pool = pref.length && Math.random() < 0.75 ? pref : spots;
+        if (layout !== "mix") {
+          const sc = x => layout === "ring" ? edge(x.cells) : 1 - edge(x.cells);
+          const best = Math.max(...pool.map(sc));
+          pool = pool.filter(x => sc(x) >= best - 0.25);
+        }
         const pick = pool[Math.floor(Math.random() * pool.length)];
         if (pick.dir === "v") vCount++;
         pick.cells.forEach(([a, b]) => used.add(a * COLS + b));
@@ -10889,8 +11022,10 @@ zoom|v2|ズームする・急上昇する`;
   function pickDailyWord(len, used) {
     const all = entriesCache || (entriesCache = [...DICT.entries()]);
     const ok = ([w]) => !NOSHOW.has(w) && w.length === len && !used.has(w) && [...w].every(ch => WEIGHTS[ch] >= 1);
-    let pool = all.filter(e => ok(e) && (pack() && !forceBasic ? inPack(e[0]) : e[1].tier === 1));
-    if (pool.length < 8) pool = pool.concat(all.filter(e => ok(e) && e[1].tier === 1 && !(pack() && inPack(e[0]))));
+    const pk = isDaily() ? null : pack(), inPk = w => !pk || pk.words.has(w);  // デイリーはみんな同じ盤面なので、単語パックは使わない
+    let pool = all.filter(e => ok(e) && (pk && !forceBasic ? inPk(e[0]) : e[1].tier === 1));
+    // パックの単語が少ない長さは、基本の単語で補う（季節パックなどは、7割はパックの単語から出す）
+    if (pool.length < 8 && !(pool.length && pk && pk.season && !forceBasic && Math.random() < 0.7)) pool = pool.concat(all.filter(e => ok(e) && e[1].tier === 1 && !(pk && inPk(e[0]))));
     if (!pool.length) pool = all.filter(e => ok(e));
     if (!pool.length) pool = all.filter(([w]) => w.length === len);
     const [w, v] = pool[Math.floor(Math.random() * pool.length)];
@@ -10902,10 +11037,14 @@ zoom|v2|ズームする・急上昇する`;
       for (let tries = 0; tries < 30; tries++) {
         const used = new Set();
         // 1〜3問目は横、4〜9問目は横と縦のまぜ、10問目は「全面フィナーレ」（白いマスなし・8色で30マス全部）
-        const last = turnNo === COLOR_TURNS - 1;
-        const lens = last ? [6, 6, 3, 3, 3, 3, 3, 3] : DAILY_LENS;
+        // エクストラ（11問目〜）は、白いマスのない全面盤面がずっと続く。横8語・縦6語を交互に、進むほど答えの道が長く
+        const last = turnNo === COLOR_TURNS - 1, extra = turnNo >= COLOR_TURNS;
+        const fullV = extra && (turnNo - COLOR_TURNS) % 2 === 1;
+        const lens = fullV ? [5, 5, 5, 5, 5, 5] : last || extra ? [6, 6, 3, 3, 3, 3, 3, 3] : DAILY_LENS;
+        const grow = extra ? Math.min(6, Math.floor((turnNo - COLOR_TURNS) / 3)) : 0;
         cwords = lens.slice().sort(() => Math.random() - 0.5).map(len => { const x = pickDailyWord(len, used); used.add(x.w); return x; });
-        dailyRoute = buildDailyBoard(cwords.map(x => x.w), last ? 16 : 12, last ? 21 : 17, 0, last ? "h" : turnNo < 3 ? "h" : "mix");
+        const lay = fullV ? "v" : last || extra ? "h" : turnNo < 3 ? "h" : ["mix", "ring", "center"][turnNo % 3];
+        dailyRoute = buildDailyBoard(cwords.map(x => x.w), last || extra ? 16 + grow : 12, last || extra ? 21 + grow : 17, 0, lay);
         if (dailyRoute) break;
       }
     } finally { unseed(); }
@@ -10937,6 +11076,8 @@ zoom|v2|ズームする・急上昇する`;
         pos = opts[Math.floor(Math.random() * opts.length)]; q.push(pos); seen.add(pos.r * COLS + pos.c);
       }
       if (new Set(q.map(x => x.r)).size < ROWS) continue;
+      // 色の判定（お題の単語だけが消える）に合わせて、先にお題をチュートリアルの単語にしておく
+      if (color) cwords = placed.map(x => ({ w: x.w, ...DICT.get(x.w) }));
       // 崩す（ルートの最初の文字を、ルートどおりに引きずった状態）
       const snap = board.map(row => row.slice());
       for (let k = 1; k < q.length; k++) swap(q[k - 1], q[k]);
@@ -10994,6 +11135,8 @@ zoom|v2|ズームする・急上昇する`;
         ? `パーフェクトは、上の色の単語を<b>1回なぞるだけで全部</b>そろえるパズル。どの盤面にも、かならずその道があるよ。<br>消し残すとライフ−1（同じ盤面でやりなおし）。ライフは3つ。困ったら「ナビ」で答えの道が見られるよ！`
         : isStudy()
         ? `単語トレーニングは、<b>日本語の意味</b>を見て、その英単語を色の文字を並べて作るモード。<br>まちがえるとライフ−1で、正解が出るよ。まちがえた単語はあとでまた出るから、自然に覚えられる！`
+        : isDaily()
+        ? `デイリーは、上の色の単語を<b>1回なぞるだけで全部</b>そろえる毎日の10問。<br>10問のあとは<b>エクストラ</b>がずっと続くよ（全部消せないとライフ−1、ライフは3つ）。後半は盤面ぜんぶが消える<b>天才の一手</b>に挑戦！`
         : isColor()
         ? `カラーモードも、<b>どんな単語でも</b>消えてコンボになるよ。<br>エネルギーは毎ターン減るけど、単語を消すと回復。<b>同じ色の文字だけ</b>で作ると大きく回復して得点も2倍。0になったら終わり！<br>上の5つのうち<b>1つは必ず、1回なぞるだけで作れる</b>よ。さがしてみて！`
         : `エンドレスは、毎ターン<b>石</b>が落ちてくる。石は動かせないけど、<b>文字は単語に使える</b>よ。<br>石が<b>15個</b>たまったら終わり。どこまで続けられるか挑戦！`, "はじめる！");
@@ -11026,7 +11169,17 @@ zoom|v2|ズームする・急上昇する`;
       $("dailyDate").textContent = `${d.getMonth() + 1}月${d.getDate()}日の盤面`;
       const alive = di.last === dayKey() || di.last === dayKey(y);
       $("dailyStreak").textContent = alive && di.streak ? `連続 ${di.streak}日${di.last === dayKey() ? "（今日はプレイ済み）" : ""}` : "毎日遊ぶと連続記録"; }
-    $("msNote").textContent = `困ったときは、ゲーム画面の「ナビ」ボタンで、消える道を線で見られます`;
+    { const n = missList().filter(w => DICT.has(w) && w.length <= COLS).length;
+      $("reviewCard").hidden = n === 0; $("reviewCount").textContent = `まちがえた単語 ${n}語`; }
+    { const k = seasonNow(), on = $("packSel").value === k;
+      $("seasonBtn").hidden = !PACKS[k] || !PACKS[k].words.size;
+      $("seasonBtn").classList.toggle("on", on);
+      $("seasonBtn").innerHTML = `<span><b>期間限定</b>　${PACKS[k].name.replace("期間限定：", "")}パック${on ? "（つかっています）" : ""}<br><small>パーフェクト・トレーニングの単語が季節の単語になる</small></span><span class="sgo">${on ? "やめる" : "つかう"}</span>`; }
+    { const di = dailyInfo(), y = new Date(); y.setDate(y.getDate() - 1);
+      const st = di.last === dayKey() || di.last === dayKey(y) ? di.streak : 0;
+      const got = ACH.filter(a => achData.u[a[0]]).length;
+      $("msBadges").innerHTML = `${st ? `<span>デイリー連続 ${st}日</span>` : ""}<span>実績 ${got}/${ACH.length}</span>`; }
+    $("msNote").textContent = [`困ったときは、ゲーム画面の「ナビ」ボタンで、消える道を線で見られます`, `設定の「盤面のテーマ」で、盤面の色を変えられます`, `ゲームが終わったら「結果をシェア」で友だちに自慢しよう`][Math.floor(Math.random() * 3)];
     $("overlay").hidden = true;
     $("modeScreen").hidden = false;
     document.body.classList.remove("playing");
@@ -11034,13 +11187,54 @@ zoom|v2|ズームする・急上昇する`;
   }
   document.querySelectorAll(".mode-card").forEach(c => c.addEventListener("click", () => {
     SFX.ensure(); SFX.levelUp(); buzz(20);
-    $("modeSel").value = c.dataset.mode;
-    try { localStorage.setItem("wordDrop.mode.v1", c.dataset.mode); } catch (e) {}
+    reviewMode = c.dataset.mode === "review";
+    const m = reviewMode ? "study" : c.dataset.mode;
+    $("modeSel").value = m;
+    try { localStorage.setItem("wordDrop.mode.v1", m); } catch (e) {}
     $("modeScreen").hidden = true;
     showView("game");
     start();
     if (!tutDone()) runTutorial();
   }));
+  $("seasonBtn").addEventListener("click", () => {
+    SFX.ensure(); buzz(15);
+    const k = seasonNow();
+    $("packSel").value = $("packSel").value === k ? "all" : k;
+    try { localStorage.setItem("wordDrop.pack.v1", $("packSel").value); } catch (e) {}
+    bookDirty = true; start(); showModeScreen();
+  });
+  // ---------- 盤面のテーマ（夜以外は、広告を1回見ると解放） ----------
+  const THEMES = [
+    ["night", "ナイト", "linear-gradient(135deg,#121729,#25305a)"],
+    ["sakura", "サクラ", "linear-gradient(135deg,#26161f,#4a2a3d 60%,#f2a6c6)"],
+    ["ocean", "オーシャン", "linear-gradient(135deg,#0b1d2a,#174060 60%,#6fd3e8)"],
+    ["forest", "フォレスト", "linear-gradient(135deg,#0f1f17,#21452f 60%,#b9e07a)"],
+    ["sunset", "サンセット", "linear-gradient(135deg,#24140f,#4f2b1c 60%,#ffb35c)"],
+    ["royal", "ロイヤル", "linear-gradient(135deg,#1a1230,#3a2766 60%,#e0c36a)"],
+  ];
+  const THEME_KEY = "wordDrop.theme.v1", THEME_OWN = "wordDrop.themeOwn.v1";
+  const themeOwned = () => { try { return new Set(["night", ...JSON.parse(localStorage.getItem(THEME_OWN) || "[]")]); } catch (e) { return new Set(["night"]); } };
+  function applyTheme(id) {
+    if (id === "night") delete document.body.dataset.theme; else document.body.dataset.theme = id;
+    try { localStorage.setItem(THEME_KEY, id); } catch (e) {}
+    renderThemes();
+  }
+  function renderThemes() {
+    const own = themeOwned(), cur = document.body.dataset.theme || "night";
+    $("themeGrid").innerHTML = THEMES.map(([id, name, sw]) => `<button type="button" class="theme-sw${id === cur ? " on" : ""}" data-theme-id="${id}" style="--sw:${sw}"><i></i>${name}<small>${id === cur ? "使用中" : own.has(id) ? "つかう" : "▶ 広告で解放"}</small></button>`).join("");
+  }
+  $("themeGrid").addEventListener("click", async e => {
+    const b = e.target.closest("[data-theme-id]"); if (!b) return;
+    const id = b.dataset.themeId, own = themeOwned();
+    if (!own.has(id)) {
+      const ok = await askAd(`「${THEMES.find(t => t[0] === id)[1]}」テーマ`, "広告を1回見ると、このテーマがずっと使えるようになります。");
+      if (!ok) return;
+      own.add(id); try { localStorage.setItem(THEME_OWN, JSON.stringify([...own].filter(x => x !== "night"))); } catch (e) {}
+      SFX.levelUp(); buzz([20, 40, 20], "SUCCESS");
+    }
+    applyTheme(id);
+  });
+  try { const t = localStorage.getItem(THEME_KEY); if (t && themeOwned().has(t) && THEMES.some(x => x[0] === t)) applyTheme(t); else renderThemes(); } catch (e) { renderThemes(); }
   $("modeChip").addEventListener("click", async () => {
     if (busy || dragging) return;
     // ゲームの途中（1ターン以上遊んだ・まだ終わっていない）なら、一度だけ確認する
@@ -11329,13 +11523,14 @@ zoom|v2|ズームする・急上昇する`;
       ? `ナビ：光っている文字から線のとおりになぞると、<b>${cwords.length}色ぜんぶ消えて PERFECT!</b>`
       : `ナビ：光っている文字から線のとおりになぞると${ex ? `、<b>${ex}色</b>消える！` : ""} ${R.words.map(w => `<b>${w}</b>`).join("・")}${R.words.length >= 2 ? `　${R.words.length}コンボ！` : ""}`);
   }
-  function poke() { lastAction = performance.now(); if (hintStage) { hintStage = 0; applyHintStage(); } }
+  // 自動のナビ（線）が出ているときは、触り始めても消さない（指をはなすまで残す）
+  function poke() { lastAction = performance.now(); if (hintStage && !$("navRoute")) { hintStage = 0; applyHintStage(); } }
   setInterval(() => {
     if (!board || busy || dragging || !$("overlay").hidden || !hints) return;
     const idle = performance.now() - lastAction;
     const first = hintFirstMs();
     const st = idle < first ? 0 : 1 + Math.floor((idle - first) / HINT_NEXT_MS);
-    if (st !== hintStage && hints.all.length) { hintStage = st; applyHintStage(); }
+    if (st !== hintStage && hints.all.length && !(hintStage > 0 && $("navRoute"))) { hintStage = st; applyHintStage(); }
   }, 250);
   const assistChanged = () => { saveAssist(); updateAssistChip(); hintStage = 0; applyHintStage(); renderCanList(); render(); };
   $("assistSel").addEventListener("change", () => { assistChanged(); loadBest(); updateHud(); });
@@ -11347,6 +11542,7 @@ zoom|v2|ズームする・急上昇する`;
   $("assistChip").addEventListener("click", e => { e.stopPropagation(); const v = assistLv(); $("assistSel").value = String(v === 0 ? assistMax() : v - 1); assistChanged(); loadBest(); updateHud(); setStatus(`アシストを「${ASSIST_NAME[assistLv()]}」にしました`); });
   updateAssistChip();
   buildDict();
+  setupSeasonPacks();
   buildPaths();
   new ResizeObserver(() => { measure(); if (board) render(); }).observe(boardEl);
   start();
