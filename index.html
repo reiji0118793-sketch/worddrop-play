@@ -857,6 +857,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       </label>
       <button type="button" id="resetBtn">最初から</button>
       <button type="button" id="tutAgainBtn">遊び方をもう一度見る</button>
+      <button type="button" id="privacyOptBtn" hidden>広告のプライバシー設定</button>
     </div>
       <div class="danger-zone">
         <button type="button" id="clearBookBtn">単語帳の記録を消す</button>
@@ -10520,6 +10521,8 @@ zoom|v2|ズームする・急上昇する`;
     if (d.streak >= 3) achTry("daily3"); if (d.streak >= 7) achTry("daily7"); if (d.streak >= 30) achTry("daily30");
     return d;
   }
+  // App Store のページ（公開されたら、シェアの文に付く）
+  const STORE_URL = "";
   // 結果をシェア（色の四角で1問ごとの結果を見せる）
   function shareText() {
     const sq = runLog.slice(-30).map(x => x ? "🟩" : "🟥"), rows = [];
@@ -10531,7 +10534,7 @@ zoom|v2|ズームする・急上昇する`;
       : reviewDone ? `WORD DROP 復習コンプリート！\n${studyOK}語を覚えなおした`
       : isStudy() ? `WORD DROP 単語トレーニング\nLv.${level}・${studyN}語中${studyOK}語正解`
       : "WORD DROP";
-    return `${head}\n${rows.join("\n")}${rows.length ? "\n" : ""}${score.toLocaleString()}点・最大${maxCombo}コンボ\n#WORDDROP #英単語パズル`;
+    return `${head}\n${rows.join("\n")}${rows.length ? "\n" : ""}${score.toLocaleString()}点・最大${maxCombo}コンボ\n#WORDDROP #英単語パズル${STORE_URL ? "\n" + STORE_URL : ""}`;
   }
   $("shareBtn").addEventListener("click", async () => {
     const text = shareText(); achTry("share");
@@ -10760,6 +10763,12 @@ zoom|v2|ズームする・急上昇する`;
       const a = A(); if (!a || started) return; started = true;
       try {
         await a.initialize({ maxAdContentRating: "Teen", tagForChildDirectedTreatment: false, initializeForTesting: ADS.TESTING });
+        // ヨーロッパなど同意が必要な地域では、先に広告の同意画面を出す（Google の UMP。AdMob の「プライバシーとメッセージ」で作った画面）
+        try {
+          const ci = await a.requestConsentInfo();
+          if (ci && ci.isConsentFormAvailable && ci.status === "REQUIRED") await a.showConsentForm();
+          if (ci && ci.privacyOptionsRequirementStatus === "REQUIRED") $("privacyOptBtn").hidden = false;  // あとから同意を変えられるボタン
+        } catch (e) {}
         const t = await a.trackingAuthorizationStatus();
         if (t && t.status === "notDetermined") await a.requestTrackingAuthorization();
       } catch (e) {}
@@ -11290,6 +11299,7 @@ zoom|v2|ズームする・急上昇する`;
       if (got > 0) $("tutMsg").innerHTML = `おしい！ <b>${got}コンボ</b>。<br>線を<b>最後まで</b>なぞってから指をはなすと、<b>5コンボ</b>になるよ`;
     }
   }
+  $("privacyOptBtn").addEventListener("click", () => { try { const C = window.Capacitor, A = C && C.Plugins && C.Plugins.AdMob; if (A && A.showPrivacyOptionsForm) A.showPrivacyOptionsForm().catch(() => {}); } catch (e) {} });
   $("tutAgainBtn").addEventListener("click", () => {
     try { localStorage.removeItem(TUT_KEY); } catch (e) {}
     showView("game"); start(); runTutorial();
