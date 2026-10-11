@@ -333,6 +333,31 @@ body[data-theme="ocean"] { --bg: #0b1d2a; --panel: #112c40; --panel-2: #16384f; 
 body[data-theme="forest"] { --bg: #0f1f17; --panel: #173023; --panel-2: #1d3b2b; --line: #2f5a41; --gold: #b9e07a; --boardbg: #0a1710; --boardline: #1d3b2b; --mshi: #21452f; }
 body[data-theme="sunset"] { --bg: #24140f; --panel: #361f17; --panel-2: #43271c; --line: #6b3f2b; --gold: #ffb35c; --boardbg: #1a0e0a; --boardline: #43271c; --mshi: #4f2b1c; }
 body[data-theme="royal"] { --bg: #1a1230; --panel: #271b45; --panel-2: #302155; --line: #4b3680; --gold: #e0c36a; --boardbg: #120c24; --boardline: #302155; --mshi: #3a2766; }
+/* 演出：コンボで画面のふちが熱くなる */
+#heat { position: fixed; inset: 0; pointer-events: none; z-index: 30; opacity: 0; transition: opacity .35s ease; background: radial-gradient(ellipse at 50% 55%, transparent 38%, var(--heatc, rgba(255,170,60,.5)) 100%); }
+#heat.rainbow { background: radial-gradient(ellipse at 50% 55%, transparent 34%, rgba(255,80,120,.55) 80%, rgba(255,210,60,.7) 100%); animation: heatHue 1.2s linear infinite; }
+@keyframes heatHue { to { filter: hue-rotate(360deg); } }
+/* 演出：消えた文字が得点へ飛んでいく */
+.flyL { position: fixed; z-index: 60; pointer-events: none; width: 26px; height: 26px; margin: -13px 0 0 -13px; display: grid; place-items: center; border-radius: 7px; font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #1a1426; background: var(--fc, #ffe45c); box-shadow: 0 0 12px var(--fc, #ffe45c); }
+/* 演出：PERFECTの直前のスローモーション */
+.view.game .board.slowmo { transition: filter .38s ease-in, scale .38s ease-in; filter: saturate(.25) brightness(.65); scale: .975; }
+#slowmoVeil { position: fixed; inset: 0; z-index: 29; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,.65) 100%); opacity: 0; transition: opacity .3s; }
+#slowmoVeil.on { opacity: 1; }
+/* 演出：連続PERFECT中は盤面のふちがオーラで光る */
+.view.game .board.aura1 { box-shadow: inset 0 0 0 2px var(--boardline, #232b4d), 0 0 14px 2px rgba(255,214,90,.55); animation: aura 1.4s ease-in-out infinite; }
+.view.game .board.aura2 { box-shadow: inset 0 0 0 2px #ffb347, 0 0 22px 5px rgba(255,140,50,.7); animation: aura .9s ease-in-out infinite; }
+.view.game .board.aura3 { box-shadow: inset 0 0 0 2px #fff, 0 0 30px 8px rgba(255,90,160,.75); animation: aura .6s ease-in-out infinite, heatHue 2s linear infinite; }
+@keyframes aura { 50% { box-shadow: inset 0 0 0 2px #fff6, 0 0 6px 1px rgba(255,214,90,.25); } }
+#auraWrap { display: contents; }
+.auraTag { position: fixed; z-index: 26; padding: 1px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 900; color: #1a1426; background: linear-gradient(90deg, #ffe45c, #ff9f1c); pointer-events: none; }
+/* 演出：6文字以上の単語は大きく出す */
+.bigword { position: fixed; left: 50%; top: 42%; z-index: 58; pointer-events: none; translate: -50% -50%; text-align: center; white-space: nowrap; }
+.bigword b { display: block; font-family: var(--font-display); font-weight: 800; font-size: clamp(44px, 15vw, 72px); letter-spacing: .06em; color: #fff; -webkit-text-stroke: 2px rgba(0,0,0,.35); text-shadow: 0 0 18px var(--bw, #ffe45c), 0 4px 0 rgba(0,0,0,.4); }
+.bigword span { display: inline-block; margin-top: 2px; padding: 3px 12px; border-radius: 999px; background: rgba(0,0,0,.6); color: #fff; font-size: 15px; font-weight: 700; }
+/* 演出：ゲーム中にベストを超えた瞬間 */
+.recbanner { position: fixed; left: 50%; top: 18%; z-index: 59; pointer-events: none; translate: -50% 0; padding: 8px 22px; border-radius: 14px; background: rgba(10,12,28,.85); border: 2px solid #ffe45c; text-align: center; }
+.recbanner b { display: block; font-family: var(--font-display); font-weight: 800; font-size: 30px; letter-spacing: .08em; background: linear-gradient(90deg, #ff4d6d, #ff9f1c, #ffe45c, #4ade80, #38bdf8, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.recbanner small { color: #fff; font-size: 12px; }
 .ms-note { text-align: center; font-size: 11.5px; color: var(--muted); margin: 4px 0 0; }
 .modechip { --c: #7fb7ff; cursor: pointer; font: inherit; font-size: 12px; }
 .modechip::after { content: " ▾"; font-size: 10px; }
@@ -919,6 +944,8 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
   <div class="adbanner" id="adBanner" aria-label="広告"><span id="adBannerTxt">広告スペース（試遊版）</span></div>
 </div>
 <div id="gfx"></div>
+<div id="heat"></div>
+<div id="slowmoVeil"></div>
 <div id="achToast" aria-live="polite"><div class="medal">★</div><div><small>実績解除</small><b id="achName"></b><span class="d" id="achDesc"></span></div></div>
 <div id="tutCoach" hidden><div class="tc-close" id="tutClose">タップで閉じる ×</div><div class="step" id="tutStep"></div><p id="tutMsg"></p><button type="button" id="tutBtn" hidden></button></div>
 
@@ -9247,6 +9274,12 @@ zoom|v2|ズームする・急上昇する`;
       fail() { tone(140, 0.45, { to: 55, vol: 0.4 }); noise(0.25, { filter: "lowpass", freq: 300, vol: 0.35 }); },
       tick() { tone(1320, 0.06, { type: "square", vol: 0.08 }); },
       levelUp() { [0, 4, 7, 12].forEach((k, i) => tone(note(k), 0.18, { vol: 0.16, type: "triangle", when: i * 0.09 })); },
+      // デイリーのエクストラ：問題が進むほど、合図のテンポが速く・音が高くなる
+      extra(n) {
+        const gap = Math.max(0.04, 0.12 - n * 0.006), base = Math.min(n, 14) - 5;
+        [0, 4, 7, 12, 16].forEach((k, i) => tone(note(base + k), 0.16, { vol: 0.12, type: "triangle", when: i * gap, wet: 0.5 }));
+        if (n >= 5) tone(55 + n * 2, 0.25, { to: 40, vol: 0.3, when: 5 * gap });
+      },
       record() { [0, 4, 7, 12, 16, 19, 24].forEach((k, i) => tone(note(k), 0.25, { vol: 0.15, type: "triangle", when: i * 0.08 })); },
       stone() { tone(150, 0.18, { to: 70, vol: 0.35 }); noise(0.12, { filter: "lowpass", freq: 500, vol: 0.3 }); },
       crack() { noise(0.25, { filter: "bandpass", freq: 1800, q: 0.8, vol: 0.4 }); tone(320, 0.12, { to: 120, vol: 0.2, type: "square" }); },
@@ -9727,6 +9760,7 @@ zoom|v2|ズームする・急上昇する`;
       for (const el of els.values()) el.classList.remove("fall");
     }
     maxCombo = Math.max(maxCombo, combo);
+    heatOff(combo >= 5 ? 1200 : 600);
     if (isPuzzle() && !tut) {
       const all = cwords.length > 0 && exact.size >= cwords.length;
       if (combo > 0) {
@@ -9828,7 +9862,7 @@ zoom|v2|ズームする・急上昇する`;
           buildDailyPuzzle(turns);
           render();
           for (const t of board.flat()) if (t.col !== undefined) { const el = elFor(t); el.classList.remove("cin"); void el.offsetWidth; el.classList.add("cin"); }
-          SFX.levelUp();
+          if (turns >= COLOR_TURNS) SFX.extra(turns - COLOR_TURNS + 1); else SFX.levelUp();
         }
       }
       // 消えた色は、新しい単語になって出てくる
@@ -9978,6 +10012,56 @@ zoom|v2|ズームする・急上昇する`;
     if (combo === 5 || combo === 8 || combo === 12) { SFX.bigCombo(combo); buzz([40, 30, 70]); shakeBoard(combo); }
   }
   let lastCombo = 0;
+  // ---------- 演出 ----------
+  const fxOn = () => $("fxToggle").checked;
+  let heatT = 0;
+  // 1. コンボが増えるほど、画面のふちが熱くなる（3:黄 → 5:オレンジ → 8:赤 → 10〜:虹）
+  function heat(combo) {
+    const el = $("heat"); clearTimeout(heatT);
+    if (!fxOn() || combo < 2) { el.style.opacity = 0; el.classList.remove("rainbow"); return; }
+    el.classList.toggle("rainbow", combo >= 10);
+    el.style.setProperty("--heatc", combo >= 8 ? "rgba(255,50,40,.7)" : combo >= 5 ? "rgba(255,120,30,.6)" : "rgba(255,200,70,.45)");
+    el.style.opacity = Math.min(1, 0.35 + combo * 0.08);
+  }
+  function heatOff(ms = 700) { clearTimeout(heatT); heatT = setTimeout(() => heat(0), ms); }
+  // 2. 消えた文字が、得点のところへ飛んでいく
+  function flyLetter(el, ch, color) {
+    if (!fxOn()) return;
+    const a = el.getBoundingClientRect(), b = $("score").getBoundingClientRect();
+    const d = document.createElement("div"); d.className = "flyL"; d.textContent = ch; d.style.setProperty("--fc", color || "#ffe45c");
+    const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2, x1 = b.left + b.width / 2, y1 = b.top + b.height / 2;
+    d.style.left = x0 + "px"; d.style.top = y0 + "px"; document.body.appendChild(d);
+    const mx = (x0 + x1) / 2 + (Math.random() - .5) * 120, my = Math.min(y0, y1) - 40 - Math.random() * 60;
+    d.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${mx - x0}px, ${my - y0}px) scale(.9)`, opacity: 1, offset: .45 }, { transform: `translate(${x1 - x0}px, ${y1 - y0}px) scale(.35)`, opacity: .2 }], { duration: 560 + Math.random() * 160, easing: "cubic-bezier(.3,.1,.5,1)" }).onfinish = () => { d.remove(); bumpScoreFx(); };
+  }
+  let fxBumpT = 0;
+  function bumpScoreFx() { const now = performance.now(); if (now - fxBumpT < 60) return; fxBumpT = now; const el = $("score"); el.classList.remove("up"); void el.offsetWidth; el.classList.add("up"); }
+  // 5. 6文字以上の単語は、画面いっぱいに大きく出す
+  function bigWord(w, m, color) {
+    if (!fxOn()) return;
+    const d = document.createElement("div"); d.className = "bigword"; d.style.setProperty("--bw", color);
+    d.innerHTML = `<b>${w}</b><span>${esc(m)}</span>`; document.body.appendChild(d);
+    d.animate([{ opacity: 0, scale: 2.2 }, { opacity: 1, scale: .95, offset: .25 }, { opacity: 1, scale: 1, offset: .75 }, { opacity: 0, scale: 1.1 }], { duration: 1100, easing: "ease-out" }).onfinish = () => d.remove();
+    gfx.flash(color, .18);
+  }
+  // 6. ゲームの途中でベストを超えた瞬間に「NEW RECORD!」
+  let recShown = false;
+  function recordBanner() {
+    const d = document.createElement("div"); d.className = "recbanner"; d.innerHTML = "<b>NEW RECORD!</b><small>ベスト更新中！</small>"; document.body.appendChild(d);
+    d.animate([{ opacity: 0, translate: "-50% -30px", scale: .6 }, { opacity: 1, translate: "-50% 0", scale: 1.08, offset: .15 }, { opacity: 1, scale: 1, offset: .8 }, { opacity: 0, translate: "-50% -10px" }], { duration: 1800, easing: "ease-out" }).onfinish = () => d.remove();
+    SFX.record(); buzz([30, 40, 30], "SUCCESS"); if (fxOn()) gfx.rain(30);
+  }
+  // 4. 連続PERFECT中は、盤面のふちがオーラで光る（2連続〜）
+  function pfChain() { if (!(isStage() || isDaily())) return 0; let n = 0; for (let i = runLog.length - 1; i >= 0 && runLog[i]; i--) n++; return n; }
+  function updateAura() {
+    const n = fxOn() && !tut ? pfChain() : 0;
+    boardEl.classList.toggle("aura1", n >= 2 && n < 4); boardEl.classList.toggle("aura2", n >= 4 && n < 7); boardEl.classList.toggle("aura3", n >= 7);
+    // 盤面の外（すぐ上）に「PERFECT n連続」を出す（盤面の中は見切れるため）
+    let wrap = document.getElementById("auraWrap");
+    if (!wrap) { wrap = document.createElement("div"); wrap.id = "auraWrap"; wrap.innerHTML = '<div class="auraTag" hidden></div>'; boardEl.parentNode.insertBefore(wrap, boardEl); }
+    const tag = wrap.firstChild; tag.hidden = n < 2 || !$("modeScreen").hidden;
+    if (!tag.hidden) { tag.textContent = `PERFECT ${n}連続`; const r = boardEl.getBoundingClientRect(); tag.style.top = Math.max(4, r.top - 26) + "px"; tag.style.left = (r.right - tag.offsetWidth - 4) + "px"; }
+  }
   async function popWord(f, combo, popped) {
     const info = DICT.get(f.w), p = POS[info.pos];
     const tiles = f.cells.map(x => board[x.r][x.c]);
@@ -9995,14 +10079,16 @@ zoom|v2|ズームする・急上昇する`;
     $("tiles").appendChild(lab);
     lab.animate([{ transform: lab.style.transform || "", opacity: 0, scale: .5 }, { opacity: 1, scale: 1.08, offset: .6 }, { opacity: 1, scale: 1 }], { duration: 220, easing: "ease-out" });
     SFX.word(combo); buzz(Math.min(14 + combo * 8, 70));
-    gfx.burst(Math.min(8 + combo * 3, 30)); if (combo >= 3) { gfx.flash(combo >= 5 ? "#ff7a3a" : "#ffd84d", .12); }
+    gfx.burst(Math.min(8 + combo * 3, 30));
+    heat(combo);
+    if (f.w.length >= 6 && !tut) bigWord(f.w, info.m, color); if (combo >= 3) { gfx.flash(combo >= 5 ? "#ff7a3a" : "#ffd84d", .12); }
     if (combo === 5 || combo === 8 || combo === 12) { SFX.bigCombo(combo); buzz([40, 30, 70]); shakeBoard(combo); gfx.shake(); }
     await sleep(180);
     // つづりの順に、1文字ずつはじけて消える
     for (const t of tiles) {
       if (popped.has(t)) continue;
       popped.add(t);
-      const el = elFor(t); el.classList.add("popout"); sparks(el); SFX.pop(tiles.indexOf(t), combo);
+      const el = elFor(t); el.classList.add("popout"); sparks(el); SFX.pop(tiles.indexOf(t), combo); flyLetter(el, t.ch, color);
       await sleep(55);
     }
     await sleep(170);
@@ -10248,7 +10334,14 @@ zoom|v2|ズームする・急上昇する`;
   const PERFECT_BONUS = 1000;
   async function perfectWipe() {
     const tiles = board.flat();
-    gfx.perfect(2600); SFX.perfect(); leverBuzz(lastCombo);
+    SFX.perfect();  // 「ため」の音が先に鳴る
+    if (fxOn()) {
+      // 一瞬、時間が止まったように暗く・ゆっくりにしてから、ドーン！
+      boardEl.classList.add("slowmo"); $("slowmoVeil").classList.add("on"); buzz(10);
+      await sleep(400);
+      boardEl.classList.remove("slowmo"); $("slowmoVeil").classList.remove("on");
+    } else await sleep(400);
+    gfx.perfect(2600); leverBuzz(lastCombo);
     await sleep(500);
     tiles.forEach((t, k) => { const el = elFor(t); el.style.animationDelay = ""; el.querySelector(".face").style.animationDelay = ((k % COLS) * 35 + Math.floor(k / COLS) * 35) + "ms"; el.classList.add("wipe"); });
     SFX.whoosh();
@@ -10354,6 +10447,8 @@ zoom|v2|ズームする・急上昇する`;
   function setStatus(html) { $("status").innerHTML = `<span>${html}</span>`; }
   function bumpScore() { const el = $("score"); el.classList.remove("up"); void el.offsetWidth; el.classList.add("up"); updateHud(); }
   function updateHud() {
+    updateAura();
+    if (!recShown && !tut && bestScore > 0 && score > bestScore && turns > 0) { recShown = true; recordBanner(); }
     $("score").textContent = score.toLocaleString();
     $("best").textContent = Math.max(bestScore, score).toLocaleString();
     $("lvChip").textContent = isStage() ? `STAGE ${level}` : `Lv.${level}`;
@@ -10475,7 +10570,7 @@ zoom|v2|ズームする・急上昇する`;
     nextId = 1; held = null; dragging = false; busy = false;
     if (typeof tutClear === "function" && tut) { tut = null; tutClear(); }
     $("tutCoach").hidden = true;
-    runLog = []; reviewDone = false;
+    runLog = []; reviewDone = false; recShown = false; heat(0);
     gameAch = []; energy = ENERGY_MAX; contUsed = 0; rescueUsed = false; lastTier = 0; pfStreak = 0; pfRoute = null;
     score = 0; lives = LIVES; level = 1; streak = 0; turns = 0; loadBest(); maxCombo = 0; totalWords = 0; learned = new Map(); odai = null;
     $("overlay").hidden = true; $("burst").hidden = true;
