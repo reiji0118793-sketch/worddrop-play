@@ -327,6 +327,10 @@ html, body { height: 100%; overflow: hidden; }
 .theme-sw.on { border-color: var(--gold); box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 40%, transparent); }
 .theme-sw i { width: 100%; height: 34px; border-radius: 8px; background: var(--sw); border: 1px solid rgba(255,255,255,.12); }
 .theme-sw small { color: var(--muted); font-size: 11px; font-weight: 500; }
+.statsbox { display: grid; gap: 6px; margin: 10px 0 12px; font-size: 13px; }
+.statsbox .row { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--panel-2); }
+.statsbox .row b { color: var(--gold); font-weight: 700; }
+#feedbackBtn { width: 100%; }
 .sharebtn { background: linear-gradient(#7cc4ff, #3f86d9); color: #061a33; border: 0; font-weight: 900; }
 body[data-theme="sakura"] { --bg: #26161f; --panel: #36202d; --panel-2: #43283a; --line: #6a3d58; --gold: #f2a6c6; --boardbg: #1d1018; --boardline: #43283a; --mshi: #4a2a3d; }
 body[data-theme="ocean"] { --bg: #0b1d2a; --panel: #112c40; --panel-2: #16384f; --line: #245272; --gold: #6fd3e8; --boardbg: #081620; --boardline: #16384f; --mshi: #174060; }
@@ -862,6 +866,12 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       <div class="danger-zone">
         <button type="button" id="clearBookBtn">単語帳の記録を消す</button>
       </div>
+    </div>
+    <div class="card">
+      <h2>試遊の記録と感想</h2>
+      <p class="sub">遊んだ記録はこの端末の中だけに残ります（どこにも送られません）。感想を送るときに、記録をいっしょに付けられます。</p>
+      <div class="statsbox" id="statsBox"></div>
+      <button type="button" class="primary" id="feedbackBtn">感想を送る（記録つき）</button>
     </div>
     <div class="card">
       <h2>盤面のテーマ</h2>
@@ -9673,6 +9683,7 @@ zoom|v2|ズームする・急上昇する`;
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   async function resolveTurn() {
     busy = true; turns++;
+    if (turns === 1 && !tut) statsTouchDay();
     // ナビの線（自動・アイテムどちらも）は、指をはなしたら消す
     paidNav = null; hintStage = 0; navClear();
     document.querySelectorAll(".navstart").forEach(e => e.classList.remove("navstart"));
@@ -10484,6 +10495,7 @@ zoom|v2|ズームする・急上昇する`;
     $("bestLabel").textContent = "BEST"; $("bestLabel").parentElement.title = `${MODE_NAME[$("modeSel").value]}・アシスト${ASSIST_NAME[assistLv()]}の最高点`;
   }
   function showEnd() {
+    statsGame("end");
     const rec = score > bestScore;
     if (rec) { bestScore = score; try { localStorage.setItem(bestKey(), String(score)); } catch (e) {} }
     if (rec) { SFX.record(); buzz([30, 60, 30, 60, 80], "SUCCESS"); } else SFX.over();
@@ -10521,6 +10533,65 @@ zoom|v2|ズームする・急上昇する`;
     if (d.streak >= 3) achTry("daily3"); if (d.streak >= 7) achTry("daily7"); if (d.streak >= 30) achTry("daily30");
     return d;
   }
+  // ---------- 試遊の記録（端末の中だけ） ----------
+  const BUILD_DATE = "2026-10-12";
+  const STATS_KEY = "wordDrop.stats.v1";
+  function statsLoad() { try { const v = JSON.parse(localStorage.getItem(STATS_KEY) || "null"); if (v && v.modes) return v; } catch (e) {} return { first: dayKey(), days: [], modes: {}, nav: 0, ads: 0, conts: 0, recent: [] }; }
+  function statsSave(st) { try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) {} }
+  const statMode = () => isStudy() && reviewMode ? "review" : $("modeSel").value;
+  function statsTouchDay() { const st = statsLoad(), d = dayKey(); if (!st.days.includes(d)) { st.days.push(d); st.days = st.days.slice(-90); statsSave(st); } }
+  // 1ゲームの終わり（how = "end"：最後まで / "quit"：途中でタイトルへ）
+  function statsGame(how) {
+    if (tut || turns <= 0) return;
+    const st = statsLoad(), k = statMode(), m = st.modes[k] || (st.modes[k] = { games: 0, quits: 0, bestLv: 0, turns: 0, best: 0 });
+    m.games++; if (how === "quit") m.quits++;
+    m.bestLv = Math.max(m.bestLv, k === "daily" ? turns : level); m.turns += turns; m.best = Math.max(m.best, score);
+    st.recent.push({ m: k, lv: level, t: turns, s: score, how, d: dayKey(), pk: $("packSel").value });
+    st.recent = st.recent.slice(-20);
+    statsSave(st); renderStats();
+  }
+  function statsAdd(key) { const st = statsLoad(); st[key] = (st[key] || 0) + 1; statsSave(st); }
+  const STAT_NAME = { stage: "パーフェクト", study: "単語トレーニング", review: "復習", daily: "デイリー", color: "カラー", endless: "エンドレス" };
+  function statsLines() {
+    const st = statsLoad(), out = [];
+    out.push(["遊んだ日数", `${st.days.length}日（初日 ${st.first}）`]);
+    for (const [k, m] of Object.entries(st.modes)) {
+      const lvName = k === "stage" ? "最高STAGE" : k === "daily" ? "最高" : "最高Lv";
+      const lv = k === "daily" ? `${m.bestLv}問` : m.bestLv;
+      out.push([STAT_NAME[k] || k, `${m.games}回（途中でやめた ${m.quits}回）・${lvName} ${lv}・平均 ${Math.round(m.turns / Math.max(1, m.games))}ターン・ベスト ${m.best.toLocaleString()}点`]);
+    }
+    out.push(["ナビ・広告", `ナビ ${st.nav}回・リワード広告 ${st.ads}回・コンティニュー ${st.conts}回`]);
+    return out;
+  }
+  function renderStats() {
+    const box = $("statsBox"); if (!box) return;
+    box.innerHTML = statsLines().map(([k, v]) => `<div class="row"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join("");
+  }
+  function feedbackText() {
+    const st = statsLoad();
+    const recent = st.recent.slice(-5).map(r => `${STAT_NAME[r.m] || r.m} Lv${r.lv} ${r.t}ターン ${r.s}点（${r.how === "quit" ? "途中でやめた" : "最後まで"}）`).join("\n");
+    return `【WORD DROP 試遊の感想】
+よかったところ：
+
+わかりにくかったところ：
+
+むずかしすぎ・かんたんすぎたところ：
+
+バグ・気になったこと：
+
+--- 自動で付く記録 ---
+版：${BUILD_DATE}／${/iPhone|iPad/.test(navigator.userAgent) ? "iPhone" : "その他"}／${window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() ? "アプリ" : "ブラウザ"}
+${statsLines().map(([k, v]) => `${k}：${v}`).join("\n")}
+最近のゲーム：
+${recent || "まだありません"}`;
+  }
+  $("feedbackBtn").addEventListener("click", async () => {
+    const text = feedbackText();
+    try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+    try { await navigator.clipboard.writeText(text); $("feedbackBtn").textContent = "コピーしました！ LINEやメールに貼りつけて送ってね"; }
+    catch (e) { $("feedbackBtn").textContent = "この端末では送れませんでした"; }
+  });
+  renderStats();
   // App Store のページ（公開されたら、シェアの文に付く）
   const STORE_URL = "";
   // 結果をシェア（色の四角で1問ごとの結果を見せる）
@@ -10544,7 +10615,7 @@ zoom|v2|ズームする・急上昇する`;
   });
   // 広告を見てコンティニュー
   function doContinue() {
-    contUsed++;
+    contUsed++; statsAdd("conts");
     $("overlay").hidden = true;
     if (isDaily()) {
       lives = 1;
@@ -10739,10 +10810,12 @@ zoom|v2|ズームする・急上昇する`;
   // iPhoneアプリでは AdMob（@capacitor-community/admob）、ブラウザの試遊版ではダミーの広告画面を出す
   // ★ 本番前に：AdMobで作った広告ユニットIDに差し替えて、TESTING を false にする（今はGoogle公式のテスト用ID）
   const ADS = {
+    // 本番の広告ユニット（AdMob：WORD DROP / iOS）。TESTING が true の間は、同じ枠に「テスト広告」が出る（自分の端末で押しても安全）
+    // App Store に公開する直前に TESTING を false にする
     TESTING: true,
-    rewarded: "ca-app-pub-3940256099942544/1712485313",      // テスト用：リワード広告（iOS）
-    interstitial: "ca-app-pub-3940256099942544/4411468910",  // テスト用：インタースティシャル広告（iOS）
-    banner: "ca-app-pub-3940256099942544/2934735716",        // テスト用：バナー広告（iOS）
+    rewarded: "ca-app-pub-3473571296401576/3690478279",      // リワード（reward_navi）
+    interstitial: "ca-app-pub-3473571296401576/6170221829",  // インタースティシャル（inter_between）
+    banner: "ca-app-pub-3473571296401576/2410195352",        // バナー（banner_main）
     interEveryFirstDay: 5,                                   // はじめて遊ぶ日は、合間の広告を少なめに（5回に1回）
     interEvery: 3,                                           // ゲームが3回終わるごとに1回
   };
@@ -10785,7 +10858,8 @@ zoom|v2|ズームする・急上昇する`;
       });
     }
     // リワード広告：最後まで見たら true
-    async function rewarded() {
+    async function rewarded() { const ok = await rewardedRaw(); if (ok) statsAdd("ads"); return ok; }
+    async function rewardedRaw() {
       const a = A();
       if (!a) return fake();
       if (!rewardReady) await prepReward();
@@ -11416,6 +11490,7 @@ zoom|v2|ズームする・急上昇する`;
     if (busy || dragging) return;
     // ゲームの途中（1ターン以上遊んだ・まだ終わっていない）なら、一度だけ確認する
     if (turns > 0 && $("overlay").hidden && !tut && !(await askSheet("タイトルに戻りますか？", "今のゲームは終わります。", "タイトルに戻る", "ゲームを続ける"))) return;
+    if ($("overlay").hidden) statsGame("quit");
     showModeScreen();
   });
   $("toModeBtn").addEventListener("click", async () => { await Ads.between(); showModeScreen(); });
@@ -11686,7 +11761,7 @@ zoom|v2|ズームする・急上昇する`;
       if (!R) { setStatus("今は消える道が見つからない。大きくなぞって並べ替えよう"); return; }
       paidNav = R; hintStage = 0;
       drawPaidNav();
-      addNav(-1); SFX.levelUp();
+      addNav(-1); SFX.levelUp(); statsAdd("nav");
     } finally { navBusy = false; }
   }
   function drawPaidNav() {
