@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <!-- WORD DROP 試遊版（開発中） -->
-<title>英単語ドロップ スコアアタック</title>
+<title>WORD DROP - 英単語パズル</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
@@ -348,10 +348,11 @@ body[data-theme="royal"] { --bg: #1a1230; --panel: #271b45; --panel-2: #302155; 
 #slowmoVeil { position: fixed; inset: 0; z-index: 29; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,.65) 100%); opacity: 0; transition: opacity .3s; }
 #slowmoVeil.on { opacity: 1; }
 /* 演出：連続PERFECT中は盤面のふちがオーラで光る */
-.view.game .board.aura1 { box-shadow: inset 0 0 0 2px var(--boardline, #232b4d), 0 0 14px 2px rgba(255,214,90,.55); animation: aura 1.4s ease-in-out infinite; }
-.view.game .board.aura2 { box-shadow: inset 0 0 0 2px #ffb347, 0 0 22px 5px rgba(255,140,50,.7); animation: aura .9s ease-in-out infinite; }
-.view.game .board.aura3 { box-shadow: inset 0 0 0 2px #fff, 0 0 30px 8px rgba(255,90,160,.75); animation: aura .6s ease-in-out infinite, heatHue 2s linear infinite; }
-@keyframes aura { 50% { box-shadow: inset 0 0 0 2px #fff6, 0 0 6px 1px rgba(255,214,90,.25); } }
+.view.game .board.aura1 { box-shadow: inset 0 0 0 2px var(--boardline, #232b4d), 0 0 14px 2px rgba(255,214,90,.5); animation: aura 2.4s ease-in-out infinite; }
+.view.game .board.aura2 { box-shadow: inset 0 0 0 2px #ffb347, 0 0 20px 4px rgba(255,150,60,.6); animation: aura 2s ease-in-out infinite; }
+.view.game .board.aura3 { box-shadow: inset 0 0 0 2px #ffd6e8, 0 0 26px 6px rgba(255,110,170,.6), 0 0 6px 2px rgba(255,220,120,.5); animation: aura 2s ease-in-out infinite; }  /* 盤面に filter をかけない：タイルの色が変わって見づらくなる */
+@keyframes aura { 50% { box-shadow: inset 0 0 0 2px rgba(255,255,255,.35), 0 0 10px 2px rgba(255,214,90,.3); } }
+@media (prefers-reduced-motion: reduce) { .view.game .board.aura1, .view.game .board.aura2, .view.game .board.aura3 { animation: none; } #heat { transition: none; } }
 #auraWrap { display: contents; }
 .auraTag { position: fixed; z-index: 26; padding: 1px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 900; color: #1a1426; background: linear-gradient(90deg, #ffe45c, #ff9f1c); pointer-events: none; }
 /* 演出：6文字以上の単語は大きく出す */
@@ -466,6 +467,8 @@ body { margin: 0; }
 .tile.c5 .face { background: linear-gradient(#fde0c4, #f6b884); border-color: #d07a2c; color: #4a2408; }
 .tile.c6 .face { background: linear-gradient(#ccf3ee, #8fded4); border-color: #2a9d90; color: #0f3a35; }
 .tile.c7 .face { background: linear-gradient(#fbd6ea, #f2a7cf); border-color: #c95a97; color: #4d1433; }
+.tile.c8 .face { background: linear-gradient(#e6f6c8, #c4e68a); border-color: #6f9a1f; color: #263d06; }
+.tile.c9 .face { background: linear-gradient(#f3e2cf, #dcb894); border-color: #8a5a33; color: #3a2410; }
 /* 色のない文字は白。暗くせず「これも使える・消せる」とわかるようにする */
 .board.colormode .tile:not(.cc) .face { background: linear-gradient(160deg, #ffffff, #f1f3f8 55%, #d9dde8); border-color: #aeb6cc; color: #1d2233; box-shadow: 0 3px 0 #8a92a8, 0 6px 10px rgba(0,0,0,.35); }
 .board.colormode .tile.vowel:not(.cc) .face { color: #1d2233; }
@@ -9110,7 +9113,7 @@ zoom|v2|ズームする・急上昇する`;
   // ---------- スコアアタックの設定 ----------
   const LIVES = 3, TURNS_PER_LEVEL = 5;
   const quotaOf = lv => [30, 60, 100, 150, 200][lv - 1] || 200 + (lv - 5) * 60;
-  const timeOf = lv => tut ? 40 : $("modeSel").value === "daily" ? Math.max(15, 4 + (dailyRoute ? dailyRoute.length : 0)) : isPuzzle() ? Math.min(30, Math.max(10, 6 + (puzzleRoute ? puzzleRoute.length : 6))) : Math.max(6, Number($("timeSel").value) - Math.max(0, lv - 3));
+  const timeOf = lv => tut ? 40 : $("modeSel").value === "daily" ? Math.max(15, 4 + (dailyRoute ? dailyRoute.length : 0)) : isPuzzle() ? Math.min(30, Math.max(10, Math.round(6 + (puzzleRoute ? puzzleRoute.length : 6) * (isStage() ? (isSpeedStage(lv) ? 0.62 : Math.max(0.7, 1 - Math.max(0, lv - 12) * 0.012)) : 1)))) : Math.max(6, Number($("timeSel").value) - Math.max(0, lv - 3));
   // ベストスコアは「モード × アシスト」ごとに別々に記録する（ランキングも別々にする前提）
   const STONE_CAP = 15, STONE_EVERY = 15, STONE_MAX = 5;  // 石は文字入り（t.stone = true）。動かせないが単語に使える
   const isEndless = () => $("modeSel").value === "endless";
@@ -9161,7 +9164,7 @@ zoom|v2|ズームする・急上昇する`;
   const ENERGY_MAX = 100;
   const energyDrain = () => Math.min(22, 8 + (level - 1) * 2);   // レベルが上がるほど減りが速い
   let energy = ENERGY_MAX;
-  const COLOR_TURNS = 10, CCOL = ["#e07a66", "#5b8fdc", "#5fae5a", "#d9ae2c", "#9a6bd6", "#f08a3c", "#2bb3a6", "#e06aa8"];  // カラーは前の5色、デイリーは8色
+  const COLOR_TURNS = 10, CCOL = ["#e07a66", "#5b8fdc", "#5fae5a", "#d9ae2c", "#9a6bd6", "#f08a3c", "#2bb3a6", "#e06aa8", "#8fbf3a", "#a8774c"];  // カラーは前の5色、デイリーは8色
   const DAILY_LENS = [5, 4, 3, 3, 3, 3, 3, 3];  // デイリーの8つの単語の長さ
   let cwords = [], cshort = [true, true, true, false, false];
   const bestKey = () => isDaily() ? `wordDrop.daily.${dayKey()}` : `wordDrop.best.v2.${$("modeSel").value}.${assistLv()}`;
@@ -9798,7 +9801,7 @@ zoom|v2|ズームする・急上昇する`;
           if (level >= 20) achTry("stage20"); if (level >= 40) achTry("stage40");
           setStatus(level === diagFrom()
             ? `<b>STAGE ${level}：ななめ解禁！</b>　指をななめに動かすと、ななめのマスと入れ替わる`
-            : `${heal ? "<b>ノーミス3連続！ ライフ+1</b>　" : ""}<b>STAGE ${level}</b>　${isFullStage(level) ? "<b>全面ボーナス！</b> 白いマスなし。全部消せたら盤面まるごとPERFECT" : `${cwords.length}色を1回なぞって全部消そう`}`);
+            : `${heal ? "<b>ノーミス3連続！ ライフ+1</b>　" : ""}<b>STAGE ${level}</b>　${isTenStage(level) ? "<b>10コンボボーナス！</b> 3文字の単語10個を1回なぞって全部消そう" : isSpeedStage(level) ? "<b>スピード勝負！</b> 答えの道がとても長い。急いでなぞろう" : isFullStage(level) ? "<b>全面ボーナス！</b> 白いマスなし。全部消せたら盤面まるごとPERFECT" : `${cwords.length}色を1回なぞって全部消そう`}`);
         } else {
           streak = 0; lives--; noMiss = 0;
           SFX.fail(); buzz([80, 60, 120]); gfx.shake();
@@ -11056,22 +11059,30 @@ ${recent || "まだありません"}`;
   // 並べ方：STAGE 1〜4は横だけ。そのあとは横・縦・まぜをいろいろ。15・25・35…ステージは「全面ボーナス」（白いマスなし）
   let stageRecent = [];
   const isFullStage = s => s >= 15 && s % 10 === 5;
+  // 10コンボボーナス：20・30・40…ステージは、3文字×10語で盤面ぜんぶ（1回なぞると10コンボ）
+  const isTenStage = s => s >= 20 && s % 10 === 0;
+  // スピード勝負：17・27・37…ステージは、答えの道がとても長い（時間はきびしめ）
+  const isSpeedStage = s => s >= 17 && s % 10 === 7;
+  // 並べ方：ステージが進むほど、横だけ → 縦もまざる → 縦横がばらばら、とむずかしくなる
   function stageLayout(s, lens) {
     if (s <= 4) return "h";
-    const opts = ["h", "mix", "mix", "ring", "center"];
-    if (lens.length <= COLS && lens.every(L => L <= ROWS)) opts.push("v", "v");
+    const canV = lens.length <= COLS && lens.every(L => L <= ROWS);
+    const opts = s <= 12 ? ["h", "h", "mix", "ring"] : s <= 25 ? ["h", "mix", "mix", "ring", "center"] : ["mix", "mix", "mix", "ring", "center", "center"];
+    if (canV) opts.push(...(s <= 12 ? ["v"] : ["v", "v"]));
     return opts[Math.floor(Math.random() * opts.length)];
   }
   function buildStagePuzzle() {
-    const sp = stageSpec(level), full = isFullStage(level);
+    const sp = stageSpec(level), full = isFullStage(level), ten = isTenStage(level), speed = isSpeedStage(level);
     for (let tries = 0; tries < 25; tries++) {
       forceBasic = tries >= 6;
       const used = new Set(stageRecent.slice(-40));
       // 全面ボーナス：前半は5文字×6語を縦に、後半は6文字×2＋3文字×6を横に（30マスぴったり）
-      const lens = full ? (level < 35 ? [5, 5, 5, 5, 5, 5] : [6, 6, 3, 3, 3, 3, 3, 3]) : sp.lens;
-      const layout = full ? (level < 35 ? "v" : "h") : stageLayout(level, lens);
+      const lens = ten ? [3, 3, 3, 3, 3, 3, 3, 3, 3, 3] : full ? (level < 35 ? [5, 5, 5, 5, 5, 5] : [6, 6, 3, 3, 3, 3, 3, 3]) : sp.lens;
+      const layout = ten ? "ten" : full ? (level < 35 ? "v" : "h") : speed ? ["mix", "ring", "center"][tries % 3] : stageLayout(level, lens);
       try { cwords = lens.slice().sort(() => Math.random() - 0.5).map(len => { const x = pickDailyWord(len, used); used.add(x.w); return x; }); } catch (e) { continue; }
-      const route = buildDailyBoard(cwords.map(x => x.w), full ? Math.max(sp.Lmin, 14) : sp.Lmin, full ? Math.max(sp.Lmax, 19) : sp.Lmax, sp.diag, layout);
+      const Lmin = ten ? Math.max(sp.Lmin, 16) : speed ? 22 : full ? Math.max(sp.Lmin, 14) : sp.Lmin;
+      const Lmax = ten ? Math.max(sp.Lmax, 21) : speed ? 26 : full ? Math.max(sp.Lmax, 19) : sp.Lmax;
+      const route = buildDailyBoard(cwords.map(x => x.w), Lmin, Lmax, speed || ten ? 0 : sp.diag, layout);
       if (route) {
         cwords.forEach(x => stageRecent.push(x.w)); puzzleRoute = route; stageSnap = board.map(row => row.map(t => ({ ch: t.ch, col: t.col }))); stageWords = cwords.slice(); renderCwords(); return true; }
     }
@@ -11158,6 +11169,20 @@ ${recent || "まだありません"}`;
       if (words.length > COLS || words.some(w => w.length > ROWS)) return null;
       const cols = [...Array(COLS).keys()].sort(() => Math.random() - 0.5);
       idx.forEach((wi, k) => { const c = cols[k], r0 = Math.floor(Math.random() * (ROWS - words[wi].length + 1)); put(wi, [...words[wi]].map((_, j) => [r0 + j, c])); });
+      return cellsOf;
+    }
+    // ten：3文字の単語10個で30マスぴったり（1回なぞるだけで10コンボ）
+    //  横だけ（5段×2語）／上3段に縦6語＋下2段に横4語／上2段に横4語＋下3段に縦6語、のどれか
+    if (layout === "ten") {
+      if (words.length !== 10 || words.some(w => w.length !== 3)) return null;
+      const order = idx.slice().sort(() => Math.random() - 0.5);
+      const kind = Math.floor(Math.random() * 3);
+      let k = 0;
+      const hRow = r => { for (const c0 of [0, 3]) { const wi = order[k++]; put(wi, [0, 1, 2].map(j => [r, c0 + j])); } };
+      const vBlock = r0 => { for (let c = 0; c < COLS; c++) { const wi = order[k++]; put(wi, [0, 1, 2].map(j => [r0 + j, c])); } };
+      if (kind === 0) { for (let r = 0; r < ROWS; r++) hRow(r); }
+      else if (kind === 1) { vBlock(0); hRow(3); hRow(4); }
+      else { hRow(0); hRow(1); vBlock(2); }
       return cellsOf;
     }
     if (layout === "mix" || layout === "ring" || layout === "center") {
@@ -11260,11 +11285,12 @@ ${recent || "まだありません"}`;
         // 1〜3問目は横、4〜9問目は横と縦のまぜ、10問目は「全面フィナーレ」（白いマスなし・8色で30マス全部）
         // エクストラ（11問目〜）は、白いマスのない全面盤面がずっと続く。横8語・縦6語を交互に、進むほど答えの道が長く
         const last = turnNo === COLOR_TURNS - 1, extra = turnNo >= COLOR_TURNS;
-        const fullV = extra && (turnNo - COLOR_TURNS) % 2 === 1;
-        const lens = fullV ? [5, 5, 5, 5, 5, 5] : last || extra ? [6, 6, 3, 3, 3, 3, 3, 3] : DAILY_LENS;
+        // エクストラは「横8語 → 縦6語 → 3文字10語（10コンボ）」をくり返す
+        const xk = extra ? (turnNo - COLOR_TURNS) % 3 : -1, fullV = xk === 1, tenB = xk === 2;
+        const lens = tenB ? [3, 3, 3, 3, 3, 3, 3, 3, 3, 3] : fullV ? [5, 5, 5, 5, 5, 5] : last || extra ? [6, 6, 3, 3, 3, 3, 3, 3] : DAILY_LENS;
         const grow = extra ? Math.min(6, Math.floor((turnNo - COLOR_TURNS) / 3)) : 0;
         cwords = lens.slice().sort(() => Math.random() - 0.5).map(len => { const x = pickDailyWord(len, used); used.add(x.w); return x; });
-        const lay = fullV ? "v" : last || extra ? "h" : turnNo < 3 ? "h" : ["mix", "ring", "center"][turnNo % 3];
+        const lay = tenB ? "ten" : fullV ? "v" : last || extra ? "h" : turnNo < 3 ? "h" : ["mix", "ring", "center"][turnNo % 3];
         dailyRoute = buildDailyBoard(cwords.map(x => x.w), last || extra ? 16 + grow : 12, last || extra ? 21 + grow : 17, 0, lay);
         if (dailyRoute) break;
       }
