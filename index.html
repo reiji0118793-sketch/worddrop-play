@@ -375,6 +375,10 @@ body[data-theme="royal"] { --bg: #1a1230; --panel: #271b45; --panel-2: #302155; 
 .settings .controls { display: grid; gap: 12px; }
 .settings .controls label { justify-content: space-between; font-size: 14px; color: var(--fg); }
 .settings .controls label:has(input[type="checkbox"]) { justify-content: flex-start; gap: 10px; }
+/* 項目名（モード・単語パックなど）は折り返さず1行に。せまいときは右の選択欄のほうを縮める */
+.settings .controls { grid-template-columns: minmax(0, 1fr); }
+.settings .controls label:not(:has(input[type="checkbox"])) { white-space: nowrap; gap: 12px; min-width: 0; }
+.settings .controls label select { min-width: 0; flex: 0 1 auto; max-width: 72%; text-overflow: ellipsis; }
 .danger-zone { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 #clearBookBtn.confirm { border-color: var(--fire); color: var(--fire); }
 body { margin: 0; }
