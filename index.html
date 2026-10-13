@@ -173,7 +173,7 @@ header.top p { margin: 0; color: var(--muted); font-size: 13px; }
 .hintarrow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; overflow: visible; }
 .hintarrow .shaft { stroke: #35c9de; stroke-linecap: round; stroke-dasharray: 2 0; filter: drop-shadow(0 0 4px rgba(0,0,0,.5)); }
 .hintarrow .head { fill: #35c9de; filter: drop-shadow(0 0 4px rgba(0,0,0,.5)); }
-.hintarrow .slot { fill: rgba(53, 201, 222, .18); stroke: #35c9de; stroke-width: 2; stroke-dasharray: 6 5; animation: slotdash 1s linear infinite; }
+.hintarrow .slot { fill: rgba(53, 201, 222, .18); stroke: #35c9de; stroke-width: 2; stroke-dasharray: 6 5; animation: slotdash 1s linear 8; }
 @keyframes slotdash { to { stroke-dashoffset: -22; } }
 @keyframes pulse { to { box-shadow: 0 0 0 4px var(--gold), 0 0 20px var(--gold); transform: scale(1.05); } }
 .tile.held { transition: none; z-index: 5; }
@@ -348,11 +348,12 @@ body[data-theme="royal"] { --bg: #1a1230; --panel: #271b45; --panel-2: #302155; 
 #slowmoVeil { position: fixed; inset: 0; z-index: 29; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,.65) 100%); opacity: 0; transition: opacity .3s; }
 #slowmoVeil.on { opacity: 1; }
 /* 演出：連続PERFECT中は盤面のふちがオーラで光る */
-.view.game .board.aura1 { box-shadow: inset 0 0 0 2px var(--boardline, #232b4d), 0 0 14px 2px rgba(255,214,90,.5); animation: aura 2.4s ease-in-out infinite; }
-.view.game .board.aura2 { box-shadow: inset 0 0 0 2px #ffb347, 0 0 20px 4px rgba(255,150,60,.6); animation: aura 2s ease-in-out infinite; }
-.view.game .board.aura3 { box-shadow: inset 0 0 0 2px #ffd6e8, 0 0 26px 6px rgba(255,110,170,.6), 0 0 6px 2px rgba(255,220,120,.5); animation: aura 2s ease-in-out infinite; }  /* 盤面に filter をかけない：タイルの色が変わって見づらくなる */
-@keyframes aura { 50% { box-shadow: inset 0 0 0 2px rgba(255,255,255,.35), 0 0 10px 2px rgba(255,214,90,.3); } }
-@media (prefers-reduced-motion: reduce) { .view.game .board.aura1, .view.game .board.aura2, .view.game .board.aura3 { animation: none; } #heat { transition: none; } }
+.view.game .board.aura1 { box-shadow: inset 0 0 0 2px var(--boardline, #232b4d), 0 0 14px 2px rgba(255,214,90,.5); --auraIn: rgba(255,214,90,.45); --auraT: 2.4s; }
+.view.game .board.aura2 { box-shadow: inset 0 0 0 2px #ffb347, 0 0 20px 4px rgba(255,150,60,.6); --auraIn: rgba(255,150,60,.5); --auraT: 2s; }
+.view.game .board.aura3 { box-shadow: inset 0 0 0 2px #ffd6e8, 0 0 26px 6px rgba(255,110,170,.6), 0 0 6px 2px rgba(255,220,120,.5); --auraIn: rgba(255,110,170,.55); --auraT: 2s; }
+.view.game .board.aura1::after, .view.game .board.aura2::after, .view.game .board.aura3::after { content: ""; position: absolute; inset: 0; z-index: 8; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 14px 3px var(--auraIn); opacity: 0; will-change: opacity; animation: auraPulse var(--auraT) ease-in-out infinite; }
+@keyframes auraPulse { 50% { opacity: 1; } }  /* 盤面に filter をかけない：タイルの色が変わって見づらくなる */
+@media (prefers-reduced-motion: reduce) { .view.game .board.aura1::after, .view.game .board.aura2::after, .view.game .board.aura3::after { animation: none; } #heat { transition: none; } }
 #auraWrap { display: contents; }
 .auraTag { position: fixed; z-index: 26; padding: 1px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 900; color: #1a1426; background: linear-gradient(90deg, #ffe45c, #ff9f1c); pointer-events: none; }
 /* 演出：6文字以上の単語は大きく出す */
@@ -802,11 +803,14 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
     <header class="view-head"><h2>設定</h2><p class="sub">変えると最初からやり直しになります</p></header>
     <div class="card">
       <div class="controls">
+      <!-- ルールの細かい設定は画面から外した（いつも「あり」のまま。プログラムが参照するので部品は残す） -->
+      <div hidden>
       <label><input type="checkbox" id="revToggle" checked> 逆から読むのもOK</label>
       <label><input type="checkbox" id="lToggle" checked> L字もOK（5文字のみ）</label>
       <label><input type="checkbox" id="short3" checked> 3文字は基本の単語だけ</label>
       <label><input type="checkbox" id="cascadeToggle" checked> 落ちコン（連鎖）あり</label>
       <label><input type="checkbox" id="cascStrict" checked> 落ちコンは基本の単語・4文字以上だけ</label>
+      </div>
       <label>単語の範囲
         <select id="dictSel">
           <option value="1">基本（約1,700語）</option>
@@ -882,28 +886,8 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       <div class="theme-grid" id="themeGrid"></div>
     </div>
     <div class="card">
-      <h2>ルール（試作版）</h2>
-      <ol class="rules">
-        <li>文字をつかんでなぞる。<b>最初に動かした瞬間から時間が減る</b></li>
-        <li>指を離すと、縦・横（逆から読むのもOK）と<b>L字（5文字のみ）</b>で3文字以上の英単語を探す。<b>3文字の単語は基本の単語だけ</b></li>
-        <li>1文字だけ共有する単語は同時に消える（交差）。重なる場合は長い単語が優先</li>
-        <li>得点：3文字30・4文字80・5文字150・6文字240。<b>お題は3倍</b></li>
-        <li><b>お題の文字はいつも金色のふちで光る</b>。アシスト「しっかり」なら、4秒操作しないと（2・4・8秒から選べる）、作れる単語を<b>1つだけ</b>水色で示し、<b>動かす文字と行き先を矢印で</b>教える。さらに待つと別の単語に切り替わる</li>
-        <li>1ターンに消えた単語の数がコンボ。1コンボごとに<b>+25%</b></li>
-        <li>ノルマを続けて達成すると<b>連続ボーナス</b>（1回ごとに+10%、最大+100%）</li>
-        <li><b>エンドレス</b>：毎ターン<b>石</b>が落ちてきて文字が石になる。石は単語に使えない。<b>単語のとなりの石は一緒に壊れる</b>（1個20点）。単語ができなかったターンは石が2個多く落ちる。15ターンごとに落ちる石が1個増え、<b>石が15個たまったら詰み</b></li>
-        <li><b>ノルマ</b>：1ターンの得点が<b>ノルマに届かないとライフが1減る</b>。ライフ3つがなくなったら終わり</li>
-        <li><b>5ターンごとにレベルアップ</b>。ノルマが上がり、Lv.4からはなぞれる時間が1秒ずつ短くなる（最短6秒）</li>
-        <li>落ちコンは縦横まっすぐの単語だけ（逆読みOK）。基本の単語で4文字以上のときだけ</li>
-      </ol>
+      <h2>単語のデータについて</h2>
       <p class="credit">単語の意味：EJDict-hand（パブリックドメイン）／品詞：WordNet 3.1／よく使う度：wordfreq。基本の単語は意味と品詞を確認して直しました。標準・発展の単語は自動で抜き出したため、ずれている単語があります。</p>
-      <div class="legend">
-        <span class="chip el-v">動詞</span>
-        <span class="chip el-a">形容詞</span>
-        <span class="chip el-n">名詞</span>
-        <span class="chip el-d">副詞</span>
-        <span class="chip el-p">その他</span>
-      </div>
     </div>
   </section>
 
@@ -9179,16 +9163,24 @@ zoom|v2|ズームする・急上昇する`;
   const SFX = (() => {
     let ctx = null, master = null;
     const on = () => $("soundToggle").checked;
-    let verb = null, lastCT = -1, lastWall = 0, intrTries = 0;
+    let verb = null, lastCT = -1, lastWall = 0, intrTries = 0, lastSound = 0, napping = false;
     // 音の部品をすべて捨てる（次にさわったときに作りなおす）。広告のあとや、アプリに戻ったときにiPhoneで音が出なくなるのを防ぐ
-    function reset() { try { if (ctx) ctx.close(); } catch (e) {} ctx = null; master = null; verb = null; lastCT = -1; lastWall = 0; intrTries = 0; }
+    function reset() { try { if (ctx) ctx.close(); } catch (e) {} ctx = null; master = null; verb = null; lastCT = -1; lastWall = 0; intrTries = 0; napping = false; }
+    // 6秒以上なにも鳴らしていなければ休ませる（iPhoneは音の部品が動いているだけで電池を使い、熱くなる）
+    function wake() { lastSound = performance.now(); if (ctx && napping) { napping = false; try { const pr = ctx.resume(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {} } }
+    setInterval(() => {
+      if (!ctx || napping || ctx.state !== "running") return;
+      const now = performance.now();
+      if (now - lastSound > 6000 && now - lastWall > 6000) { napping = true; try { const pr = ctx.suspend(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {} }
+    }, 2000);
     function ensure() {
       try {
         if (ctx) {
           const now = performance.now();
           // 「動いている」のに時間が進んでいない／止まったまま戻らない → こわれているので作りなおす
           const stuck = ctx.state === "running" && lastWall && now - lastWall > 1500 && ctx.currentTime === lastCT;
-          if (ctx.state !== "running" && ctx.state !== "closed") intrTries++; else intrTries = 0;
+          if (napping && ctx.state === "suspended") { napping = false; intrTries = 0; }  // 自分で休ませただけ（こわれてはいない）
+          else if (ctx.state !== "running" && ctx.state !== "closed") intrTries++; else intrTries = 0;
           if (ctx.state === "closed" || stuck || intrTries >= 3) reset();
         }
         // iPhoneのマナーモード（消音スイッチ）のときは鳴らさない。ほかのアプリの音楽とは一緒に鳴る
@@ -9219,6 +9211,7 @@ zoom|v2|ズームする・急上昇する`;
     document.addEventListener("pointerdown", () => ensure(), { capture: true, passive: true });
     function tone(freq, dur, o = {}) {
       if (!ctx || !on()) return;
+      wake();
       const t = ctx.currentTime + (o.when || 0);
       const osc = ctx.createOscillator(), g = ctx.createGain();
       osc.type = o.type || "sine";
@@ -9234,6 +9227,7 @@ zoom|v2|ズームする・急上昇する`;
     }
     function noise(dur, o = {}) {
       if (!ctx || !on()) return;
+      wake();
       const t = ctx.currentTime + (o.when || 0);
       const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
       const d = buf.getChannelData(0);
@@ -10077,6 +10071,19 @@ zoom|v2|ズームする・急上昇する`;
     const tag = wrap.firstChild; tag.hidden = n < 2 || !$("modeScreen").hidden;
     if (!tag.hidden) { tag.textContent = `PERFECT ${n}連続`; const r = boardEl.getBoundingClientRect(); tag.style.top = Math.max(4, r.top - 26) + "px"; tag.style.left = (r.right - tag.offsetWidth - 4) + "px"; }
   }
+  // 表示が盤面からはみ出すと切れて見えるので、盤面の内側におさまるように位置をずらす（長い意味は折り返す）
+  function fitLabel(lab) {
+    const b = boardEl.getBoundingClientRect(), pad = 4;
+    const inL = b.left + boardEl.clientLeft + pad, inT = b.top + boardEl.clientTop + pad;
+    const inR = inL + boardEl.clientWidth - pad * 2, inB = inT + boardEl.clientHeight - pad * 2;
+    if (lab.offsetWidth > inR - inL) { lab.style.whiteSpace = "normal"; lab.style.width = (inR - inL) + "px"; }
+    const r = lab.getBoundingClientRect();
+    let dx = 0, dy = 0;
+    if (r.left < inL) dx = inL - r.left; else if (r.right > inR) dx = inR - r.right;
+    if (r.top < inT) dy = inT - r.top; else if (r.bottom > inB) dy = inB - r.bottom;
+    if (dx) lab.style.left = (parseFloat(lab.style.left) + dx) + "px";
+    if (dy) lab.style.top = (parseFloat(lab.style.top) + dy) + "px";
+  }
   async function popWord(f, combo, popped) {
     const info = DICT.get(f.w), p = POS[info.pos];
     const tiles = f.cells.map(x => board[x.r][x.c]);
@@ -10092,6 +10099,7 @@ zoom|v2|ズームする・急上昇する`;
     lab.style.cssText = `--wc:${color};--bc:${tier};left:${Math.max(70, Math.min(COLS * S - 70, cx))}px;top:${below ? (maxR + 1) * S + 4 : minR * S - 4}px`;
     lab.innerHTML = `<span class="wl-c"><b>${combo}</b> COMBO</span><span class="wl-w">${f.w}</span><span class="wl-m">${esc(info.m)}</span>`;
     $("tiles").appendChild(lab);
+    fitLabel(lab);
     lab.animate([{ transform: lab.style.transform || "", opacity: 0, scale: .5 }, { opacity: 1, scale: 1.08, offset: .6 }, { opacity: 1, scale: 1 }], { duration: 220, easing: "ease-out" });
     SFX.word(combo); buzz(Math.min(14 + combo * 8, 70));
     gfx.burst(Math.min(8 + combo * 3, 30));
@@ -11361,12 +11369,14 @@ ${recent || "まだありません"}`;
       <circle cx="${pts[0][0]}" cy="${pts[0][1]}" r="${S * 0.42}" fill="none" stroke="#fff" stroke-width="4"/>
       <text x="${pts[0][0]}" y="${route[0].r === 0 ? pts[0][1] + S * 0.68 : pts[0][1] - S * 0.5}" text-anchor="middle" font-size="${S * 0.22}" font-weight="900" fill="#fff" stroke="#000" stroke-width="3" paint-order="stroke">START</text>`;
     boardEl.appendChild(svg);
-    svg.querySelector(".tline").animate([{ strokeDashoffset: 0 }, { strokeDashoffset: -sw * 1.8 * 4 }], { duration: 900, iterations: Infinity });
-    const f = document.createElement("div"); f.id = pre + "Finger"; f.className = "routeFinger"; boardEl.appendChild(f);
-    const n = pts.length, kf = [{ left: pts[0][0] + "px", top: pts[0][1] + "px", opacity: 0, offset: 0 }, { left: pts[0][0] + "px", top: pts[0][1] + "px", opacity: 1, offset: .08 }];
-    pts.forEach((p, k) => kf.push({ left: p[0] + "px", top: p[1] + "px", opacity: 1, offset: .14 + .74 * k / (n - 1) }));
-    kf.push({ left: pts[n - 1][0] + "px", top: pts[n - 1][1] + "px", opacity: 0, offset: 1 });
-    f.animate(kf, { duration: 700 + n * 330, iterations: Infinity, easing: "linear" });
+    const n = pts.length, loopMs = 700 + n * 330, loops = pre === "tut" ? Infinity : 3;
+    svg.querySelector(".tline").animate([{ strokeDashoffset: 0 }, { strokeDashoffset: -sw * 1.8 * 4 }], { duration: 900, iterations: loops === Infinity ? Infinity : Math.ceil(loops * loopMs / 900) });
+    const f = document.createElement("div"); f.id = pre + "Finger"; f.className = "routeFinger"; f.style.left = "0px"; f.style.top = "0px"; f.style.opacity = "0"; boardEl.appendChild(f);
+    const at = p => `translate(${p[0]}px, ${p[1]}px)`;
+    const kf = [{ transform: at(pts[0]), opacity: 0, offset: 0 }, { transform: at(pts[0]), opacity: 1, offset: .08 }];
+    pts.forEach((p, k) => kf.push({ transform: at(p), opacity: 1, offset: .14 + .74 * k / (n - 1) }));
+    kf.push({ transform: at(pts[n - 1]), opacity: 0, offset: 1 });
+    f.animate(kf, { duration: loopMs, iterations: loops, easing: "linear" });
   }
   async function tutAfter() {
     if (!tut) return;
