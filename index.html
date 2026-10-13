@@ -297,10 +297,10 @@ html, body { height: 100%; overflow: hidden; }
 .mt.k3 { background: linear-gradient(#f9edbd, #ecd27a); border-color: #b98d16; color: #4a3806; }
 .mh { background: none; border: 0; color: #e07a66; font-size: 26px; font-family: inherit; }
 .mc-body { display: grid; gap: 4px; min-width: 0; }
-.mc-name { font-size: 18px; color: #fff; }
+.mc-name { font-size: 19px; color: #fff; }
 .mc-name small { font-size: 12px; color: var(--muted); font-weight: 500; margin-left: 4px; }
-.mc-desc { font-size: 12.5px; line-height: 1.5; color: var(--muted); }
-.mc-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
+.mc-desc { font-size: 13px; line-height: 1.4; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-meta { display: flex; justify-content: space-between; margin-top: 2px; gap: 8px; font-size: 12px; color: var(--muted); }
 .mc-best b { font-family: var(--font-display); color: var(--gold); font-size: 14px; }
 .season { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 14px; border-radius: 14px; border: 2px dashed var(--gold); background: color-mix(in srgb, var(--gold) 12%, var(--panel)); color: var(--fg); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .season b { color: var(--gold); }
@@ -905,33 +905,33 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       <button type="button" class="mode-card" data-mode="stage" style="--mc:#e06aa8">
         <span class="mc-art" aria-hidden="true"><i class="mt k0">P</i><i class="mt k1">E</i><i class="mt k2">R</i><i class="mt k3">F</i></span>
         <span class="mc-body">
-          <b class="mc-name">パーフェクト <small>一括消しパズル</small></b>
-          <span class="mc-desc">どの盤面にも、1回なぞるだけで全部の色が消える道がかならずある。ステージが進むほど色が増えて道が長くなり、ななめも登場</span>
-          <span class="mc-meta"><span>ライフ3つ・消し残すと−1</span><span class="mc-best">BEST <b data-best="stage">0</b></span></span>
+          <b class="mc-name">ひと筆パーフェクト</b>
+          <span class="mc-desc">1回なぞって全部消す</span>
+          <span class="mc-meta"><span class="mc-best">BEST <b data-best="stage">0</b></span></span>
         </span>
       </button>
       <button type="button" class="mode-card" data-mode="study" style="--mc:#5fae5a">
         <span class="mc-art" aria-hidden="true"><i class="mt k0">C</i><i class="mt k0">A</i><i class="mt k0">T</i><i class="mt">猫</i></span>
         <span class="mc-body">
-          <b class="mc-name">単語トレーニング <small>意味→つづり</small></b>
-          <span class="mc-desc">日本語の意味を見て、その英単語を色の文字で作る。まちがえた単語はあとでまた出てくるから、遊びながら覚えられる</span>
-          <span class="mc-meta"><span>ライフ3つ・まちがえると−1</span><span class="mc-best">BEST <b data-best="study">0</b></span></span>
+          <b class="mc-name">つづりトレーニング</b>
+          <span class="mc-desc">意味を見て英単語をつくる</span>
+          <span class="mc-meta"><span class="mc-best">BEST <b data-best="study">0</b></span></span>
         </span>
       </button>
       <button type="button" class="mode-card" data-mode="daily" style="--mc:#d9b45a">
         <span class="mc-art" aria-hidden="true"><i class="mt k3">D</i><i class="mt k0">A</i><i class="mt k1">Y</i><i class="mt k4">!</i></span>
         <span class="mc-body">
-          <b class="mc-name">デイリー <small id="dailyDate"></small></b>
-          <span class="mc-desc">8色の単語がごちゃまぜの盤面に、1回なぞるだけで全部消える「天才の1手」がかくれている。10問のあとは<b>エクストラ</b>がずっと続く。問題は毎日0時に入れかわり、みんな同じ</span>
+          <b class="mc-name">デイリーエクストラ<small id="dailyDate" hidden></small></b>
+          <span class="mc-desc">毎日かわる盤面、どこまで続く？</span>
           <span class="mc-meta"><span id="dailyStreak">連続 0日</span><span class="mc-best">今日のBEST <b data-best="daily">0</b></span></span>
         </span>
       </button>
       <button type="button" class="mode-card" data-mode="review" id="reviewCard" style="--mc:#2bb3a6" hidden>
         <span class="mc-art" aria-hidden="true"><i class="mt k1">R</i><i class="mt k1">E</i><i class="mt k1">V</i><i class="mt">復</i></span>
         <span class="mc-body">
-          <b class="mc-name">復習 <small>まちがえた単語だけ</small></b>
-          <span class="mc-desc">単語トレーニングでまちがえた単語だけが出てくる。全部正解すると「復習コンプリート！」</span>
-          <span class="mc-meta"><span id="reviewCount">0語</span><span>ライフ3つ</span></span>
+          <b class="mc-name">まちがい復習</b>
+          <span class="mc-desc">まちがえた単語だけもう一度</span>
+          <span class="mc-meta"><span id="reviewCount">0語</span></span>
         </span>
       </button>
       <p class="ms-note" id="msNote"></p>
@@ -11430,16 +11430,16 @@ ${recent || "まだありません"}`;
     { const d = new Date(), di = dailyInfo(), y = new Date(); y.setDate(y.getDate() - 1);
       $("dailyDate").textContent = `${d.getMonth() + 1}月${d.getDate()}日の盤面`;
       const alive = di.last === dayKey() || di.last === dayKey(y);
-      $("dailyStreak").textContent = alive && di.streak ? `連続 ${di.streak}日${di.last === dayKey() ? "（今日はプレイ済み）" : ""}` : "毎日遊ぶと連続記録"; }
+      $("dailyStreak").textContent = alive && di.streak ? `連続 ${di.streak}日${di.last === dayKey() ? " ✓" : ""}` : "連続 0日"; }
     { const n = missList().filter(w => DICT.has(w) && w.length <= COLS).length;
-      $("reviewCard").hidden = n === 0; $("reviewCount").textContent = `まちがえた単語 ${n}語`; }
+      $("reviewCard").hidden = n === 0; $("reviewCount").textContent = `のこり ${n}語`; }
     { const k = seasonNow(), on = $("packSel").value === k;
       $("seasonBtn").hidden = !PACKS[k] || !PACKS[k].words.size;
       $("seasonBtn").classList.toggle("on", on);
-      $("seasonBtn").innerHTML = `<span><b>期間限定</b>　${PACKS[k].name.replace("期間限定：", "")}パック${on ? "（つかっています）" : ""}<br><small>パーフェクト・トレーニングの単語が季節の単語になる</small></span><span class="sgo">${on ? "やめる" : "つかう"}</span>`; }
+      $("seasonBtn").innerHTML = `<span><b>期間限定</b>　${PACKS[k].name.replace("期間限定：", "").replace(/の単語$/, "")}の単語</span><span class="sgo">${on ? "やめる" : "つかう"}</span>`; }
     { const on = $("packSel").value === "code";
       $("codeBtn").classList.toggle("on", on);
-      $("codeBtn").innerHTML = `<span><b>NEW</b>　エンジニア英単語パック${on ? "（つかっています）" : ""}<br><small>return・array・async など、コードによく出る単語で遊ぶ</small></span><span class="sgo">${on ? "やめる" : "つかう"}</span>`; }
+      $("codeBtn").innerHTML = `<span><b>NEW</b>　エンジニア英単語</span><span class="sgo">${on ? "やめる" : "つかう"}</span>`; }
     { const di = dailyInfo(), y = new Date(); y.setDate(y.getDate() - 1);
       const st = di.last === dayKey() || di.last === dayKey(y) ? di.streak : 0;
       const got = ACH.filter(a => achData.u[a[0]]).length;
