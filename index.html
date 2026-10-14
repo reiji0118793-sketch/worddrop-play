@@ -302,6 +302,22 @@ html, body { height: 100%; overflow: hidden; }
 .mc-desc { font-size: 13px; line-height: 1.4; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mc-meta { display: flex; justify-content: space-between; margin-top: 2px; gap: 8px; font-size: 12px; color: var(--muted); }
 .mc-best b { font-family: var(--font-display); color: var(--gold); font-size: 14px; }
+.packbtn { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--panel)); color: var(--fg); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.packbtn .pk-k { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.packbtn .pk-v { flex: 1; min-width: 0; font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.packbtn .pk-go { flex: none; padding: 4px 12px; border-radius: 999px; background: var(--gold); color: #1a1426; font-weight: 900; font-size: 12px; }
+.packbtn.mini { width: auto; max-width: 72%; padding: 6px 10px; border-width: 1px; font-size: 13px; }
+.packbtn.mini .pk-k { display: none; }
+.packbtn.mini .pk-v { font-size: 13px; }
+.packlist { display: grid; gap: 8px; }
+.packlist button { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.packlist button .pl-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--muted); }
+.packlist button.on { border: 2px solid var(--gold); background: color-mix(in srgb, var(--gold) 14%, var(--panel-2)); }
+.packlist button.on .pl-dot { border-color: var(--gold); background: radial-gradient(circle, var(--gold) 45%, transparent 50%); }
+.packlist .pl-name { font-weight: 700; font-size: 15px; }
+.packlist .pl-sub { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+.packlist .pl-tag { font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 999px; background: var(--gold); color: #1a1426; }
+.packlist .pl-tag.new { background: #5fd0b8; }
 .season { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 14px; border-radius: 14px; border: 2px dashed var(--gold); background: color-mix(in srgb, var(--gold) 12%, var(--panel)); color: var(--fg); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .season b { color: var(--gold); }
 .season.code { border-color: #5fd0b8; background: color-mix(in srgb, #5fd0b8 12%, var(--panel)); }
@@ -749,6 +765,13 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
     </div>
   </div>
 
+  <div class="cansheet" id="packSheet" role="dialog" aria-label="単語パックをえらぶ" hidden>
+    <div class="cs-in">
+      <div class="cs-head"><b>単語パックをえらぶ</b><button type="button" id="packClose">閉じる</button></div>
+      <div class="packlist" id="packList"></div>
+      <p class="cs-note">パーフェクトとつづりトレーニングの単語がかわります（デイリーはみんな同じ単語）</p>
+    </div>
+  </div>
   <div class="cansheet" id="adSheet" role="dialog" aria-label="広告の確認" hidden>
     <div class="cs-in">
       <div class="cs-head"><b id="adTitle">ナビがありません</b></div>
@@ -834,7 +857,8 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
           <option value="daily">デイリー（今日の盤面・10問）</option>
         </select>
       </label>
-      <label>単語パック
+      <label class="packrow">単語パック <button type="button" class="packbtn mini" id="packBtn2"></button></label>
+      <label hidden>単語パック
         <select id="packSel">
           <option value="all" selected>すべての単語</option>
           <option value="eiken3">英検3級レベル（中学卒業程度）</option>
@@ -900,8 +924,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       <h1 class="ms-title">WORD DROP</h1>
       <p class="ms-sub">英単語ドロップ ・ モードをえらぶ</p>
       <div class="ms-badges" id="msBadges"></div>
-      <button type="button" class="season" id="seasonBtn" hidden></button>
-      <button type="button" class="season code" id="codeBtn"></button>
+      <button type="button" class="packbtn" id="packBtn"></button>
       <button type="button" class="mode-card" data-mode="stage" style="--mc:#e06aa8">
         <span class="mc-art" aria-hidden="true"><i class="mt k0">P</i><i class="mt k1">E</i><i class="mt k2">R</i><i class="mt k3">F</i></span>
         <span class="mc-body">
@@ -9807,7 +9830,7 @@ zoom|v2|ズームする・急上昇する`;
           if (heal) { lives++; SFX.levelUp(); buzz([20, 40, 20]); }
           if (level >= 20) achTry("stage20"); if (level >= 40) achTry("stage40");
           setStatus(level === diagFrom()
-            ? `<b>STAGE ${level}：ななめ解禁！</b>　指をななめに動かすと、ななめのマスと入れ替わる`
+            ? `<b>STAGE ${level}：答えの道にななめが登場！</b>　ななめに動かさないと全部消せない盤面も出てくる`
             : `${heal ? "<b>ノーミス3連続！ ライフ+1</b>　" : ""}<b>STAGE ${level}</b>　${isTenStage(level) ? "<b>10コンボボーナス！</b> 3文字の単語10個を1回なぞって全部消そう" : isSpeedStage(level) ? "<b>スピード勝負！</b> 答えの道がとても長い。急いでなぞろう" : isFullStage(level) ? "<b>全面ボーナス！</b> 白いマスなし。全部消せたら盤面まるごとPERFECT" : `${cwords.length}色を1回なぞって全部消そう`}`);
         } else {
           streak = 0; lives--; noMiss = 0;
@@ -9828,7 +9851,7 @@ zoom|v2|ズームする・急上昇する`;
           setStatus(`<b>正解！</b>　${cwords.map(x => `${x.w}（${esc(x.m)}）`).join("・")}　+${bonus}`);
           if (studyBoards >= studyNeed()) {
             level++; studyBoards = 0;
-            setStatus(`<b>レベルアップ！ Lv.${level}</b>　${level === diagFrom() ? "ここから、ななめにも動かせる（たまにだけ出るよ）" : studyCount() > cwords.length ? `次から${studyCount()}語いっしょに出るよ` : "少し長い単語も出てくる"}`);
+            setStatus(`<b>レベルアップ！ Lv.${level}</b>　${level === diagFrom() ? "ここから、ななめに動かす答えも出てくる（たまにだけ）" : studyCount() > cwords.length ? `次から${studyCount()}語いっしょに出るよ` : "少し長い単語も出てくる"}`);
           }
           await sleep(700);
         } else {
@@ -10496,7 +10519,7 @@ zoom|v2|ズームする・急上昇する`;
       $("lvFill").style.width = ((turns % STONE_EVERY) / STONE_EVERY * 100) + "%";
     } else if (isPuzzle()) {
       $("hearts").innerHTML = Array.from({ length: LIVES }, (_, i) => `<span class="${i < lives ? "on" : "off"}">♥</span>`).join("");
-      $("quota").innerHTML = isStage() ? `<b>${cwords.length}色</b>を1回で全部消す${allowDiag() ? "・ななめOK" : ""}` : `正解 <b>${studyOK}</b>語　この盤面は${cwords.length}語`;
+      $("quota").innerHTML = isStage() ? `<b>${cwords.length}色</b>を1回で全部消す` : `正解 <b>${studyOK}</b>語　この盤面は${cwords.length}語`;
     } else if (isEnergy()) {
       const pct = Math.round(energy / ENERGY_MAX * 100);
       $("hearts").innerHTML = `<span class="ebar${pct <= 25 ? " danger" : ""}" aria-label="エネルギー ${pct}"><i style="width:${pct}%"></i></span>`;
@@ -11054,10 +11077,11 @@ ${recent || "まだありません"}`;
   // デイリー：毎ターン、その日の決まったパズル（1本の道で5色ぜんぶ消せる）を出す。誰でも同じ盤面
   let dailyRoute = null;
   // ---------- パーフェクト（ステージ）と単語トレーニング ----------
-  // ななめは終盤だけ：パーフェクトはSTAGE 28（8色）から、単語トレーニングはLv.10から。それまでは指もたて・よこにしか動かない
+  // 答えの道にななめが入るのは終盤だけ：パーフェクトはSTAGE 28（8色）から、単語トレーニングはLv.10から
+  // 指の動き（ななめのマスとの入れ替え）は、どのモードでもデイリーと同じくいつでもできる
   const DIAG_STAGE = 28, DIAG_STUDY = 10;
   const diagFrom = () => isStudy() ? DIAG_STUDY : DIAG_STAGE;
-  const allowDiag = () => !isPuzzle() || level >= diagFrom();
+  const allowDiag = () => true;
   // 答えの道に入れてよいななめの回数：解禁直後は1回まで、さらに10段階進むと2回まで
   const diagMax = () => level < diagFrom() ? 0 : level < diagFrom() + 10 ? 1 : 2;
   let noMiss = 0, puzzleRoute = null, stageSnap = null, stageWords = null, studyN = 0, studyOK = 0, studyBoards = 0, studyReveal = false, studyRecent = [];
@@ -11442,13 +11466,7 @@ ${recent || "まだありません"}`;
       $("dailyStreak").textContent = alive && di.streak ? `連続 ${di.streak}日${di.last === dayKey() ? " ✓" : ""}` : "連続 0日"; }
     { const n = missList().filter(w => DICT.has(w) && w.length <= COLS).length;
       $("reviewCard").hidden = n === 0; $("reviewCount").textContent = `のこり ${n}語`; }
-    { const k = seasonNow(), on = $("packSel").value === k;
-      $("seasonBtn").hidden = !PACKS[k] || !PACKS[k].words.size;
-      $("seasonBtn").classList.toggle("on", on);
-      $("seasonBtn").innerHTML = `<span><b>期間限定</b>　${PACKS[k].name.replace("期間限定：", "").replace(/の単語$/, "")}の単語</span><span class="sgo">${on ? "やめる" : "つかう"}</span>`; }
-    { const on = $("packSel").value === "code";
-      $("codeBtn").classList.toggle("on", on);
-      $("codeBtn").innerHTML = `<span><b>NEW</b>　エンジニア英単語</span><span class="sgo">${on ? "やめる" : "つかう"}</span>`; }
+    renderPackBtns();
     { const di = dailyInfo(), y = new Date(); y.setDate(y.getDate() - 1);
       const st = di.last === dayKey() || di.last === dayKey(y) ? di.streak : 0;
       const got = ACH.filter(a => achData.u[a[0]]).length;
@@ -11471,19 +11489,43 @@ ${recent || "まだありません"}`;
     start();
     if (!tutDone()) runTutorial();
   }));
-  $("codeBtn").addEventListener("click", () => {
-    SFX.ensure(); buzz(15);
-    $("packSel").value = $("packSel").value === "code" ? "all" : "code";
-    try { localStorage.setItem("wordDrop.pack.v1", $("packSel").value); } catch (e) {}
-    buildDict(); entriesCache = null; bookDirty = true; start(); showModeScreen();
+  // ---------- 単語パック：タイトルと設定の同じボタンから、1つの画面でえらぶ ----------
+  function packLabel(v) {
+    const o = $("packSel").querySelector(`option[value="${v}"]`); const t = o ? o.textContent : v;
+    const m = /^(.*?)（(.*)）$/.exec(t.replace("期間限定：", ""));
+    return m ? { name: m[1], sub: m[2] } : { name: t.replace("期間限定：", ""), sub: "" };
+  }
+  function renderPackBtns() {
+    const L = packLabel($("packSel").value);
+    for (const id of ["packBtn", "packBtn2"]) { const b = $(id); if (b) b.innerHTML = `<span class="pk-k">単語パック</span><span class="pk-v">${esc(L.name)}</span><span class="pk-go">かえる</span>`; }
+  }
+  function openPackSheet() {
+    SFX.ensure(); buzz(12);
+    const cur = $("packSel").value;
+    const opts = [...$("packSel").options].filter(o => !o.hidden && !o.disabled);
+    $("packList").innerHTML = opts.map(o => {
+      const L = packLabel(o.value), pk = PACKS[o.value];
+      const tag = pk && pk.season ? `<span class="pl-tag">期間限定</span>` : o.value === "code" ? `<span class="pl-tag new">NEW</span>` : "<span></span>";
+      const sub = o.value === "all" ? "いろいろな英単語がまざって出る" : L.sub;
+      return `<button type="button" data-pack="${o.value}" class="${o.value === cur ? "on" : ""}"><span class="pl-dot"></span><span><span class="pl-name">${esc(L.name)}</span>${sub ? `<span class="pl-sub">${esc(sub)}</span>` : ""}</span>${tag}</button>`;
+    }).join("");
+    $("packSheet").hidden = false;
+  }
+  $("packList").addEventListener("click", e => {
+    const b = e.target.closest("button[data-pack]"); if (!b) return;
+    const v = b.dataset.pack; $("packSheet").hidden = true;
+    if (v === $("packSel").value) return;
+    SFX.levelUp(); buzz(20);
+    $("packSel").value = v;
+    try { localStorage.setItem("wordDrop.pack.v1", v); } catch (e) {}
+    buildDict(); entriesCache = null; bookDirty = true; start(); renderPackBtns();
+    if (!$("modeScreen").hidden) showModeScreen();
+    setStatus(`単語パックを「${packLabel(v).name}」にしました`);
   });
-  $("seasonBtn").addEventListener("click", () => {
-    SFX.ensure(); buzz(15);
-    const k = seasonNow();
-    $("packSel").value = $("packSel").value === k ? "all" : k;
-    try { localStorage.setItem("wordDrop.pack.v1", $("packSel").value); } catch (e) {}
-    buildDict(); entriesCache = null; bookDirty = true; start(); showModeScreen();
-  });
+  $("packBtn").addEventListener("click", openPackSheet);
+  $("packBtn2").addEventListener("click", e => { e.preventDefault(); openPackSheet(); });
+  $("packClose").addEventListener("click", () => { $("packSheet").hidden = true; });
+  $("packSheet").addEventListener("click", e => { if (e.target === $("packSheet")) $("packSheet").hidden = true; });
   // タイトル画面は、下のタブの上で終わらせる（タブや広告の後ろに文字が透けないように）
   function fitModeScreen() {
     const tb = document.querySelector(".tabbar"); if (!tb) return;
@@ -11836,14 +11878,14 @@ ${recent || "まだありません"}`;
   const assistChanged = () => { saveAssist(); updateAssistChip(); hintStage = 0; applyHintStage(); renderCanList(); render(); };
   $("assistSel").addEventListener("change", () => { assistChanged(); loadBest(); updateHud(); });
   try { const pk = localStorage.getItem("wordDrop.pack.v1"); if (pk && (pk === "all" || PACKS[pk])) $("packSel").value = pk; } catch (e) {}
-  $("packSel").addEventListener("change", () => { try { localStorage.setItem("wordDrop.pack.v1", $("packSel").value); } catch (e) {} buildDict(); entriesCache = null; start(); bookDirty = true; });
+  $("packSel").addEventListener("change", () => { try { localStorage.setItem("wordDrop.pack.v1", $("packSel").value); } catch (e) {} buildDict(); entriesCache = null; start(); bookDirty = true; renderPackBtns(); });
   $("modeSel").addEventListener("change", () => { try { localStorage.setItem("wordDrop.mode.v1", $("modeSel").value); } catch (e) {} start(); });
   try { const m = localStorage.getItem("wordDrop.mode.v1"); if (m === "stage" || m === "study" || m === "daily") $("modeSel").value = m; else if (m === "color" || m === "endless") $("modeSel").value = "stage"; } catch (e) {}  // ノルマモードは試遊前に外した（コードは残してある）
   $("hintDelay").addEventListener("change", assistChanged);
   $("assistChip").addEventListener("click", e => { e.stopPropagation(); const v = assistLv(); $("assistSel").value = String(v === 0 ? assistMax() : v - 1); assistChanged(); loadBest(); updateHud(); setStatus(`アシストを「${ASSIST_NAME[assistLv()]}」にしました`); });
   updateAssistChip();
   buildDict();
-  setupSeasonPacks();
+  setupSeasonPacks(); renderPackBtns();
   buildPaths();
   new ResizeObserver(() => { measure(); if (board) render(); }).observe(boardEl);
   start();
