@@ -301,6 +301,10 @@ html, body { height: 100%; overflow: hidden; }
 .mc-name small { font-size: 12px; color: var(--muted); font-weight: 500; margin-left: 4px; }
 .mc-desc { font-size: 13px; line-height: 1.4; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mc-meta { display: flex; justify-content: space-between; margin-top: 2px; gap: 8px; font-size: 12px; color: var(--muted); }
+.mc-resume { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; padding-top: 6px; border-top: 1px dashed color-mix(in srgb, var(--mc) 50%, var(--line)); font-size: 12.5px; }
+.mc-resume[hidden] { display: none; }
+.mc-resume .mr-go { color: var(--gold); font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-resume .mr-new { flex: none; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: 11.5px; }
 .mc-best b { font-family: var(--font-display); color: var(--gold); font-size: 14px; }
 .packbtn { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--panel)); color: var(--fg); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .packbtn .pk-k { color: var(--muted); font-size: 12px; white-space: nowrap; }
@@ -347,6 +351,7 @@ html, body { height: 100%; overflow: hidden; }
 .statsbox .row { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--panel-2); }
 .statsbox .row b { color: var(--gold); font-weight: 700; }
 #feedbackBtn { width: 100%; }
+.settings .card + .card { margin-top: 12px; }
 .sharebtn { background: linear-gradient(#7cc4ff, #3f86d9); color: #061a33; border: 0; font-weight: 900; }
 body[data-theme="sakura"] { --bg: #26161f; --panel: #36202d; --panel-2: #43283a; --line: #6a3d58; --gold: #f2a6c6; --boardbg: #1d1018; --boardline: #43283a; --mshi: #4a2a3d; }
 body[data-theme="ocean"] { --bg: #0b1d2a; --panel: #112c40; --panel-2: #16384f; --line: #245272; --gold: #6fd3e8; --boardbg: #081620; --boardline: #16384f; --mshi: #174060; }
@@ -604,6 +609,29 @@ body { margin: 0; }
   background: repeating-conic-gradient(#ff4d6d 0 8deg, transparent 8deg 15deg, #ffe45c 15deg 23deg, transparent 23deg 30deg, #38bdf8 30deg 38deg, transparent 38deg 45deg, #4ade80 45deg 53deg, transparent 53deg 60deg);
   opacity: .55; -webkit-mask: radial-gradient(circle, #000 22%, transparent 70%); mask: radial-gradient(circle, #000 22%, transparent 70%); }
 @keyframes rainbow { to { background-position: 200% 0; } }
+/* GREAT PERFECT：金色 */
+#gfx .pftxt.gold { background: linear-gradient(180deg, #fff6c2, #ffd84d 45%, #c98a14 55%, #ffe680); -webkit-background-clip: text; background-clip: text; animation: none; filter: drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 22px rgba(255,200,60,.8)); }
+#gfx .pfrays.gold { background: repeating-conic-gradient(rgba(255,215,80,.9) 0 9deg, transparent 9deg 18deg); }
+#gfx .bit.coin { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff6c2, #ffd84d 45%, #b8860b) !important; box-shadow: 0 0 6px rgba(255,210,80,.8); }
+/* スロット */
+#gfx .slot { position: absolute; left: 50%; transform: translate(-50%, -50%); padding: 12px 14px 10px; border-radius: 18px; background: linear-gradient(#3a2a10, #1a1206); border: 3px solid #ffd84d; box-shadow: 0 0 0 3px #1a1206, 0 0 30px rgba(255,200,60,.6); text-align: center; }
+#gfx .slot .sl-top { font-family: var(--font-display); font-weight: 900; font-size: 14px; letter-spacing: .3em; color: #ffd84d; margin-bottom: 8px; }
+#gfx .slot .reels { display: flex; gap: 8px; }
+#gfx .slot .reel { width: 72px; height: 84px; border-radius: 10px; background: linear-gradient(#fff, #e9e4d6 50%, #fff); overflow: hidden; position: relative; box-shadow: inset 0 6px 10px rgba(0,0,0,.35), inset 0 -6px 10px rgba(0,0,0,.35); }
+#gfx .slot .strip { position: absolute; left: 0; right: 0; top: 0; }
+#gfx .slot .sym { height: 84px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 46px; line-height: 1; }
+#gfx .slot .sym.s7 { color: #e0262f; -webkit-text-stroke: 2px #6b0d12; }
+#gfx .slot .sym.sbar { font-size: 22px; color: #fff; }
+#gfx .slot .sym.sbar i { font-style: normal; display: inline-block; padding: 4px 8px; background: #222; border-radius: 4px; letter-spacing: .05em; }
+#gfx .slot .sym.sw { color: #1f6fd1; font-size: 40px; }
+#gfx .slot .reel.hit { box-shadow: inset 0 0 0 3px #ffd84d, 0 0 16px rgba(255,216,77,.9); }
+#gfx .slot .sl-msg { margin-top: 8px; min-height: 22px; font-family: "Zen Maru Gothic", sans-serif; font-weight: 900; font-size: 18px; color: #fff; text-shadow: 0 2px 0 #000; }
+#gfx .slot.reach .sl-msg { color: #ff5b5b; }
+/* プレミア：画面が暗くなってカットイン */
+#gfx .cutin { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(ellipse at center, rgba(40,20,0,.55), rgba(0,0,0,.85)); }
+#gfx .cutin .ci-band { width: 120%; padding: 18px 0; background: linear-gradient(90deg, transparent, #c98a14 15%, #ffe680 50%, #c98a14 85%, transparent); text-align: center; transform: rotate(-6deg); box-shadow: 0 0 40px rgba(255,200,60,.7); }
+#gfx .cutin .ci-band b { display: block; font-family: var(--font-display); font-weight: 900; font-size: 40px; letter-spacing: .12em; color: #2a1600; }
+#gfx .cutin .ci-band small { display: block; font-family: "Zen Maru Gothic", sans-serif; font-weight: 900; font-size: 14px; color: #2a1600; letter-spacing: .3em; }
 .tile.wipe .face { animation: wipe .45s ease-in forwards; }
 @keyframes wipe { 30% { transform: scale(1.18); filter: brightness(1.8); } 100% { transform: scale(0) rotate(25deg); opacity: 0; } }
 .tile.dropin .face { animation: dropin .45s cubic-bezier(.2,.9,.3,1.3) both; }
@@ -827,86 +855,67 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
   </section>
 
   <section class="view settings" id="view-settings" aria-label="設定" hidden>
-    <header class="view-head"><h2>設定</h2><p class="sub">変えると最初からやり直しになります</p></header>
+    <header class="view-head"><h2>設定</h2></header>
+    <!-- 画面には出さない部品（プログラムが参照するので残す） -->
+    <div hidden>
+      <input type="checkbox" id="revToggle" checked><input type="checkbox" id="lToggle" checked><input type="checkbox" id="short3" checked>
+      <input type="checkbox" id="cascadeToggle" checked><input type="checkbox" id="cascStrict" checked>
+      <select id="modeSel">
+        <option value="stage" selected>パーフェクト</option>
+        <option value="study">つづりトレーニング</option>
+        <option value="endless">エンドレス</option>
+        <option value="color">カラー</option>
+        <option value="daily">デイリー</option>
+      </select>
+      <select id="timeSel"><option value="6">6秒</option><option value="8">8秒</option><option value="10" selected>10秒</option><option value="12">12秒</option><option value="15">15秒</option></select>
+      <select id="packSel">
+        <option value="all" selected>すべての単語</option>
+        <option value="eiken3">英検3級レベル（中学卒業程度）</option>
+        <option value="eikenp2">英検準2級レベル（高校中級程度）</option>
+        <option value="eiken2">英検2級レベル（高校卒業程度）</option>
+        <option value="code">エンジニア英単語（コードによく出る単語）</option>
+        <option value="spring">期間限定：春の単語</option>
+        <option value="summer">期間限定：夏の単語</option>
+        <option value="autumn">期間限定：秋・ハロウィンの単語</option>
+        <option value="winter">期間限定：冬・クリスマスの単語</option>
+      </select>
+      <button type="button" id="resetBtn">最初から</button>
+      <div class="statsbox" id="statsBox"></div>
+    </div>
     <div class="card">
+      <h2>あそび</h2>
       <div class="controls">
-      <!-- ルールの細かい設定は画面から外した（いつも「あり」のまま。プログラムが参照するので部品は残す） -->
-      <div hidden>
-      <label><input type="checkbox" id="revToggle" checked> 逆から読むのもOK</label>
-      <label><input type="checkbox" id="lToggle" checked> L字もOK（5文字のみ）</label>
-      <label><input type="checkbox" id="short3" checked> 3文字は基本の単語だけ</label>
-      <label><input type="checkbox" id="cascadeToggle" checked> 落ちコン（連鎖）あり</label>
-      <label><input type="checkbox" id="cascStrict" checked> 落ちコンは基本の単語・4文字以上だけ</label>
-      </div>
-      <label>単語の範囲
-        <select id="dictSel">
-          <option value="1">基本（約1,700語）</option>
-          <option value="2" selected>標準（約3,700語）</option>
-          <option value="3">辞書すべて（約8,200語）</option>
-        </select>
-      </label>
-      <label><input type="checkbox" id="soundToggle" checked> 効果音</label>
-      <label><input type="checkbox" id="vibeToggle" checked> 振動（Androidのみ。iPhoneはアプリ化後）</label>
-      <label><input type="checkbox" id="fxToggle" checked> 派手な演出（紙吹雪・画面ゆれ）</label>
-      <label>モード
-        <select id="modeSel">
-          <option value="stage" selected>パーフェクト（一括消しパズル・ライフ3）</option>
-          <option value="study">単語トレーニング（意味→つづり・ライフ3）</option>
-          <option value="endless">エンドレス（石がたまったら終わり）</option>
-          <option value="color">カラー（5色コンボ・エネルギー制）</option>
-          <option value="daily">デイリー（今日の盤面・10問）</option>
-        </select>
-      </label>
       <label class="packrow">単語パック <button type="button" class="packbtn mini" id="packBtn2"></button></label>
-      <label hidden>単語パック
-        <select id="packSel">
-          <option value="all" selected>すべての単語</option>
-          <option value="eiken3">英検3級レベル（中学卒業程度）</option>
-          <option value="eikenp2">英検準2級レベル（高校中級程度）</option>
-          <option value="eiken2">英検2級レベル（高校卒業程度）</option>
-          <option value="code">エンジニア英単語（コードによく出る単語）</option>
-          <option value="spring">期間限定：春の単語</option>
-          <option value="summer">期間限定：夏の単語</option>
-          <option value="autumn">期間限定：秋・ハロウィンの単語</option>
-          <option value="winter">期間限定：冬・クリスマスの単語</option>
+      <label>単語の数
+        <select id="dictSel">
+          <option value="1">少なめ（よく使う単語）</option>
+          <option value="2" selected>ふつう</option>
+          <option value="3">多め（むずかしい単語も）</option>
         </select>
       </label>
       <label>アシスト
         <select id="assistSel">
-          <option value="2" selected>しっかり（矢印でナビ・デイリーのみ）</option>
+          <option value="2" selected>しっかり（デイリーで道を線で教える）</option>
           <option value="1">ちょっと（作れる単語の一覧）</option>
           <option value="0">なし</option>
         </select>
       </label>
-      <label>矢印ヒントが出るまで
+      <label>ナビが出るまで
         <select id="hintDelay">
           <option value="2">2秒</option>
           <option value="4" selected>4秒</option>
           <option value="8">8秒</option>
         </select>
       </label>
-      <label>最初のなぞれる時間
-        <select id="timeSel">
-          <option value="6">6秒</option>
-          <option value="8">8秒</option>
-          <option value="10" selected>10秒</option>
-          <option value="12">12秒</option>
-          <option value="15">15秒</option>
-        </select>
-      </label>
-      <button type="button" id="resetBtn">最初から</button>
-      <button type="button" id="tutAgainBtn">遊び方をもう一度見る</button>
-      <button type="button" id="privacyOptBtn" hidden>広告のプライバシー設定</button>
-    </div>
-      <div class="danger-zone">
-        <button type="button" id="clearBookBtn">単語帳の記録を消す</button>
       </div>
     </div>
     <div class="card">
-      <h2>試遊の記録と感想</h2>
-      <p class="sub">遊んだ記録はこの端末の中だけに残ります（どこにも送られません）。感想を送るときに、記録をいっしょに付けられます。</p>
-      <div class="statsbox" id="statsBox"></div>
-      <button type="button" class="primary" id="feedbackBtn">感想を送る（記録つき）</button>
+      <h2>音と演出</h2>
+      <div class="controls">
+      <label><input type="checkbox" id="soundToggle" checked> 効果音</label>
+      <label><input type="checkbox" id="vibeToggle" checked> 振動</label>
+      <label><input type="checkbox" id="fxToggle" checked> 派手な演出（紙吹雪・画面ゆれ）</label>
+      </div>
     </div>
     <div class="card">
       <h2>盤面のテーマ</h2>
@@ -914,8 +923,16 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       <div class="theme-grid" id="themeGrid"></div>
     </div>
     <div class="card">
-      <h2>単語のデータについて</h2>
-      <p class="credit">単語の意味：EJDict-hand（パブリックドメイン）／品詞：WordNet 3.1／よく使う度：wordfreq。基本の単語は意味と品詞を確認して直しました。標準・発展の単語は自動で抜き出したため、ずれている単語があります。</p>
+      <h2>そのほか</h2>
+      <div class="controls">
+      <button type="button" id="tutAgainBtn">遊び方をもう一度見る</button>
+      <button type="button" id="feedbackBtn">感想を送る</button>
+      <button type="button" id="privacyOptBtn" hidden>広告のプライバシー設定</button>
+      </div>
+      <div class="danger-zone">
+        <button type="button" id="clearBookBtn">単語帳の記録を消す</button>
+      </div>
+      <p class="credit">単語の意味：EJDict-hand（パブリックドメイン）／品詞：WordNet 3.1／よく使う度：wordfreq</p>
     </div>
   </section>
 
@@ -9316,6 +9333,12 @@ zoom|v2|ズームする・急上昇する`;
         if (n >= 5) tone(55 + n * 2, 0.25, { to: 40, vol: 0.3, when: 5 * gap });
       },
       record() { [0, 4, 7, 12, 16, 19, 24].forEach((k, i) => tone(note(k), 0.25, { vol: 0.15, type: "triangle", when: i * 0.08 })); },
+      // スロット：リールが回る「カラカラ」・止まる「カチッ」・リーチ・当たり
+      reel() { for (let i = 0; i < 6; i++) tone(900 + (i % 2) * 300, 0.03, { type: "square", vol: 0.04, when: i * 0.06 }); },
+      stop() { tone(220, 0.08, { type: "square", vol: 0.12 }); noise(0.05, { freq: 1500, vol: 0.1 }); },
+      reach() { [0, 0.16, 0.32].forEach((w, i) => tone(note(12 + i * 2), 0.14, { type: "sawtooth", vol: 0.07, when: w, wet: 0.4 })); },
+      win(big) { const ks = big ? [0, 4, 7, 12, 16, 19, 24, 28, 31, 36] : [0, 4, 7, 12, 16, 19, 24]; ks.forEach((k, i) => { tone(note(k), 0.3, { vol: 0.13, type: "triangle", when: i * 0.06, wet: 0.6 }); tone(note(k + 12), 0.2, { vol: 0.05, type: "square", when: i * 0.06 + 0.03 }); }); },
+      coin(n = 8) { for (let i = 0; i < n; i++) { tone(1800 + Math.random() * 600, 0.08, { type: "square", vol: 0.04, when: i * 0.07 }); tone(2600, 0.06, { type: "triangle", vol: 0.04, when: i * 0.07 + 0.03 }); } },
       stone() { tone(150, 0.18, { to: 70, vol: 0.35 }); noise(0.12, { filter: "lowpass", freq: 500, vol: 0.3 }); },
       crack() { noise(0.25, { filter: "bandpass", freq: 1800, q: 0.8, vol: 0.4 }); tone(320, 0.12, { to: 120, vol: 0.2, type: "square" }); },
       over() { [7, 4, 0, -5].forEach((k, i) => tone(note(k - 12), 0.35, { vol: 0.15, when: i * 0.16 })); }
@@ -10391,6 +10414,23 @@ zoom|v2|ズームする・急上昇する`;
   // iPhoneアプリでは強い振動を連打して最後に「成功」の振動、Androidでは長い振動パターン
   // PERFECT!：盤面のブロックを全部消して、まっさらな盤面にする（ボーナス +1000点、エネルギー満タン）
   const PERFECT_BONUS = 1000;
+  // PERFECTの種類を抽選する（パチンコやスロットのように、たまに大当たり）
+  //  normal：ふつう（×1）／ great：金色（×1.5）／ jackpot：スロット（そろった絵柄で×2〜×3）／ premium：カットイン（×5・とてもまれ）
+  //  PERFECTが続くほど、当たりやすくなる（最大で連続5回ぶん）
+  function rollPerfect(chain) {
+    const k = Math.min(chain, 5), r = Math.random();
+    const pPrem = 0.015 + k * 0.004, pJack = 0.09 + k * 0.03, pGreat = 0.22 + k * 0.03;
+    if (r < pPrem) return { kind: "premium", mult: 5 };
+    if (r < pPrem + pJack) {
+      const q = Math.random();
+      const reels = q < 0.3 ? ["7", "7", "7"] : q < 0.75 ? ["B", "B", "B"] : q < 0.9 ? ["W", "W", "W"] : ["7", "7", "B"];
+      const mult = reels.join("") === "777" ? 3 : reels[0] === reels[1] && reels[1] === reels[2] ? 2 : 1.5;
+      return { kind: "jackpot", mult, reels };
+    }
+    if (r < pPrem + pJack + pGreat) return { kind: "great", mult: 1.5 };
+    return { kind: "normal", mult: 1 };
+  }
+  let lastPerfect = null;
   async function perfectWipe() {
     const tiles = board.flat();
     SFX.perfect();  // 「ため」の音が先に鳴る
@@ -10400,14 +10440,20 @@ zoom|v2|ズームする・急上昇する`;
       await sleep(400);
       boardEl.classList.remove("slowmo"); $("slowmoVeil").classList.remove("on");
     } else await sleep(400);
-    gfx.perfect(2600); leverBuzz(lastCombo);
+    const pf = lastPerfect = tut ? { kind: "normal", mult: 1 } : rollPerfect(isEnergy() ? pfStreak : streak);
+    const bonus = Math.round(PERFECT_BONUS * pf.mult);
+    if (pf.kind === "jackpot") await gfx.slot(pf.reels);
+    if (pf.kind === "premium") { SFX.reach(); await gfx.cutin(); }
+    const sub = pf.mult > 1 ? `ボーナス ×${pf.mult}　+${bonus.toLocaleString()}` : "";
+    gfx.perfectKind(pf.kind, sub, pf.kind === "normal" ? 2600 : 2800); leverBuzz(lastCombo);
+    if (pf.kind !== "normal") { SFX.win(pf.kind !== "great"); SFX.coin(pf.kind === "great" ? 6 : 12); }
     await sleep(500);
     tiles.forEach((t, k) => { const el = elFor(t); el.style.animationDelay = ""; el.querySelector(".face").style.animationDelay = ((k % COLS) * 35 + Math.floor(k / COLS) * 35) + "ms"; el.classList.add("wipe"); });
     SFX.whoosh();
     await sleep(700);
     for (const t of tiles) { const el = els.get(t.id); if (el) el.remove(); els.delete(t.id); }
     board = freshBoard();
-    score += PERFECT_BONUS; bumpScore();
+    score += bonus; bumpScore();
     if (isEnergy()) energy = ENERGY_MAX;
     // 色の単語は、このあと「消えた色は新しい単語に」の処理で5つとも置きなおされる（デイリーは次の問題に入れかわる）
     plant = null;
@@ -10418,7 +10464,7 @@ zoom|v2|ズームする・急上昇する`;
     measure(); render();
     board.flat().forEach((t, k) => { const el = elFor(t); el.querySelector(".face").style.animationDelay = (k * 18) + "ms"; el.classList.add("dropin"); setTimeout(() => el.classList.remove("dropin"), 1000); });
     maybeAskReview();
-    setStatus(`<b>PERFECT!</b>　全消しボーナス +${PERFECT_BONUS}点${isEnergy() ? "　エネルギー満タン！" : ""}`);
+    setStatus(`<b>${pf.kind === "premium" ? "PREMIUM PERFECT!" : pf.kind === "jackpot" ? "JACKPOT!" : pf.kind === "great" ? "GREAT PERFECT!" : "PERFECT!"}</b>　全消しボーナス +${bonus.toLocaleString()}点${pf.mult > 1 ? `（×${pf.mult}）` : ""}${isEnergy() ? "　エネルギー満タン！" : ""}`);
     await sleep(600);
     if (puzzled) setStatus(`<b>PERFECTチャンス！</b>（${pfStreak}連続）　この並びは、1回なぞるだけで全部消せる道がかくれているよ`);
     return puzzled;
@@ -10542,7 +10588,7 @@ zoom|v2|ズームする・急上昇する`;
     $("bestLabel").textContent = "BEST"; $("bestLabel").parentElement.title = `${MODE_NAME[$("modeSel").value]}・アシスト${ASSIST_NAME[assistLv()]}の最高点`;
   }
   function showEnd() {
-    statsGame("end");
+    statsGame("end"); resumeClear(statMode()); lastResumeJson = "";
     const rec = score > bestScore;
     if (rec) { bestScore = score; try { localStorage.setItem(bestKey(), String(score)); } catch (e) {} }
     if (rec) { SFX.record(); buzz([30, 60, 30, 60, 80], "SUCCESS"); } else SFX.over();
@@ -10586,6 +10632,25 @@ zoom|v2|ズームする・急上昇する`;
   function statsLoad() { try { const v = JSON.parse(localStorage.getItem(STATS_KEY) || "null"); if (v && v.modes) return v; } catch (e) {} return { first: dayKey(), days: [], modes: {}, nav: 0, ads: 0, conts: 0, recent: [] }; }
   function statsSave(st) { try { localStorage.setItem(STATS_KEY, JSON.stringify(st)); } catch (e) {} }
   const statMode = () => isStudy() && reviewMode ? "review" : $("modeSel").value;
+  // ---------- つづきから：ゲームの途中の進み具合を、モードごとに端末に残す ----------
+  // タイトルに戻っても、アプリを閉じても、つみ（ゲームオーバー）になっていなければ、同じステージ・同じ点数から続けられる
+  const RESUME_KEY = "wordDrop.resume.v1";
+  let resumeData = null;
+  function resumeAll() { try { return JSON.parse(localStorage.getItem(RESUME_KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function resumeGet(k) { const r = resumeAll()[k]; if (!r) return null; if (k === "daily" && r.day !== dayKey()) return null; return r; }
+  function resumeClear(k) { const a = resumeAll(); delete a[k]; try { localStorage.setItem(RESUME_KEY, JSON.stringify(a)); } catch (e) {} }
+  let lastResumeJson = "";
+  function resumeSave() {
+    if (tut || !board || busy || dragging || turns <= 0 || lives <= 0 || !$("overlay").hidden || !isColor() || !(isPuzzle() || isDaily())) return;
+    const k = statMode();
+    const d = { level, score, lives, turns, streak, noMiss, contUsed, maxCombo, totalWords, studyN, studyOK, studyBoards, runLog: runLog.slice(-200), day: dayKey() };
+    const j = k + JSON.stringify(d); if (j === lastResumeJson) return; lastResumeJson = j;
+    const a = resumeAll(); a[k] = d; try { localStorage.setItem(RESUME_KEY, JSON.stringify(a)); } catch (e) {}
+  }
+  setInterval(resumeSave, 1500);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) resumeSave(); });
+  window.addEventListener("pagehide", resumeSave);
+  const resumeText = (k, r) => k === "daily" ? `${r.turns + 1}問目` : k === "stage" ? `STAGE ${r.level}` : `Lv.${r.level}`;
   function statsTouchDay() { const st = statsLoad(), d = dayKey(); if (!st.days.includes(d)) { st.days.push(d); st.days = st.days.slice(-90); statsSave(st); } }
   // 1ゲームの終わり（how = "end"：最後まで / "quit"：途中でタイトルへ）
   function statsGame(how) {
@@ -10706,12 +10771,14 @@ ${recent || "まだありません"}`;
     $("bonusText").textContent = isStage() ? "1回で全色消すとPERFECT!" : isStudy() ? "意味から英単語を作ろう" : color ? "同じ色で作ると2倍" : "作ると得点3倍";
     dailyRoute = null;
     puzzleRoute = null; noMiss = 0; studyN = 0; studyOK = 0; studyBoards = 0; studyReveal = false;
+    const rs = resumeData; resumeData = null; lastResumeJson = "";
+    if (rs) { ({ level, score, lives, turns, streak, noMiss, contUsed, maxCombo, totalWords, studyN, studyOK, studyBoards } = rs); runLog = rs.runLog || []; }
     document.body.classList.toggle("puzzle", isPuzzle());
-    if (color) { odai = { w: "", m: "" }; if (isDaily()) buildDailyPuzzle(0); else if (isStage()) buildStagePuzzle(); else if (isStudy()) buildStudyPuzzle(); else setupColor(); } else newOdai();
+    if (color) { odai = { w: "", m: "" }; if (isDaily()) buildDailyPuzzle(rs ? turns : 0); else if (isStage()) buildStagePuzzle(); else if (isStudy()) buildStudyPuzzle(); else setupColor(); } else newOdai();
     if (unseed) unseed();
     updateAssistChip();
     measure(); updateHud(); resetTimerBar(); refreshHints();
-    setStatus("文字をつかんでなぞると、通ったマスの文字と入れ替わります");
+    setStatus(rs ? `<b>つづきから！</b>　${resumeText(statMode(), rs)}・${score.toLocaleString()}点` : "文字をつかんでなぞると、通ったマスの文字と入れ替わります");
   }
 
   // ---------- 派手な演出（紙吹雪・帯・画面ゆれ）。設定でオフにできる ----------
@@ -10759,6 +10826,73 @@ ${recent || "まだありません"}`;
         e.querySelector(".pftxt").animate([{ transform: "scale(4) rotate(-8deg)", opacity: 0 }, { transform: "scale(.85) rotate(2deg)", opacity: 1, offset: .14 }, { transform: "scale(1.05)", opacity: 1, offset: .22 }, { transform: "scale(1)", opacity: 1, offset: .85 }, { transform: "scale(1.4)", opacity: 0 }], { duration: ms, easing: "ease-out", fill: "both" });
         this.flash("#fff", .55); this.rain(160); this.shake();
         kill(e, ms + 30);
+      },
+      // 種類つきのPERFECT（kind: normal / great / jackpot / premium、sub: 下に出る文字）
+      perfectKind(kind, sub, ms = 2400) {
+        if (!on()) return; const c = center();
+        const gold = kind !== "normal";
+        const word = kind === "premium" ? "PREMIUM!" : kind === "jackpot" ? "JACKPOT!" : kind === "great" ? "GREAT PERFECT!" : "PERFECT!";
+        const e = add("banner", { top: (c.y) + "px" }, `<div class="pfrays${gold ? " gold" : ""}"></div><div class="pftxt${gold ? " gold" : ""}" style="${word.length > 10 ? "font-size:36px;top:-34px;letter-spacing:0" : word.length > 8 ? "font-size:52px;top:-44px" : ""}">${word}</div>${sub ? `<div class="pfsub">${sub}</div>` : ""}`);
+        e.querySelector(".pfrays").animate([{ transform: "rotate(0) scale(.2)", opacity: 0 }, { transform: "rotate(60deg) scale(1)", opacity: .6, offset: .2 }, { transform: "rotate(220deg) scale(1.15)", opacity: .6, offset: .85 }, { transform: "rotate(260deg) scale(1.3)", opacity: 0 }], { duration: ms, fill: "both" });
+        e.querySelector(".pftxt").animate([{ transform: "scale(4) rotate(-8deg)", opacity: 0 }, { transform: "scale(.85) rotate(2deg)", opacity: 1, offset: .14 }, { transform: "scale(1.05)", opacity: 1, offset: .22 }, { transform: "scale(1)", opacity: 1, offset: .85 }, { transform: "scale(1.4)", opacity: 0 }], { duration: ms, easing: "ease-out", fill: "both" });
+        if (sub) e.querySelector(".pfsub").animate([{ transform: "translateY(20px)", opacity: 0 }, { transform: "none", opacity: 1, offset: .25 }, { opacity: 1, offset: .85 }, { opacity: 0 }], { duration: ms, fill: "both" });
+        this.flash(gold ? "#ffe9a0" : "#fff", .5); this.rain(kind === "normal" ? 160 : 120); this.shake();
+        if (gold) this.coins(kind === "premium" ? 70 : kind === "jackpot" ? 50 : 30);
+        kill(e, ms + 30);
+      },
+      coins(n) {
+        if (!on()) return;
+        for (let i = 0; i < n; i++) {
+          const e = add("bit coin", { left: (Math.random() * 100) + "%", top: "-20px" });
+          e.animate([{ transform: "translateY(0) rotateY(0)" }, { transform: `translate(${(Math.random() - .5) * 80}px,${innerHeight + 60}px) rotateY(${720 + Math.random() * 720}deg)` }],
+            { duration: 1100 + Math.random() * 900, delay: Math.random() * 500, easing: "cubic-bezier(.4,0,.8,.6)", fill: "both" });
+          kill(e, 2600);
+        }
+      },
+      // スロット：3つのリールが回って、左・まん中・右の順に止まる。2つそろうと「リーチ！」で右がゆっくり
+      // res：止まる絵柄 3つ。tap でいそぐ（どこかをさわると早く止まる）
+      async slot(res) {
+        if (!on()) return;
+        const c = center();
+        const SYM = { "7": `<div class="sym s7">7</div>`, "B": `<div class="sym sbar"><i>BAR</i></div>`, "W": `<div class="sym sw">W</div>` };
+        const order = ["7", "B", "W", "B", "W", "7", "W", "B"];
+        const e = add("slot", { top: c.y + "px" }, `<div class="sl-top">PERFECT CHANCE</div><div class="reels">${[0, 1, 2].map(() => `<div class="reel"><div class="strip">${order.concat(order, order).map(k => SYM[k]).join("")}</div></div>`).join("")}</div><div class="sl-msg"></div>`);
+        e.animate([{ transform: "translate(-50%,-50%) scale(.3)", opacity: 0 }, { transform: "translate(-50%,-50%) scale(1)", opacity: 1 }], { duration: 220, easing: "ease-out", fill: "both" });
+        let fast = false; const hurry = () => { fast = true; };
+        window.addEventListener("pointerdown", hurry, { once: true, capture: true });
+        const H = 84, loop = order.length * H;
+        const strips = [...e.querySelectorAll(".strip")], anims = strips.map((st, i) => st.animate([{ transform: "translateY(0)" }, { transform: `translateY(-${loop}px)` }], { duration: 260 + i * 30, iterations: Infinity }));
+        const wait = ms => new Promise(r => { const t0 = performance.now(); const f = () => (fast || performance.now() - t0 >= ms) ? r() : requestAnimationFrame(f); f(); });
+        SFX.reel();
+        await wait(520);
+        for (let i = 0; i < 3; i++) {
+          if (i === 2 && res[0] === res[1]) {
+            e.classList.add("reach"); e.querySelector(".sl-msg").textContent = "リーチ！"; SFX.reach(); buzz([20, 40, 20]);
+            anims[2].updatePlaybackRate(0.35);
+            await wait(900);
+          } else { SFX.reel(); await wait(i === 0 ? 0 : 300); }
+          anims[i].cancel();
+          const idx = order.indexOf(res[i]) + order.length;
+          strips[i].style.transform = `translateY(-${idx * H}px)`;
+          strips[i].animate([{ transform: `translateY(-${idx * H - 30}px)` }, { transform: `translateY(-${idx * H}px)` }], { duration: 160, easing: "cubic-bezier(.2,1.6,.4,1)" });
+          SFX.stop(); buzz(15);
+        }
+        window.removeEventListener("pointerdown", hurry, { capture: true });
+        const hit = res[0] === res[1] && res[1] === res[2];
+        if (hit) e.querySelectorAll(".reel").forEach(r => r.classList.add("hit"));
+        e.classList.remove("reach");
+        e.querySelector(".sl-msg").textContent = hit ? (res[0] === "7" ? "７７７ 大当たり！" : res[0] === "B" ? "BAR そろい！" : "W そろい！") : "おしい！ でもボーナス";
+        await wait(hit ? 650 : 450);
+        e.animate([{ opacity: 1 }, { opacity: 0, transform: "translate(-50%,-50%) scale(1.15)" }], { duration: 200, fill: "both" });
+        kill(e, 220);
+      },
+      async cutin() {
+        if (!on()) return;
+        const e = add("cutin", {}, `<div class="ci-band"><small>WORD DROP</small><b>PREMIUM</b></div>`);
+        e.animate([{ opacity: 0 }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .85 }, { opacity: 0 }], { duration: 1500, fill: "both" });
+        e.querySelector(".ci-band").animate([{ transform: "translateX(-120%) rotate(-6deg)" }, { transform: "translateX(0) rotate(-6deg)", offset: .25 }, { transform: "translateX(0) rotate(-6deg)", offset: .8 }, { transform: "translateX(120%) rotate(-6deg)" }], { duration: 1500, easing: "ease-in-out", fill: "both" });
+        kill(e, 1520);
+        await new Promise(r => setTimeout(r, 1300));
       },
       // 大当たり：lv1 紙吹雪 / lv2 帯つき / lv3 帯＋光＋大ゆれ
       party(lv, label) {
@@ -11466,7 +11600,7 @@ ${recent || "まだありません"}`;
       $("dailyStreak").textContent = alive && di.streak ? `連続 ${di.streak}日${di.last === dayKey() ? " ✓" : ""}` : "連続 0日"; }
     { const n = missList().filter(w => DICT.has(w) && w.length <= COLS).length;
       $("reviewCard").hidden = n === 0; $("reviewCount").textContent = `のこり ${n}語`; }
-    renderPackBtns();
+    renderPackBtns(); renderResumeTags();
     { const di = dailyInfo(), y = new Date(); y.setDate(y.getDate() - 1);
       const st = di.last === dayKey() || di.last === dayKey(y) ? di.streak : 0;
       const got = ACH.filter(a => achData.u[a[0]]).length;
@@ -11478,7 +11612,17 @@ ${recent || "まだありません"}`;
     document.body.classList.remove("playing");
     document.querySelectorAll(".tabbar button").forEach(b => b.classList.toggle("on", b.dataset.view === "game"));
   }
-  document.querySelectorAll(".mode-card").forEach(c => c.addEventListener("click", () => {
+  function renderResumeTags() {
+    document.querySelectorAll(".mode-card").forEach(c => {
+      const k = c.dataset.mode, r = resumeGet(k);
+      let t = c.querySelector(".mc-resume");
+      if (!t) { t = document.createElement("span"); t.className = "mc-resume"; c.querySelector(".mc-body").appendChild(t); }
+      t.hidden = !r;
+      if (r) t.innerHTML = `<span class="mr-go">▶ つづきから　${resumeText(k, r)}・${r.score.toLocaleString()}点</span><span class="mr-new" role="button" tabindex="0">はじめから</span>`;
+    });
+  }
+  document.querySelectorAll(".mode-card").forEach(c => c.addEventListener("click", e => {
+    const fresh = !!e.target.closest(".mr-new");
     SFX.ensure(); SFX.levelUp(); buzz(20);
     reviewMode = c.dataset.mode === "review";
     const m = reviewMode ? "study" : c.dataset.mode;
@@ -11486,6 +11630,7 @@ ${recent || "まだありません"}`;
     try { localStorage.setItem("wordDrop.mode.v1", m); } catch (e) {}
     $("modeScreen").hidden = true;
     showView("game");
+    if (fresh) resumeClear(c.dataset.mode); else resumeData = resumeGet(c.dataset.mode);
     start();
     if (!tutDone()) runTutorial();
   }));
@@ -11580,8 +11725,7 @@ ${recent || "まだありません"}`;
   $("modeChip").addEventListener("click", async () => {
     if (busy || dragging) return;
     // ゲームの途中（1ターン以上遊んだ・まだ終わっていない）なら、一度だけ確認する
-    if (turns > 0 && $("overlay").hidden && !tut && !(await askSheet("タイトルに戻りますか？", "今のゲームは終わります。", "タイトルに戻る", "ゲームを続ける"))) return;
-    if ($("overlay").hidden) statsGame("quit");
+    resumeSave();  // 途中の進み具合は残るので、確認なしで戻れる（次にえらぶと、つづきから）
     showModeScreen();
   });
   $("toModeBtn").addEventListener("click", async () => { await Ads.between(); showModeScreen(); });
