@@ -603,7 +603,7 @@ body { margin: 0; }
 /* PERFECT!（全色そろえ）：虹色の大きな文字 */
 #gfx .pftxt { position: absolute; left: -220px; width: 440px; top: -52px; text-align: center; font-family: var(--font-display); font-weight: 900; font-size: 64px; line-height: 1; letter-spacing: .04em; white-space: nowrap;
   background: linear-gradient(90deg, #ff4d6d, #ff9f1c, #ffe45c, #4ade80, #38bdf8, #a78bfa, #ff4d6d); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
-  -webkit-text-stroke: 2px rgba(255,255,255,.9); filter: drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 18px rgba(255,255,255,.55)); animation: rainbow 1.1s linear infinite; }
+  -webkit-text-stroke: 2px rgba(255,255,255,.9); filter: drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 18px rgba(255,255,255,.55)); animation: rainbow 2.4s linear infinite; }
 #gfx .pfsub { position: absolute; left: -200px; width: 400px; top: 22px; text-align: center; font-family: "Zen Maru Gothic", sans-serif; font-weight: 900; font-size: 24px; color: #fff; -webkit-text-stroke: 1.5px #1a1020; paint-order: stroke fill; text-shadow: 0 3px 0 #000; }
 #gfx .pfrays { position: absolute; left: -260px; top: -260px; width: 520px; height: 520px; border-radius: 50%;
   background: repeating-conic-gradient(#ff4d6d 0 8deg, transparent 8deg 15deg, #ffe45c 15deg 23deg, transparent 23deg 30deg, #38bdf8 30deg 38deg, transparent 38deg 45deg, #4ade80 45deg 53deg, transparent 53deg 60deg);
@@ -612,24 +612,13 @@ body { margin: 0; }
 /* GREAT PERFECT：金色 */
 #gfx .pftxt.gold { background: linear-gradient(180deg, #fff6c2, #ffd84d 45%, #c98a14 55%, #ffe680); -webkit-background-clip: text; background-clip: text; animation: none; filter: drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 22px rgba(255,200,60,.8)); }
 #gfx .pfrays.gold { background: repeating-conic-gradient(rgba(255,215,80,.9) 0 9deg, transparent 9deg 18deg); }
+#gfx .pftxt.silver { background: linear-gradient(180deg, #ffffff, #dfe6f2 45%, #9aa6bb 55%, #f4f7fb); -webkit-background-clip: text; background-clip: text; animation: none; filter: drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 18px rgba(200,220,255,.7)); }
+#gfx .pfrays.silver { background: repeating-conic-gradient(rgba(220,232,255,.75) 0 9deg, transparent 9deg 18deg); }
+#gfx .bit.gem { width: 12px; height: 12px; border-radius: 2px; box-shadow: 0 0 8px rgba(255,255,255,.9); }
 #gfx .bit.coin { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff6c2, #ffd84d 45%, #b8860b) !important; box-shadow: 0 0 6px rgba(255,210,80,.8); }
-/* スロット */
-#gfx .slot { position: absolute; left: 50%; transform: translate(-50%, -50%); padding: 12px 14px 10px; border-radius: 18px; background: linear-gradient(#3a2a10, #1a1206); border: 3px solid #ffd84d; box-shadow: 0 0 0 3px #1a1206, 0 0 30px rgba(255,200,60,.6); text-align: center; }
-#gfx .slot .sl-top { font-family: var(--font-display); font-weight: 900; font-size: 14px; letter-spacing: .3em; color: #ffd84d; margin-bottom: 8px; }
-#gfx .slot .reels { display: flex; gap: 8px; }
-#gfx .slot .reel { width: 72px; height: 84px; border-radius: 10px; background: linear-gradient(#fff, #e9e4d6 50%, #fff); overflow: hidden; position: relative; box-shadow: inset 0 6px 10px rgba(0,0,0,.35), inset 0 -6px 10px rgba(0,0,0,.35); }
-#gfx .slot .strip { position: absolute; left: 0; right: 0; top: 0; }
-#gfx .slot .sym { height: 84px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 46px; line-height: 1; }
-#gfx .slot .sym.s7 { color: #e0262f; -webkit-text-stroke: 2px #6b0d12; }
-#gfx .slot .sym.sbar { font-size: 22px; color: #fff; }
-#gfx .slot .sym.sbar i { font-style: normal; display: inline-block; padding: 4px 8px; background: #222; border-radius: 4px; letter-spacing: .05em; }
-#gfx .slot .sym.sw { color: #1f6fd1; font-size: 40px; }
-#gfx .slot .reel.hit { box-shadow: inset 0 0 0 3px #ffd84d, 0 0 16px rgba(255,216,77,.9); }
-#gfx .slot .sl-msg { margin-top: 8px; min-height: 22px; font-family: "Zen Maru Gothic", sans-serif; font-weight: 900; font-size: 18px; color: #fff; text-shadow: 0 2px 0 #000; }
-#gfx .slot.reach .sl-msg { color: #ff5b5b; }
 /* プレミア：画面が暗くなってカットイン */
-#gfx .cutin { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(ellipse at center, rgba(40,20,0,.55), rgba(0,0,0,.85)); }
-#gfx .cutin .ci-band { width: 120%; padding: 18px 0; background: linear-gradient(90deg, transparent, #c98a14 15%, #ffe680 50%, #c98a14 85%, transparent); text-align: center; transform: rotate(-6deg); box-shadow: 0 0 40px rgba(255,200,60,.7); }
+#gfx .cutin { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(ellipse at center, rgba(30,20,50,.55), rgba(0,0,0,.85)); }
+#gfx .cutin .ci-band { width: 120%; padding: 18px 0; background: linear-gradient(90deg, transparent, #ff9fb2 12%, #ffd27a 28%, #fff3a0 42%, #a8f0c0 56%, #9fd8ff 70%, #c9b3ff 86%, transparent); text-align: center; transform: rotate(-6deg); box-shadow: 0 0 40px rgba(255,255,255,.7); }
 #gfx .cutin .ci-band b { display: block; font-family: var(--font-display); font-weight: 900; font-size: 40px; letter-spacing: .12em; color: #2a1600; }
 #gfx .cutin .ci-band small { display: block; font-family: "Zen Maru Gothic", sans-serif; font-weight: 900; font-size: 14px; color: #2a1600; letter-spacing: .3em; }
 .tile.wipe .face { animation: wipe .45s ease-in forwards; }
@@ -9333,10 +9322,6 @@ zoom|v2|ズームする・急上昇する`;
         if (n >= 5) tone(55 + n * 2, 0.25, { to: 40, vol: 0.3, when: 5 * gap });
       },
       record() { [0, 4, 7, 12, 16, 19, 24].forEach((k, i) => tone(note(k), 0.25, { vol: 0.15, type: "triangle", when: i * 0.08 })); },
-      // スロット：リールが回る「カラカラ」・止まる「カチッ」・リーチ・当たり
-      reel() { for (let i = 0; i < 6; i++) tone(900 + (i % 2) * 300, 0.03, { type: "square", vol: 0.04, when: i * 0.06 }); },
-      stop() { tone(220, 0.08, { type: "square", vol: 0.12 }); noise(0.05, { freq: 1500, vol: 0.1 }); },
-      reach() { [0, 0.16, 0.32].forEach((w, i) => tone(note(12 + i * 2), 0.14, { type: "sawtooth", vol: 0.07, when: w, wet: 0.4 })); },
       win(big) { const ks = big ? [0, 4, 7, 12, 16, 19, 24, 28, 31, 36] : [0, 4, 7, 12, 16, 19, 24]; ks.forEach((k, i) => { tone(note(k), 0.3, { vol: 0.13, type: "triangle", when: i * 0.06, wet: 0.6 }); tone(note(k + 12), 0.2, { vol: 0.05, type: "square", when: i * 0.06 + 0.03 }); }); },
       coin(n = 8) { for (let i = 0; i < n; i++) { tone(1800 + Math.random() * 600, 0.08, { type: "square", vol: 0.04, when: i * 0.07 }); tone(2600, 0.06, { type: "triangle", vol: 0.04, when: i * 0.07 + 0.03 }); } },
       stone() { tone(150, 0.18, { to: 70, vol: 0.35 }); noise(0.12, { filter: "lowpass", freq: 500, vol: 0.3 }); },
@@ -10414,23 +10399,22 @@ zoom|v2|ズームする・急上昇する`;
   // iPhoneアプリでは強い振動を連打して最後に「成功」の振動、Androidでは長い振動パターン
   // PERFECT!：盤面のブロックを全部消して、まっさらな盤面にする（ボーナス +1000点、エネルギー満タン）
   const PERFECT_BONUS = 1000;
-  // PERFECTの種類を抽選する（パチンコやスロットのように、たまに大当たり）
-  //  normal：ふつう（×1）／ great：金色（×1.5）／ jackpot：スロット（そろった絵柄で×2〜×3）／ premium：カットイン（×5・とてもまれ）
-  //  PERFECTが続くほど、当たりやすくなる（最大で連続5回ぶん）
-  function rollPerfect(chain) {
-    const k = Math.min(chain, 5), r = Math.random();
-    const pPrem = 0.015 + k * 0.004, pJack = 0.09 + k * 0.03, pGreat = 0.22 + k * 0.03;
-    if (r < pPrem) return { kind: "premium", mult: 5 };
-    if (r < pPrem + pJack) {
-      const q = Math.random();
-      const reels = q < 0.3 ? ["7", "7", "7"] : q < 0.75 ? ["B", "B", "B"] : q < 0.9 ? ["W", "W", "W"] : ["7", "7", "B"];
-      const mult = reels.join("") === "777" ? 3 : reels[0] === reels[1] && reels[1] === reels[2] ? 2 : 1.5;
-      return { kind: "jackpot", mult, reels };
-    }
-    if (r < pPrem + pJack + pGreat) return { kind: "great", mult: 1.5 };
-    return { kind: "normal", mult: 1 };
+  // PERFECTの種類は「実力」で決まる（運では決めない：ランキングを公平にするため）
+  //  chain：PERFECTの連続回数（1回目=1）。1 ふつう → 2 GREAT → 3 SUPER → 4 HYPER → 5 PREMIUM
+  //  8コンボ以上で消したときは、1段上の演出になる
+  //  ボーナス：ふつう ×1（銀）/ GREAT ×1.5・SUPER ×2・HYPER ×3（金）/ PREMIUM ×5（虹）
+  function rollPerfect(chain, combo = 0) {
+    const c = Math.max(1, chain); let k = c <= 5 ? c : [5, 2, 2, 3, 4][c % 5];  // 6回目からは GREAT,GREAT,BAR,777,PREMIUM をくり返す
+    if (combo >= 8) k = Math.min(5, k + 1);
+    if (k === 5) return { kind: "premium", mult: 5, lv: 5 };
+    if (k === 4) return { kind: "hyper", mult: 3, lv: 4 };
+    if (k === 3) return { kind: "super", mult: 2, lv: 3 };
+    if (k === 2) return { kind: "great", mult: 1.5, lv: 2 };
+    return { kind: "normal", mult: 1, lv: 1 };
   }
   let lastPerfect = null;
+  // デイリーの「続けて全部消した回数」（今回をふくむ）。デイリーはどの問題も8語前後なので、コンボ数では上げない
+  function dailyChain() { let ch = 1; for (let i = runLog.length - 1; i >= 0 && runLog[i]; i--) ch++; return ch; }
   async function perfectWipe() {
     const tiles = board.flat();
     SFX.perfect();  // 「ため」の音が先に鳴る
@@ -10440,10 +10424,9 @@ zoom|v2|ズームする・急上昇する`;
       await sleep(400);
       boardEl.classList.remove("slowmo"); $("slowmoVeil").classList.remove("on");
     } else await sleep(400);
-    const pf = lastPerfect = tut ? { kind: "normal", mult: 1 } : rollPerfect(isEnergy() ? pfStreak : streak);
+    const pf = lastPerfect = tut ? { kind: "normal", mult: 1 } : isDaily() ? rollPerfect(dailyChain()) : rollPerfect(isEnergy() ? pfStreak : streak, lastCombo);
     const bonus = Math.round(PERFECT_BONUS * pf.mult);
-    if (pf.kind === "jackpot") await gfx.slot(pf.reels);
-    if (pf.kind === "premium") { SFX.reach(); await gfx.cutin(); }
+    if (pf.kind === "premium") { SFX.bigCombo(12); await gfx.cutin(); }
     const sub = pf.mult > 1 ? `ボーナス ×${pf.mult}　+${bonus.toLocaleString()}` : "";
     gfx.perfectKind(pf.kind, sub, pf.kind === "normal" ? 2600 : 2800); leverBuzz(lastCombo);
     if (pf.kind !== "normal") { SFX.win(pf.kind !== "great"); SFX.coin(pf.kind === "great" ? 6 : 12); }
@@ -10464,7 +10447,7 @@ zoom|v2|ズームする・急上昇する`;
     measure(); render();
     board.flat().forEach((t, k) => { const el = elFor(t); el.querySelector(".face").style.animationDelay = (k * 18) + "ms"; el.classList.add("dropin"); setTimeout(() => el.classList.remove("dropin"), 1000); });
     maybeAskReview();
-    setStatus(`<b>${pf.kind === "premium" ? "PREMIUM PERFECT!" : pf.kind === "jackpot" ? "JACKPOT!" : pf.kind === "great" ? "GREAT PERFECT!" : "PERFECT!"}</b>　全消しボーナス +${bonus.toLocaleString()}点${pf.mult > 1 ? `（×${pf.mult}）` : ""}${isEnergy() ? "　エネルギー満タン！" : ""}`);
+    setStatus(`<b>${pf.kind === "premium" ? "PREMIUM PERFECT!" : pf.kind === "hyper" ? "HYPER PERFECT!" : pf.kind === "super" ? "SUPER PERFECT!" : pf.kind === "great" ? "GREAT PERFECT!" : "PERFECT!"}</b>　全消しボーナス +${bonus.toLocaleString()}点${pf.mult > 1 ? `（×${pf.mult}）` : ""}${isEnergy() ? "　エネルギー満タン！" : ""}`);
     await sleep(600);
     if (puzzled) setStatus(`<b>PERFECTチャンス！</b>（${pfStreak}連続）　この並びは、1回なぞるだけで全部消せる道がかくれているよ`);
     return puzzled;
@@ -10830,14 +10813,17 @@ ${recent || "まだありません"}`;
       // 種類つきのPERFECT（kind: normal / great / jackpot / premium、sub: 下に出る文字）
       perfectKind(kind, sub, ms = 2400) {
         if (!on()) return; const c = center();
-        const gold = kind !== "normal";
-        const word = kind === "premium" ? "PREMIUM!" : kind === "jackpot" ? "JACKPOT!" : kind === "great" ? "GREAT PERFECT!" : "PERFECT!";
-        const e = add("banner", { top: (c.y) + "px" }, `<div class="pfrays${gold ? " gold" : ""}"></div><div class="pftxt${gold ? " gold" : ""}" style="${word.length > 10 ? "font-size:36px;top:-34px;letter-spacing:0" : word.length > 8 ? "font-size:52px;top:-44px" : ""}">${word}</div>${sub ? `<div class="pfsub">${sub}</div>` : ""}`);
+        // ふつう＝銀、GREAT・SUPER・HYPER＝金、PREMIUM（いちばん上）＝虹
+        const gold = kind !== "normal" && kind !== "premium", tone = kind === "normal" ? " silver" : gold ? " gold" : "";
+        const word = kind === "premium" ? "PREMIUM!" : kind === "hyper" ? "HYPER PERFECT!" : kind === "super" ? "SUPER PERFECT!" : kind === "great" ? "GREAT PERFECT!" : "PERFECT!";
+        const e = add("banner", { top: (c.y) + "px" }, `<div class="pfrays${tone}"></div><div class="pftxt${tone}" style="${word.length > 10 ? "font-size:36px;top:-34px;letter-spacing:0" : word.length > 8 ? "font-size:52px;top:-44px" : ""}">${word}</div>${sub ? `<div class="pfsub">${sub}</div>` : ""}`);
         e.querySelector(".pfrays").animate([{ transform: "rotate(0) scale(.2)", opacity: 0 }, { transform: "rotate(60deg) scale(1)", opacity: .6, offset: .2 }, { transform: "rotate(220deg) scale(1.15)", opacity: .6, offset: .85 }, { transform: "rotate(260deg) scale(1.3)", opacity: 0 }], { duration: ms, fill: "both" });
         e.querySelector(".pftxt").animate([{ transform: "scale(4) rotate(-8deg)", opacity: 0 }, { transform: "scale(.85) rotate(2deg)", opacity: 1, offset: .14 }, { transform: "scale(1.05)", opacity: 1, offset: .22 }, { transform: "scale(1)", opacity: 1, offset: .85 }, { transform: "scale(1.4)", opacity: 0 }], { duration: ms, easing: "ease-out", fill: "both" });
         if (sub) e.querySelector(".pfsub").animate([{ transform: "translateY(20px)", opacity: 0 }, { transform: "none", opacity: 1, offset: .25 }, { opacity: 1, offset: .85 }, { opacity: 0 }], { duration: ms, fill: "both" });
-        this.flash(gold ? "#ffe9a0" : "#fff", .5); this.rain(kind === "normal" ? 160 : 120); this.shake();
-        if (gold) this.coins(kind === "premium" ? 70 : kind === "jackpot" ? 50 : 30);
+        this.flash(gold ? "#ffe9a0" : "#fff", .5); this.rain(kind === "normal" ? 140 : kind === "premium" ? 200 : 120); this.shake();
+        if (gold) this.coins(kind === "hyper" ? 55 : kind === "super" ? 40 : 25);
+        if (kind === "premium") { this.coins(40); this.gems(50); }
+        if (kind === "hyper" || kind === "premium") { this.flash("#fff", .35); setTimeout(() => this.shake(), 250); }
         kill(e, ms + 30);
       },
       coins(n) {
@@ -10849,42 +10835,16 @@ ${recent || "まだありません"}`;
           kill(e, 2600);
         }
       },
-      // スロット：3つのリールが回って、左・まん中・右の順に止まる。2つそろうと「リーチ！」で右がゆっくり
-      // res：止まる絵柄 3つ。tap でいそぐ（どこかをさわると早く止まる）
-      async slot(res) {
+      // 虹色の宝石（PREMIUMだけ）
+      gems(n) {
         if (!on()) return;
-        const c = center();
-        const SYM = { "7": `<div class="sym s7">7</div>`, "B": `<div class="sym sbar"><i>BAR</i></div>`, "W": `<div class="sym sw">W</div>` };
-        const order = ["7", "B", "W", "B", "W", "7", "W", "B"];
-        const e = add("slot", { top: c.y + "px" }, `<div class="sl-top">PERFECT CHANCE</div><div class="reels">${[0, 1, 2].map(() => `<div class="reel"><div class="strip">${order.concat(order, order).map(k => SYM[k]).join("")}</div></div>`).join("")}</div><div class="sl-msg"></div>`);
-        e.animate([{ transform: "translate(-50%,-50%) scale(.3)", opacity: 0 }, { transform: "translate(-50%,-50%) scale(1)", opacity: 1 }], { duration: 220, easing: "ease-out", fill: "both" });
-        let fast = false; const hurry = () => { fast = true; };
-        window.addEventListener("pointerdown", hurry, { once: true, capture: true });
-        const H = 84, loop = order.length * H;
-        const strips = [...e.querySelectorAll(".strip")], anims = strips.map((st, i) => st.animate([{ transform: "translateY(0)" }, { transform: `translateY(-${loop}px)` }], { duration: 260 + i * 30, iterations: Infinity }));
-        const wait = ms => new Promise(r => { const t0 = performance.now(); const f = () => (fast || performance.now() - t0 >= ms) ? r() : requestAnimationFrame(f); f(); });
-        SFX.reel();
-        await wait(520);
-        for (let i = 0; i < 3; i++) {
-          if (i === 2 && res[0] === res[1]) {
-            e.classList.add("reach"); e.querySelector(".sl-msg").textContent = "リーチ！"; SFX.reach(); buzz([20, 40, 20]);
-            anims[2].updatePlaybackRate(0.35);
-            await wait(900);
-          } else { SFX.reel(); await wait(i === 0 ? 0 : 300); }
-          anims[i].cancel();
-          const idx = order.indexOf(res[i]) + order.length;
-          strips[i].style.transform = `translateY(-${idx * H}px)`;
-          strips[i].animate([{ transform: `translateY(-${idx * H - 30}px)` }, { transform: `translateY(-${idx * H}px)` }], { duration: 160, easing: "cubic-bezier(.2,1.6,.4,1)" });
-          SFX.stop(); buzz(15);
+        const G = ["#ff4d6d", "#ff9f1c", "#ffe45c", "#4ade80", "#38bdf8", "#a78bfa"];
+        for (let i = 0; i < n; i++) {
+          const e = add("bit gem", { left: (Math.random() * 100) + "%", top: "-20px", background: G[i % G.length] });
+          e.animate([{ transform: "translateY(0) rotate(45deg)" }, { transform: `translate(${(Math.random() - .5) * 80}px,${innerHeight + 60}px) rotate(${405 + Math.random() * 360}deg)` }],
+            { duration: 1200 + Math.random() * 900, delay: Math.random() * 600, easing: "cubic-bezier(.4,0,.8,.6)", fill: "both" });
+          kill(e, 2800);
         }
-        window.removeEventListener("pointerdown", hurry, { capture: true });
-        const hit = res[0] === res[1] && res[1] === res[2];
-        if (hit) e.querySelectorAll(".reel").forEach(r => r.classList.add("hit"));
-        e.classList.remove("reach");
-        e.querySelector(".sl-msg").textContent = hit ? (res[0] === "7" ? "７７７ 大当たり！" : res[0] === "B" ? "BAR そろい！" : "W そろい！") : "おしい！ でもボーナス";
-        await wait(hit ? 650 : 450);
-        e.animate([{ opacity: 1 }, { opacity: 0, transform: "translate(-50%,-50%) scale(1.15)" }], { duration: 200, fill: "both" });
-        kill(e, 220);
       },
       async cutin() {
         if (!on()) return;
