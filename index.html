@@ -660,7 +660,7 @@ body { margin: 0; }
 .view.game .odai { background: none; border: 0; padding: 0 4px; }
 .view.game .odai .timer { margin: 4px -4px 0; height: 5px; border-radius: 3px; }
 .view.game .recent { display: none; }
-.view.game .status { min-height: 2.4em; font-size: 12px; line-height: 1.3; }
+.view.game .status { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; height: 2.6em; min-height: 2.6em; font-size: 12px; line-height: 1.3; overflow: hidden; }  /* いつも2行ぶんの高さ：ナビの文が出ても盤面が上下に動かない */
 .view.game .board { border-width: 0; border-radius: 10px; padding: 0; background: var(--boardbg, #0e1326); box-shadow: inset 0 0 0 2px var(--boardline, #232b4d); }
 .view.game .tile .face { width: 93%; height: 93%; border-radius: 16%; }
 .view.game .board { margin-block: auto; }
@@ -10953,7 +10953,7 @@ ${recent || "まだありません"}`;
   const ADS = {
     // 本番の広告ユニット（AdMob：WORD DROP / iOS）。TESTING が true の間は、同じ枠に「テスト広告」が出る（自分の端末で押しても安全）
     // App Store に公開する直前に TESTING を false にする
-    TESTING: true,
+    TESTING: false,
     rewarded: "ca-app-pub-3473571296401576/3690478279",      // リワード（reward_navi）
     interstitial: "ca-app-pub-3473571296401576/6170221829",  // インタースティシャル（inter_between）
     banner: "ca-app-pub-3473571296401576/2410195352",        // バナー（banner_main）
