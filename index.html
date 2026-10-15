@@ -9762,7 +9762,7 @@ zoom|v2|ズームする・急上昇する`;
         });
         addLearned(f.w, info);
         achTry("first"); if (f.w.length >= 6) achTry("long6");
-        const bn = Object.keys(book).length; if (bn >= 100) achTry("book100"); if (bn >= 500) achTry("book500");
+        const bn = Object.keys(book).length; if (bn >= 100) achTry("book100"); if (bn >= 500) achTry("book500"); if (bn >= 1000) achTry("book1000");
       }
       // エンドレス：単語に使った石と、となり合う石が壊れる
       if (isEndless()) {
@@ -9844,7 +9844,7 @@ zoom|v2|ズームする・急上昇する`;
           if (noMiss >= 3) noMiss = 0;
           await perfectWipe();  // この中で次のステージへ
           if (heal) { lives++; SFX.levelUp(); buzz([20, 40, 20]); }
-          if (level >= 20) achTry("stage20"); if (level >= 40) achTry("stage40");
+          if (level >= 20) achTry("stage20"); if (level >= 40) achTry("stage40"); if (level >= 60) achTry("stage60");
           setStatus(level === diagFrom()
             ? `<b>STAGE ${level}：答えの道にななめが登場！</b>　ななめに動かさないと全部消せない盤面も出てくる`
             : `${heal ? "<b>ノーミス3連続！ ライフ+1</b>　" : ""}<b>STAGE ${level}</b>　${isTenStage(level) ? "<b>10コンボボーナス！</b> 3文字の単語10個を1回なぞって全部消そう" : isSpeedStage(level) ? "<b>スピード勝負！</b> 答えの道がとても長い。急いでなぞろう" : isFullStage(level) ? "<b>全面ボーナス！</b> 白いマスなし。全部消せたら盤面まるごとPERFECT" : `${cwords.length}色を1回なぞって全部消そう`}`);
@@ -9859,7 +9859,7 @@ zoom|v2|ズームする・急上昇する`;
         }
       } else {
         studyN += cwords.length; studyOK += exact.size; runLog.push(all ? 1 : 0);
-        achData.s.studyOK += exact.size; achSave(); if (achData.s.studyOK >= 100) achTry("study100");
+        achData.s.studyOK += exact.size; achSave(); if (achData.s.studyOK >= 100) achTry("study100"); if (achData.s.studyOK >= 500) achTry("study500");
         cwords.forEach((x, i) => { if (exact.has(i)) missDel(x.w); else missAdd(x.w); });
         if (all) {
           streak++; studyBoards++;
@@ -9914,7 +9914,7 @@ zoom|v2|ズームする・急上昇する`;
       // デイリーは、毎ターン次のパズル（その日・そのターンで決まった盤面）に入れかえる
       if (isDaily()) {
         touched.clear();
-        if (!tut) { runLog.push(all ? 1 : 0); if (runLog.slice(COLOR_TURNS).filter(Boolean).length >= 10) achTry("extra10"); }
+        if (!tut) { runLog.push(all ? 1 : 0); { const ex = runLog.slice(COLOR_TURNS).filter(Boolean).length; if (ex >= 10) achTry("extra10"); if (ex >= 30) achTry("extra30"); } }
         // 10問のあとは「エクストラ」：ずっと続く。全消しできないとライフ−1（ライフ3）
         if (turns > COLOR_TURNS && !all) { lives--; noMiss = 0; SFX.fail(); buzz([80, 60, 120]); gfx.shake(); setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1`); }
         if (turns === COLOR_TURNS && !tut) markDaily();
@@ -10443,6 +10443,7 @@ zoom|v2|ズームする・急上昇する`;
     const bonus = Math.round(PERFECT_BONUS * pf.mult);
     let word = null;
     premiumRun = pf.kind === "premium" ? premiumRun + 1 : 0;
+    if (!tut) { const ch = isDaily() ? dailyChain() : isEnergy() ? pfStreak : streak; if (ch >= 5) achTry("rainbow"); if (ch >= 10) achTry("rainbow10"); }
     if (pf.kind === "premium") {
       const v = lastRainbow = pickRainbow();
       SFX.bigCombo(12);
@@ -10599,7 +10600,7 @@ zoom|v2|ズームする・急上昇する`;
     $("endTitle").textContent = isPuzzle() ? "GAME OVER" : isEndless() ? "詰み！" : isEnergy() ? "エネルギー切れ！" : isColor() ? "FINISH!" : "GAME OVER";
     $("endScore").textContent = score.toLocaleString();
     $("newRec").hidden = !rec;
-    if (isEnergy() ? turns >= 30 : isColor() && turns >= COLOR_TURNS) achTry("colorDone");
+    if (isDaily() && turns >= COLOR_TURNS) achTry("colorDone");
     let dailyText = "";
     if (isDaily()) {
       const d = markDaily(), next = [3, 7, 30, 100].find(n => n > d.streak);
@@ -10627,7 +10628,7 @@ zoom|v2|ズームする・急上昇する`;
   function markDaily() {
     const d = dailyInfo(), today = dayKey(), y = new Date(); y.setDate(y.getDate() - 1);
     if (d.last !== today) { d.streak = d.last === dayKey(y) ? d.streak + 1 : 1; d.last = today; try { localStorage.setItem(DAILY_KEY, JSON.stringify(d)); } catch (e) {} }
-    if (d.streak >= 3) achTry("daily3"); if (d.streak >= 7) achTry("daily7"); if (d.streak >= 30) achTry("daily30");
+    if (d.streak >= 3) achTry("daily3"); if (d.streak >= 7) achTry("daily7"); if (d.streak >= 30) achTry("daily30"); if (d.streak >= 100) achTry("daily100"); achTry("colorDone");
     return d;
   }
   // ---------- 試遊の記録（端末の中だけ） ----------
@@ -10703,7 +10704,7 @@ ${recent || "まだありません"}`;
   }
   renderStats();
   // App Store のページ（公開されたら、シェアの文に付く）。APP_STORE_ID は App Store Connect の「Apple ID」（数字）
-  const APP_STORE_ID = "";
+  const APP_STORE_ID = "6820835521";
   const STORE_URL = APP_STORE_ID ? `https://apps.apple.com/jp/app/id${APP_STORE_ID}` : "";
   // 設定の「App Storeでレビューする」：ストアのレビューを書く画面を開く（IDが入るまでは、iPhoneの評価ダイアログを出す）
   $("feedbackBtn").addEventListener("click", async () => {
@@ -10955,29 +10956,34 @@ ${recent || "まだありません"}`;
   const ACH_KEY = "wordDrop.ach.v1";
   const ACH = [
     ["first", "はじめの一歩", "はじめて単語を作る", "1"],
+    ["allColor", "はじめてのPERFECT", "1回なぞって、全部の色の単語を消す", "◆"],
     ["combo3", "コンボ入門", "1回で3コンボ", "3"],
     ["combo5", "コンボ職人", "1回で5コンボ", "5"],
     ["combo8", "コンボの鬼", "1回で8コンボ", "8"],
-    ["combo12", "伝説のコンボ", "1回で12コンボ", "12"],
+    ["combo10", "伝説のコンボ", "1回で10コンボ", "10"],
     ["long6", "長文読み", "6文字の単語を作る", "6"],
-    ["allColor", "PERFECT!", "上の5つの単語をぜんぶ消す", "◆"],
-    ["colorDone", "カラー完走", "カラーで30ターン生き残る・デイリーを遊びきる", "✓"],
-    ["breaker8", "石の破壊神", "1回で石を8個こわす", "石"],
-    ["stones100", "石割り名人", "石を合計100個こわす", "石"],
-    ["odai30", "お題ハンター", "お題を合計30回作る", "題"],
-    ["survive50", "生き残り", "エンドレスで50ターン", "50"],
+    ["rainbow", "虹をつかめ", "PERFECTを5回連続（虹の演出）", "虹"],
+    ["rainbow10", "虹の彼方へ", "PERFECTを10回連続", "虹"],
+    ["stage20", "パーフェクト上級", "ひと筆パーフェクトでSTAGE 20に到達", "20"],
+    ["stage40", "パーフェクト名人", "ひと筆パーフェクトでSTAGE 40に到達", "40"],
+    ["stage60", "パーフェクトの神", "ひと筆パーフェクトでSTAGE 60に到達", "60"],
     ["score10k", "1万点プレイヤー", "1ゲームで10,000点", "1万"],
     ["score50k", "5万点プレイヤー", "1ゲームで50,000点", "5万"],
-    ["book100", "単語コレクター", "単語帳に100語", "100"],
-    ["book500", "単語マスター", "単語帳に500語", "500"],
+    ["score100k", "10万点プレイヤー", "1ゲームで100,000点", "10万"],
+    ["score300k", "30万点の壁", "1ゲームで300,000点", "30万"],
+    ["colorDone", "デイリー完走", "デイリーの10問を遊びきる", "✓"],
+    ["extra10", "天才の一手 10連発", "1日のエクストラで10問PERFECT", "天"],
+    ["extra30", "天才の一手 30連発", "1日のエクストラで30問PERFECT", "天"],
     ["daily3", "三日坊主じゃない", "デイリーを3日連続", "3日"],
     ["daily7", "1週間皆勤", "デイリーを7日連続", "7日"],
     ["daily30", "デイリーの達人", "デイリーを30日連続", "30日"],
-    ["extra10", "天才の一手 10連発", "デイリーのエクストラで10問PERFECT", "天"],
-    ["stage20", "パーフェクト上級", "パーフェクトでSTAGE 20に到達", "20"],
-    ["stage40", "パーフェクト名人", "パーフェクトでSTAGE 40に到達", "40"],
-    ["study100", "単語トレーニング100", "単語トレーニングで合計100語正解", "100"],
+    ["daily100", "100日の皆勤賞", "デイリーを100日連続", "100"],
+    ["study100", "つづり100", "つづりトレーニングで合計100語正解", "100"],
+    ["study500", "つづりの達人", "つづりトレーニングで合計500語正解", "500"],
     ["review", "復習コンプリート", "まちがえた単語を全部覚えなおす", "復"],
+    ["book100", "単語コレクター", "単語帳に100語", "100"],
+    ["book500", "単語マスター", "単語帳に500語", "500"],
+    ["book1000", "生き字引", "単語帳に1,000語", "千"],
     ["share", "はじめてのシェア", "結果をシェアする", "↗"],
   ];
   let achData = { u: {}, s: { stones: 0, odai: 0, studyOK: 0 } };
@@ -11000,18 +11006,18 @@ ${recent || "まだありません"}`;
   // 1ターンの結果から判定する
   function achTurn(combo, broke, all, gotOdai) {
     if (tut) return;
-    if (combo >= 3) achTry("combo3"); if (combo >= 5) achTry("combo5"); if (combo >= 8) achTry("combo8"); if (combo >= 12) achTry("combo12");
+    if (combo >= 3) achTry("combo3"); if (combo >= 5) achTry("combo5"); if (combo >= 8) achTry("combo8"); if (combo >= 10) achTry("combo10");
     if (all) achTry("allColor");
     if (broke >= 8) achTry("breaker8");
     if (broke) { achData.s.stones += broke; if (achData.s.stones >= 100) achTry("stones100"); }
     if (gotOdai) { achData.s.odai++; if (achData.s.odai >= 30) achTry("odai30"); }
-    if (score >= 10000) achTry("score10k"); if (score >= 50000) achTry("score50k");
+    if (score >= 10000) achTry("score10k"); if (score >= 50000) achTry("score50k"); if (score >= 100000) achTry("score100k"); if (score >= 300000) achTry("score300k");
     achSave();
   }
   function renderAch() {
     const got = ACH.filter(a => achData.u[a[0]]).length;
     $("achCount").textContent = `${got} / ${ACH.length}`;
-    $("achGrid").innerHTML = ACH.map(a => `<div class="ach-item${achData.u[a[0]] ? " got" : ""}"><div class="m">${achData.u[a[0]] ? "★" : "？"}</div><div><b>${a[1]}</b><span>${a[2]}${a[0] === "stones100" ? `（${Math.min(achData.s.stones, 100)}/100）` : a[0] === "odai30" ? `（${Math.min(achData.s.odai, 30)}/30）` : a[0] === "study100" ? `（${Math.min(achData.s.studyOK, 100)}/100）` : ""}</span></div></div>`).join("");
+    $("achGrid").innerHTML = ACH.map(a => `<div class="ach-item${achData.u[a[0]] ? " got" : ""}"><div class="m">${achData.u[a[0]] ? "★" : "？"}</div><div><b>${a[1]}</b><span>${a[2]}${a[0] === "stones100" ? `（${Math.min(achData.s.stones, 100)}/100）` : a[0] === "odai30" ? `（${Math.min(achData.s.odai, 30)}/30）` : a[0] === "study100" ? `（${Math.min(achData.s.studyOK, 100)}/100）` : a[0] === "study500" ? `（${Math.min(achData.s.studyOK, 500)}/500）` : ""}</span></div></div>`).join("");
   }
   renderAch();
 
@@ -11092,7 +11098,7 @@ ${recent || "まだありません"}`;
       if (!a) return fake();
       if (!rewardReady) await prepReward();
       if (!rewardReady) { await new Promise(r => setTimeout(r, 1200)); await prepReward(); }  // 1回だけ読み込みなおす
-      if (!rewardReady) { setStatus("広告を読み込めませんでした。少し待ってからもう一度どうぞ"); return false; }
+      if (!rewardReady) { setStatus("広告を読み込めなかったので、今回は広告なしで受け取れます"); return true; }
       return new Promise(res => {
         let earned = false, finished = false; const hs = [];
         const finish = () => {
