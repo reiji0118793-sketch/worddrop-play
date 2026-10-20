@@ -10524,7 +10524,7 @@ zoom|v2|ズームする・急上昇する`;
     else if (isStage()) { level++; buildStagePuzzle(); }
     measure(); render();
     board.flat().forEach((t, k) => { const el = elFor(t); el.querySelector(".face").style.animationDelay = (k * 18) + "ms"; el.classList.add("dropin"); setTimeout(() => el.classList.remove("dropin"), 1000); });
-    maybeAskReview();
+    maybeAskReview("perfect");
     setStatus(`<b>${pf.kind === "premium" ? "PREMIUM PERFECT!" : pf.kind === "hyper" ? "HYPER PERFECT!" : pf.kind === "super" ? "SUPER PERFECT!" : pf.kind === "great" ? "GREAT PERFECT!" : "PERFECT!"}</b>　全消しボーナス +${bonus.toLocaleString()}点${pf.mult > 1 ? `（×${pf.mult}）` : ""}${isEnergy() ? "　エネルギー満タン！" : ""}`);
     await sleep(600);
     if (puzzled) setStatus(`<b>PERFECTチャンス！</b>（${pfStreak}連続）　この並びは、1回なぞるだけで全部消せる道がかくれているよ`);
@@ -10729,6 +10729,7 @@ zoom|v2|ズームする・急上昇する`;
     else if (canCont) $("contNote").textContent = `${isEndless() ? "石を5個こわす" : "エネルギー＋50"}・あと${CONT_MAX - contUsed}回`;
     updateHud();
     $("overlay").hidden = false;
+    maybeAskReview("end", rec || reviewDone || (isDaily() && turns >= COLOR_TURNS));
   }
   // デイリーの連続記録（10問を遊びきった日 or ゲームオーバーになった日に1回だけ数える）
   function markDaily() {
@@ -11212,6 +11213,7 @@ ${recent || "まだありません"}`;
           hs.forEach(h => Promise.resolve(h).then(x => x && x.remove()).catch(() => {}));
           rewardReady = false; prepReward();  // 次の1本をすぐ読み込んでおく（何回でも見られるように）
           SFX.reset();  // 動画広告のあとは音が出なくなることがあるので、音を作りなおす
+          adShownAt = Date.now();
           res(earned);
         };
         const guard = setTimeout(finish, 180000);  // 閉じた合図が来なくても、ボタンが固まらないように
@@ -11233,7 +11235,7 @@ ${recent || "まだありません"}`;
       sinceInter = 0;
       await new Promise(res => {
         let finished = false; const hs = [];
-        const finish = () => { if (finished) return; finished = true; hs.forEach(h => h.then(x => x.remove()).catch(() => {})); interReady = false; prepInter(); SFX.reset(); res(); };
+        const finish = () => { if (finished) return; finished = true; hs.forEach(h => h.then(x => x.remove()).catch(() => {})); interReady = false; prepInter(); SFX.reset(); adShownAt = Date.now(); res(); };
         hs.push(a.addListener("interstitialAdDismissed", finish));
         hs.push(a.addListener("interstitialAdFailedToShow", finish));
         a.showInterstitial().catch(finish);
@@ -11279,15 +11281,25 @@ ${recent || "まだありません"}`;
   const FIRST_KEY = "wordDrop.firstDay.v1";
   try { if (!localStorage.getItem(FIRST_KEY)) localStorage.setItem(FIRST_KEY, dayKey()); } catch (e) {}
   const firstDay = () => { try { return localStorage.getItem(FIRST_KEY) === dayKey(); } catch (e) { return false; } };
-  // 星の評価のお願い（Apple公式の画面。出る回数はAppleが年3回までに制限する）。PERFECT!のあと、2回目以降・60日に1回まで
-  function maybeAskReview() {
+  // 星の評価のお願い（Apple公式の画面。出る回数はAppleが年3回までに制限する）。アプリ版だけ・ごほうびとは結びつけない
+  // 出すのは「楽しかった直後」だけ：①PERFECT!を累計3回とったあと ②遊んだ日が3日目以降で、自己ベスト更新などよい結果のGAME OVER
+  // 出さない：初日・チュートリアル・負けただけのGAME OVER・広告を見てから90秒以内。端末ごとに合計3回まで、前回から120日あける
+  const REVIEW_KEY = "wordDrop.review.v2";
+  let adShownAt = 0;  // 最後に広告（リワード・インタースティシャル）を閉じた時刻
+  function maybeAskReview(why, good = false) {
     const R = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.InAppReview;
-    let st = { n: 0, last: 0 }; try { st = JSON.parse(localStorage.getItem("wordDrop.review.v1") || "null") || st; } catch (e) {}
-    st.n++;
-    const ok = st.n >= 2 && Date.now() - st.last > 60 * 864e5;
-    if (ok) st.last = Date.now();
-    try { localStorage.setItem("wordDrop.review.v1", JSON.stringify(st)); } catch (e) {}
-    if (ok && R) setTimeout(() => R.requestReview().catch(() => {}), 1500);
+    if (!R || tut) return;
+    let st = null; try { st = JSON.parse(localStorage.getItem(REVIEW_KEY) || "null"); } catch (e) {}
+    if (!st) {  // 前の版（wordDrop.review.v1 = PERFECTの回数と、最後に出した時刻）から引きつぐ
+      let v1 = null; try { v1 = JSON.parse(localStorage.getItem("wordDrop.review.v1") || "null"); } catch (e) {}
+      st = { pf: (v1 && v1.n) || 0, asked: v1 && v1.last ? 1 : 0, last: (v1 && v1.last) || 0 };
+    }
+    if (why === "perfect") st.pf++;
+    const fun = why === "perfect" ? st.pf >= 3 : good && statsLoad().days.length >= 3;
+    const ok = fun && !firstDay() && st.asked < 3 && Date.now() - st.last > 120 * 864e5 && Date.now() - adShownAt > 90000;
+    if (ok) { st.asked++; st.last = Date.now(); }
+    try { localStorage.setItem(REVIEW_KEY, JSON.stringify(st)); } catch (e) {}
+    if (ok) setTimeout(() => R.requestReview().catch(() => {}), 2000);
   }
   // 起動したときのおまけ：①デイリー連続記録の保険（広告）②ログインボーナス（広告で3倍）
   const LOGIN_KEY = "wordDrop.login.v1", GUARD_KEY = "wordDrop.streakGuard.v1";
