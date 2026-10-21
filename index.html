@@ -506,6 +506,8 @@ body.has-banner #gameSet { padding-bottom: calc(var(--safeB) + var(--bannerH) + 
 .hearts .on { color: var(--fire); }
 .hearts .off { color: var(--line); }
 .hearts.lost { animation: hit .4s; }
+.hearts [data-n] { position: relative; }
+.hearts [data-n]::after { content: attr(data-n); position: absolute; left: 0; right: 2px; top: 50%; transform: translateY(-46%); font-size: 10px; font-weight: 900; letter-spacing: 0; text-align: center; color: #fff; }
 .hud-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
 .chip.lv { --c: var(--gold); }
 .quota b { font-variant-numeric: tabular-nums; }
@@ -544,6 +546,8 @@ body.has-banner #gameSet { padding-bottom: calc(var(--safeB) + var(--bannerH) + 
 /* 色のない文字は白。暗くせず「これも使える・消せる」とわかるようにする */
 .board.colormode .tile:not(.cc) .face { background: linear-gradient(160deg, #ffffff, #f1f3f8 55%, #d9dde8); border-color: #aeb6cc; color: #1d2233; box-shadow: 0 3px 0 #8a92a8, 0 6px 10px rgba(0,0,0,.35); }
 .board.colormode .tile.vowel:not(.cc) .face { color: #1d2233; }
+/* 石マス（STAGE 51〜）：色の盤面でも、灰色の石だと分かる見た目にする */
+.board.colormode .tile.stone:not(.cc) .face { background: radial-gradient(circle at 35% 30%, #8d93a3, #5b6173 60%, #454a59); border-color: #3a3f4d; color: #eef1f7; box-shadow: 0 3px 0 #2c303b, 0 6px 10px rgba(0,0,0,.35); }
 .tile.cin .face { animation: cin .4s ease-out; }
 @keyframes cin { from { transform: scale(.55); filter: brightness(1.6); } }
 .cwords { display: flex; flex-wrap: wrap; gap: 4px 6px; }
@@ -9737,14 +9741,14 @@ zoom|v2|ズームする・急上昇する`;
   boardEl.addEventListener("pointerdown", e => {
     if (busy || dragging || !$("overlay").hidden) return;
     e.preventDefault();
-    if (tut) $("tutCoach").hidden = true;
+    if (tut || stageIntroOn) { $("tutCoach").hidden = true; stageIntroOn = false; }
     poke();
     SFX.ensure(); SFX.grab(); buzz(12); stepCount = 0; lastTickSec = 99;
     boardEl.setPointerCapture(e.pointerId);
     heldPos = cellAt(e.clientX, e.clientY);
     if (board[heldPos.r][heldPos.c].stone) {
       const el = elFor(board[heldPos.r][heldPos.c]); el.classList.remove("nope"); void el.offsetWidth; el.classList.add("nope");
-      SFX.stone(); buzz(20); setStatus("石は動かせない。石の文字を使って単語を作るとこわせる！");
+      SFX.stone(); buzz(20); setStatus(isEndless() ? "石は動かせない。石の文字を使って単語を作るとこわせる！" : "石は動かせないし、通れない。石をよけてなぞろう");
       return;
     }
     held = board[heldPos.r][heldPos.c];
@@ -9945,11 +9949,14 @@ zoom|v2|ズームする・急上昇する`;
           if (heal) { lives++; SFX.levelUp(); buzz([20, 40, 20]); }
           if (level >= 20) achTry("stage20"); if (level >= 40) achTry("stage40"); if (level >= 60) achTry("stage60");
           if (level >= 30 && !lifeLost && !contUsed) achTry("nomiss30"); if (level >= 30 && !navUsedGame) achTry("nonav30");
+          if (isBossStage(level - 1)) { achTry("boss1"); if (level - 1 >= 100) achTry("boss100"); }
+          stageIntro();
           setStatus(level === diagFrom()
             ? `<b>STAGE ${level}：答えの道にななめが登場！</b>　ななめに動かさないと全部消せない盤面も出てくる`
-            : `${heal ? "<b>ノーミス3連続！ ライフ+1</b>　" : ""}<b>STAGE ${level}</b>　${isTenStage(level) ? "<b>10コンボボーナス！</b> 3文字の単語10個を1回なぞって全部消そう" : isSpeedStage(level) ? "<b>スピード勝負！</b> 答えの道がとても長い。急いでなぞろう" : isFullStage(level) ? "<b>全面ボーナス！</b> 白いマスなし。全部消せたら盤面まるごとPERFECT" : `${cwords.length}色を1回なぞって全部消そう`}`);
+            : `${heal ? "<b>ノーミス3連続！ ライフ+1</b>　" : ""}<b>STAGE ${level}</b>　${isBossStage(level) ? "<b>BOSS STAGE！</b> 石・ななめ・長い道の全部入り。ライフに気をつけて" : isLongStage(level) ? "<b>長い単語ステージ！</b> 5文字・6文字の単語をそろえよう" : isTenStage(level) ? "<b>10コンボボーナス！</b> 3文字の単語10個を1回なぞって全部消そう" : isSpeedStage(level) ? "<b>スピード勝負！</b> 答えの道がとても長い。急いでなぞろう" : isFullStage(level) ? "<b>全面ボーナス！</b> 白いマスなし。全部消せたら盤面まるごとPERFECT" : `${cwords.length}色を1回なぞって全部消そう`}`);
         } else {
           streak = 0; lives--; noMiss = 0; lifeLost = true;
+          if (lives > 0) introOnce("heal", "ライフ回復", "ライフが減っても大丈夫！<br><b>PERFECTを3回連続</b>でとると、ライフが<b>1つ戻る</b>よ（空いたハートの中の数字が、あと何回か）");
           SFX.fail(); buzz([80, 60, 120]); gfx.shake();
           setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1${lives > 0 ? "　同じ盤面でもう一度！" : ""}`);
           updateHud();
@@ -10729,7 +10736,9 @@ zoom|v2|ズームする・急上昇する`;
       $("quota").innerHTML = `石 <b>${n}</b>/${STONE_CAP}　毎ターン+${stonesPerTurn()}個`;
       $("lvFill").style.width = ((turns % STONE_EVERY) / STONE_EVERY * 100) + "%";
     } else if (isPuzzle()) {
-      $("hearts").innerHTML = Array.from({ length: LIVES }, (_, i) => `<span class="${i < lives ? "on" : "off"}">♥</span>`).join("");
+      // ひと筆パーフェクト：次に戻る空きハートの中に、回復までのPERFECT回数を小さく出す（ノーミス3連続でライフ+1）
+      const healAt = isStage() && lives > 0 && lives < LIVES ? lives : -1;
+      $("hearts").innerHTML = Array.from({ length: LIVES }, (_, i) => `<span class="${i < lives ? "on" : "off"}"${i === healAt ? ` data-n="${3 - noMiss}" title="PERFECTをあと${3 - noMiss}回連続でライフ+1"` : ""}>♥</span>`).join("");
       $("quota").innerHTML = isStage() ? `<b>${cwords.length}色</b>を1回で全部消す` : `正解 <b>${studyOK}</b>語　この盤面は${cwords.length}語`;
     } else if (isEnergy()) {
       const pct = Math.round(energy / ENERGY_MAX * 100);
@@ -10943,7 +10952,7 @@ ${recent || "まだありません"}`;
     const rs = resumeData; resumeData = null; lastResumeJson = "";
     if (rs) { ({ level, score, lives, turns, streak, noMiss, contUsed, maxCombo, totalWords, studyN, studyOK, studyBoards } = rs); runLog = rs.runLog || []; lifeLost = !!rs.lifeLost; navUsedGame = !!rs.navUsed; }
     document.body.classList.toggle("puzzle", isPuzzle());
-    if (color) { odai = { w: "", m: "" }; if (isDaily()) buildDailyPuzzle(rs ? turns : 0); else if (isStage()) buildStagePuzzle(); else if (isStudy()) buildStudyPuzzle(); else setupColor(); } else newOdai();
+    if (color) { odai = { w: "", m: "" }; if (isDaily()) buildDailyPuzzle(rs ? turns : 0); else if (isStage()) { buildStagePuzzle(); stageIntro(); } else if (isStudy()) buildStudyPuzzle(); else setupColor(); } else newOdai();
     if (unseed) unseed();
     updateAssistChip();
     measure(); updateHud(); resetTimerBar(); refreshHints();
@@ -11159,12 +11168,14 @@ ${recent || "まだありません"}`;
     ["score1m", "百万点", "1ゲームで1,000,000点", "百万"],
     ["daily365", "1年皆勤", "デイリーを365日連続", "365"],
     ["combo12", "神のコンボ", "1回で12コンボ", "12"],
+    ["boss1", "はじめてのBOSS撃破", "ひと筆パーフェクトで、STAGE 50 のBOSSステージをクリア", "B"],
+    ["boss100", "BOSSハンター", "ひと筆パーフェクトで、STAGE 100 のBOSSステージをクリア", "B"],
   ];
   // 実績一覧の見出し（この順で表示）。ACH の id はどれか1つのグループに入れる
   const ACH_GROUPS = [
     ["はじめて", ["first", "allColor", "dict1", "share"]],
     ["コンボ・単語づくり", ["combo3", "combo5", "combo8", "combo10", "combo12", "long6", "long6x50"]],
-    ["ひと筆パーフェクト", ["rainbow", "rainbow10", "rainbow20", "stage20", "stage40", "stage60", "nomiss30", "nonav30"]],
+    ["ひと筆パーフェクト", ["rainbow", "rainbow10", "rainbow20", "stage20", "stage40", "stage60", "nomiss30", "nonav30", "boss1", "boss100"]],
     ["スコア", ["score10k", "score50k", "score100k", "score300k", "score1m"]],
     ["デイリー", ["colorDone", "extra10", "extra30", "extra50", "daily3", "daily7", "daily30", "daily100", "daily365"]],
     ["単語・学習", ["study100", "study500", "study1000", "review", "book100", "book500", "book1000", "book3000", "say50", "packs5"]],
@@ -11494,8 +11505,9 @@ ${recent || "まだありません"}`;
     for (const [n, count, sets] of STAGE_BANDS) {
       if (i < count) {
         const lens = sets[Math.min(sets.length - 1, Math.floor(i / Math.max(1, Math.ceil(Math.min(count, 6) / sets.length))))];
-        const Lmin = Math.min(20, Math.round(1.5 * n) + i);
-        return { lens, Lmin, Lmax: Math.min(24, Lmin + 3), diag: s >= DIAG_STAGE ? (s < DIAG_STAGE + 10 ? 1 : 2) : 0, n };
+        // STAGE 41〜：道の長さの上限を、6ステージごとに1マスずつ上げる（最大26）。ななめは STAGE 60 から3回まで
+        const Lmin = s > 40 ? Math.min(26, 20 + Math.floor((s - 40) / 6)) : Math.min(20, Math.round(1.5 * n) + i);
+        return { lens, Lmin, Lmax: Math.min(s > 40 ? 28 : 24, Lmin + 3), diag: s >= DIAG_STAGE ? (s < DIAG_STAGE + 10 ? 1 : s < 60 ? 2 : 3) : 0, n };
       }
       i -= count;
     }
@@ -11507,6 +11519,10 @@ ${recent || "まだありません"}`;
   const isTenStage = s => s >= 20 && s % 10 === 0;
   // スピード勝負：17・27・37…ステージは、答えの道がとても長い（時間はきびしめ）
   const isSpeedStage = s => s >= 17 && s % 10 === 7;
+  // STAGE 41〜の難しさ：おとり文字（41〜）・石マス（51〜1個、70〜2個、90〜3個）・長い単語ステージ（63・73…）・BOSS（50・100…）
+  const isBossStage = s => s >= 50 && s % 50 === 0;
+  const isLongStage = s => s >= 63 && s % 10 === 3;
+  const stageStones = s => isBossStage(s) ? 2 : s >= 90 ? 3 : s >= 70 ? 2 : s >= 51 ? 1 : 0;
   // 並べ方：ステージが進むほど、横だけ → 縦もまざる → 縦横がばらばら、とむずかしくなる
   function stageLayout(s, lens) {
     if (s <= 4) return "h";
@@ -11515,20 +11531,51 @@ ${recent || "まだありません"}`;
     if (canV) opts.push(...(s <= 12 ? ["v"] : ["v", "v"]));
     return opts[Math.floor(Math.random() * opts.length)];
   }
+  // 新しい難しさが初めて出るステージで、1回だけ短い説明を出す（初見殺しをなくす）。OK か、なぞり始めると閉じる
+  const INTRO_KEY = "wordDrop.stageIntro.v1";
+  const STAGE_INTROS = [
+    ["boss", s => isBossStage(s), "BOSS STAGE", "<b>BOSSステージ！</b><br>石・ななめ・長い道がそろった強敵。ライフに気をつけて、道をよく見てからなぞろう"],
+    ["speed", s => isSpeedStage(s), "NEW", "<b>スピード勝負</b><br>答えの道がとても長いステージ。時間はなぞっている間だけ減るから、道を決めてから一気になぞろう"],
+    ["diag", s => s >= DIAG_STAGE && s < DIAG_STAGE + 3, "NEW", "<b>ななめが登場</b><br>ここからは、答えの道に<b>ななめ</b>の動きが入ることがある"],
+    ["decoy", s => s > 40, "NEW", "<b>おとり文字</b><br>白いマスに、色の単語と<b>同じ文字</b>がまざるようになった。どの文字を使うか、よく見てえらぼう"],
+    ["stone", s => stageStones(s) > 0 && !isFullStage(s) && !isTenStage(s), "NEW", "<b>石マス</b><br>灰色の<b>石</b>は動かせないし、通り抜けもできない。石をよけて道を考えよう"],
+    ["long", s => isLongStage(s), "NEW", "<b>長い単語ステージ</b><br>5文字・6文字の長い単語ばかり。1つの単語をそろえるのに、長い道が必要"],
+  ];
+  let stageIntroOn = false;
+  const introSeen = () => { try { return JSON.parse(localStorage.getItem(INTRO_KEY) || "[]"); } catch (e) { return []; } };
+  function introOnce(id, step, html) {
+    setTimeout(() => {
+      const seen = introSeen();
+      if (seen.includes(id) || tut || dragging || !$("overlay").hidden || !$("tutCoach").hidden) return;
+      seen.push(id); try { localStorage.setItem(INTRO_KEY, JSON.stringify(seen)); } catch (e) {}
+      coach(step, html, "OK");
+      stageIntroOn = true;
+      $("tutBtn").onclick = () => { $("tutCoach").hidden = true; stageIntroOn = false; };
+    }, 900);
+  }
+  function stageIntro() {
+    if (!isStage() || tut) return;
+    const seen = introSeen(), it = STAGE_INTROS.find(([id, on]) => !seen.includes(id) && on(level)); if (!it) return;
+    introOnce(it[0], `STAGE ${level}　${it[2]}`, it[3]);
+  }
   function buildStagePuzzle() {
-    const sp = stageSpec(level), full = isFullStage(level), ten = isTenStage(level), speed = isSpeedStage(level);
+    const sp = stageSpec(level), full = isFullStage(level), boss = isBossStage(level), ten = isTenStage(level) && !boss, speed = isSpeedStage(level), long = isLongStage(level);
+    const opt = { stones: full || ten ? 0 : stageStones(level), decoy: level > 40 };
     for (let tries = 0; tries < 25; tries++) {
       forceBasic = tries >= 6;
       const used = new Set(stageRecent.slice(-40));
       // 全面ボーナス：前半は5文字×6語を縦に、後半は6文字×2＋3文字×6を横に（30マスぴったり）
-      const lens = ten ? [3, 3, 3, 3, 3, 3, 3, 3, 3, 3] : full ? (level < 35 ? [5, 5, 5, 5, 5, 5] : [6, 6, 3, 3, 3, 3, 3, 3]) : sp.lens;
-      const layout = ten ? "ten" : full ? (level < 35 ? "v" : "h") : speed ? ["mix", "ring", "center"][tries % 3] : stageLayout(level, lens);
+      // 石があるときは、石と道の場所をあけるため、3文字の単語を1つへらす（8色→7色）
+      const base = sp.lens.slice(); if (opt.stones) base.pop();
+      const lens = boss ? [5, 4, 4, 3, 3, 3, 3] : ten ? [3, 3, 3, 3, 3, 3, 3, 3, 3, 3] : full ? (level < 35 ? [5, 5, 5, 5, 5, 5] : [6, 6, 3, 3, 3, 3, 3, 3]) : long ? [6, 6, 5, 5] : base;
+      const layout = ten ? "ten" : full ? (level < 35 ? "v" : "h") : long ? ["h", "mix"][tries % 2] : speed || boss ? ["mix", "ring", "center"][tries % 3] : stageLayout(level, lens);
       try { cwords = lens.slice().sort(() => Math.random() - 0.5).map(len => { const x = pickDailyWord(len, used); used.add(x.w); return x; }); } catch (e) { continue; }
-      const Lmin = ten ? Math.max(sp.Lmin, 16) : speed ? 22 : full ? Math.max(sp.Lmin, 14) : sp.Lmin;
-      const Lmax = ten ? Math.max(sp.Lmax, 21) : speed ? 26 : full ? Math.max(sp.Lmax, 19) : sp.Lmax;
-      const route = buildDailyBoard(cwords.map(x => x.w), Lmin, Lmax, speed || ten ? 0 : sp.diag, layout);
+      const Lmin = boss ? 24 : ten ? Math.max(sp.Lmin, 16) : speed ? Math.max(sp.Lmin, 22) : full ? Math.max(sp.Lmin, 14) : sp.Lmin;
+      const Lmax = boss ? 27 : ten ? Math.max(sp.Lmax, 21) : speed ? Math.max(sp.Lmax, 26) : full ? Math.max(sp.Lmax, 19) : sp.Lmax;
+      if (level > 40) opt.minLen = Lmin - 2;
+      const route = buildDailyBoard(cwords.map(x => x.w), Lmin, Lmax, speed || ten ? 0 : boss ? 3 : sp.diag, layout, opt);
       if (route) {
-        cwords.forEach(x => stageRecent.push(x.w)); puzzleRoute = route; stageSnap = board.map(row => row.map(t => ({ ch: t.ch, col: t.col }))); stageWords = cwords.slice(); renderCwords(); return true; }
+        cwords.forEach(x => stageRecent.push(x.w)); puzzleRoute = route; stageSnap = board.map(row => row.map(t => ({ ch: t.ch, col: t.col, stone: !!t.stone }))); stageWords = cwords.slice(); renderCwords(); return true; }
     }
     return false;
   }
@@ -11595,7 +11642,7 @@ ${recent || "まだありません"}`;
   }
   function restoreStage() {
     newPuzzleBoard(() => {
-      board.forEach((row, r) => row.forEach((t, c) => { const x = stageSnap[r][c]; t.ch = x.ch; t.stone = false; if (x.col !== undefined) t.col = x.col; else delete t.col; }));
+      board.forEach((row, r) => row.forEach((t, c) => { const x = stageSnap[r][c]; t.ch = x.ch; t.stone = !!x.stone; if (x.col !== undefined) t.col = x.col; else delete t.col; }));
       cwords = stageWords.slice(); renderCwords();
     });
   }
@@ -11672,7 +11719,8 @@ ${recent || "まだありません"}`;
     });
     return cellsOf;
   }
-  function buildDailyBoard(words, Lmin = 12, Lmax = 17, diag = 0, layout = "h") {
+  // opt.stones：白いマスに置く石（動かせない・通れない）の数　opt.decoy：白いマスを、色の単語と同じ文字（おとり）にする
+  function buildDailyBoard(words, Lmin = 12, Lmax = 17, diag = 0, layout = "h", opt = {}) {
     const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], ND = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
     const until = isDaily() ? Infinity : performance.now() + 400;  // 作れない組み合わせで固まらないよう、1回の挑戦は0.4秒まで（デイリーはみんな同じ盤面にするため制限なし）
     for (let tries = 0; tries < 30000; tries++) {
@@ -11680,13 +11728,18 @@ ${recent || "まだありません"}`;
       for (const t of board.flat()) { delete t.col; t.stone = false; t.ch = randLetter(); }
       const cellsOf = placeWords(words, layout);
       if (!cellsOf) { if (layout === "v" || tries > 400) return null; continue; }
-      // ぜんぶの単語を通る、重ならない長い道（たて・よこ）
+      if (opt.stones || opt.decoy) {
+        const white = board.flat().filter(t => t.col === undefined).sort(() => Math.random() - 0.5), letters = words.join("");
+        white.forEach((t, k) => { if (k < (opt.stones || 0)) t.stone = true; else if (opt.decoy) t.ch = letters[Math.floor(Math.random() * letters.length)]; });
+      }
+      // ぜんぶの単語を通る、重ならない長い道（たて・よこ）。石は通らない
       let pos = { r: Math.floor(Math.random() * ROWS), c: Math.floor(Math.random() * COLS) };
+      if (board[pos.r][pos.c].stone) continue;
       let dUsed = 0;
       const q = [pos], seen = new Set([pos.r * COLS + pos.c]);
       const L = Lmin + Math.floor(Math.random() * (Lmax - Lmin + 1));
       for (let k = 0; k < L; k++) {
-        const free = n => n.r >= 0 && n.r < ROWS && n.c >= 0 && n.c < COLS && !seen.has(n.r * COLS + n.c);
+        const free = n => n.r >= 0 && n.r < ROWS && n.c >= 0 && n.c < COLS && !seen.has(n.r * COLS + n.c) && !board[n.r][n.c].stone;
         let opts = N4.map(([dr, dc]) => ({ r: pos.r + dr, c: pos.c + dc })).filter(free);
         // ななめは「たまに」だけ（1歩ごとに3.5%）、決めた回数まで
         if (dUsed < diag && Math.random() < 0.035) { const d = ND.map(([dr, dc]) => ({ r: pos.r + dr, c: pos.c + dc, d: 1 })).filter(free); if (d.length) opts = d; }
@@ -11694,6 +11747,7 @@ ${recent || "まだありません"}`;
         pos = opts[Math.floor(Math.random() * opts.length)]; if (pos.d) { dUsed++; pos = { r: pos.r, c: pos.c }; } q.push(pos); seen.add(pos.r * COLS + pos.c);
       }
       if (!cellsOf.every(cs => cs.some(x => seen.has(x)))) continue;
+      if (opt.minLen && q.length < opt.minLen) continue;  // 行き止まりで道が短くなりすぎたら作りなおす（STAGE 41〜）
       const snap = board.map(row => row.slice());
       for (let k = 1; k < q.length; k++) swap(q[k - 1], q[k]);
       if (findWords(board).length) { board = snap; continue; }
