@@ -10826,6 +10826,19 @@ zoom|v2|ズームする・急上昇する`;
   document.addEventListener("visibilitychange", () => { if (document.hidden) resumeSave(); });
   window.addEventListener("pagehide", resumeSave);
   const resumeText = (k, r) => k === "daily" ? `${r.turns + 1}問目` : k === "stage" ? `STAGE ${r.level}` : `Lv.${r.level}`;
+  // テスト用（ブラウザの試遊版だけ）：URL に ?stage=50 を付けると、ひと筆パーフェクトを STAGE 50 の「つづきから」にする
+  // 新しい要素の説明をもう一度見られるように、説明の既読も消す。アプリ版では何もしない
+  try {
+    const n = Number(new URLSearchParams(location.search).get("stage"));
+    const native = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+    if (!native && Number.isInteger(n) && n >= 1 && n <= 999) {
+      const a = resumeAll(); a.stage = { level: n, score: 0, lives: 3, turns: 1, streak: 0, noMiss: 0, contUsed: 0, maxCombo: 0, totalWords: 0, studyN: 0, studyOK: 0, studyBoards: 0, runLog: [], day: dayKey() };
+      localStorage.setItem(RESUME_KEY, JSON.stringify(a));
+      localStorage.setItem("wordDrop.tutorial.v1", "1"); localStorage.removeItem("wordDrop.stageIntro.v1");
+      localStorage.setItem("wordDrop.mode.v1", "stage");
+      history.replaceState(null, "", location.pathname);  // 読みこみ直しても、遊んだ続きが上書きされないように
+    }
+  } catch (e) {}
   function statsTouchDay() { const st = statsLoad(), d = dayKey(); if (!st.days.includes(d)) { st.days.push(d); st.days = st.days.slice(-90); statsSave(st); } }
   // 1ゲームの終わり（how = "end"：最後まで / "quit"：途中でタイトルへ）
   function statsGame(how) {
