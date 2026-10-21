@@ -550,6 +550,11 @@ body.has-banner #gameSet { padding-bottom: calc(var(--safeB) + var(--bannerH) + 
 .cw { display: inline-flex; align-items: baseline; gap: 5px; padding: 1px 8px; border-radius: 8px; border: 2px solid var(--cc); background: color-mix(in srgb, var(--cc) 20%, transparent); }
 .cw b { font-family: var(--font-display); font-weight: 800; letter-spacing: .08em; font-size: 15px; color: #fff; }
 .cw span { font-size: 11px; color: var(--muted); max-width: 7em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 上の単語は「押せる」ことが分かるように、小さな🔊の印（タップで意味・発音・例文） */
+.cw .cw-snd { width: 11px; height: 11px; flex: none; align-self: center; color: var(--muted); }
+/* チュートリアル：上の単語をタップしてもらう（transformだけの軽いアニメ） */
+.cw.tut-tap { box-shadow: 0 0 0 2px #ffe45c; animation: tutTap 1s ease-in-out infinite; }
+@keyframes tutTap { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 .odai.color .cwords { gap: 4px; }
 .odai.color .cw { padding: 0 6px; gap: 4px; border-width: 1.5px; }
 .odai.color .cw.study { padding: 2px 10px; }
@@ -10397,7 +10402,7 @@ zoom|v2|ズームする・急上昇する`;
         + `<span class="cwhint">意味の英単語を、同じ色の文字を並べて作ろう${cwords.length > 1 ? `（${cwords.length}語ぜんぶ1回で）` : ""}　<b>単語をタップでヒント</b></span>`;
       return;
     }
-    $("cwords").innerHTML = cwords.map((x, i) => `<span class="cw" data-w="${x.w}" style="--cc:${CCOL[i]}"><b>${x.w}</b><span>${x.m}</span></span>`).join("");
+    $("cwords").innerHTML = cwords.map((x, i) => `<span class="cw" data-w="${x.w}" style="--cc:${CCOL[i]}"><b>${x.w}</b><span>${x.m}</span><svg class="cw-snd" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h3l4-3v10L5 10H2z" fill="currentColor"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>`).join("");
     wordSheetHint();
   }
   function setupColor() {
@@ -10654,6 +10659,7 @@ zoom|v2|ズームする・急上昇する`;
   let wsStudyIdx = -1;
   function openWordSheet(W, idx) {
     W = String(W || "").toUpperCase(); if (!W) return;
+    if (tutTapDone) tutTapDone();
     // つづりトレーニングで、まだ答えが出ていない単語：意味だけ見せる（つづりは見せない）
     const secret = isStudy() && !tut && idx !== undefined && !(studyReveal && studyReveal.has(idx));
     wsStudyIdx = secret ? idx : -1;
@@ -11721,7 +11727,7 @@ ${recent || "まだありません"}`;
       render(); updateHud(); resetTimerBar(); refreshHints(); hints = null; applyHintStage();
       elFor(board[route[0].r][route[0].c]).classList.add("tut");
       requestAnimationFrame(() => drawRoute(route));
-      coach(retry ? "もう一度！" : "遊び方 1/3", `光っている文字をつかんで、<b>線のとおりに最後まで</b>なぞってみよう。<br>指をはなすと、<b>5つの単語</b>が一気にそろう！`);
+      coach(retry ? "もう一度！" : "遊び方 1/4", `光っている文字をつかんで、<b>線のとおりに最後まで</b>なぞってみよう。<br>指をはなすと、<b>5つの単語</b>が一気にそろう！`);
       setStatus("光っている文字から、線のとおりになぞってみよう");
       return;
     }
@@ -11750,17 +11756,34 @@ ${recent || "まだありません"}`;
     kf.push({ transform: at(pts[n - 1]), opacity: 0, offset: 1 });
     f.animate(kf, { duration: loopMs, iterations: loops, easing: "linear" });
   }
+  // 上の単語をタップすると意味・🔊発音・例文が見られることを、チュートリアルで1回さわって覚えてもらう
+  let tutTapDone = null;
+  async function tutWordTap() {
+    const chips = [...document.querySelectorAll("#cwords .cw[data-w]")];
+    if (!chips.length || $("cwords").hidden) return;
+    chips.forEach(c => c.classList.add("tut-tap"));
+    coach("遊び方 3/4", "上に並んでいる<b>単語</b>をタップしてみよう！", "あとで見る");
+    const tapped = await new Promise(r => { tutTapDone = () => r(true); $("tutBtn").onclick = () => r(false); });
+    tutTapDone = null;
+    chips.forEach(c => c.classList.remove("tut-tap"));
+    if (!tapped) return;
+    $("tutCoach").hidden = true;
+    await new Promise(r => { const iv = setInterval(() => { if ($("wordSheet").hidden) { clearInterval(iv); r(); } }, 200); });
+    coach("遊び方 3/4", "いいね！ 遊んでいる途中でも、上の単語をタップすると<b>意味・🔊発音・例文</b>が見られるよ", "つぎへ");
+    await new Promise(r => $("tutBtn").onclick = r);
+  }
   async function tutAfter() {
     if (!tut) return;
     tutClear();
     const got = maxCombo;
     if (got >= 5 || (got > 0 && tutTries >= 1)) {
       tut = null;
-      coach("遊び方 2/3", got >= 5
+      coach("遊び方 2/4", got >= 5
         ? `すごい！ <b>${got}コンボ！</b><br>一度のなぞりで単語をたくさん作るほど、<b>コンボ</b>で得点がどんどん増えるよ`
         : `ナイス！ <b>${got}コンボ！</b><br>一度のなぞりで単語をたくさん作るほど、<b>コンボ</b>で得点がどんどん増えるよ`, "つぎへ");
       await new Promise(r => $("tutBtn").onclick = r);
-      coach("遊び方 3/3", isStage()
+      await tutWordTap();
+      coach("遊び方 4/4", isStage()
         ? `パーフェクトは、上の色の単語を<b>1回なぞるだけで全部</b>そろえるパズル。どの盤面にも、かならずその道があるよ。<br>消し残すとライフ−1（同じ盤面でやりなおし）。ライフは3つ。困ったら「ナビ」で答えの道が見られるよ！`
         : isStudy()
         ? `単語トレーニングは、<b>日本語の意味</b>を見て、その英単語を色の文字を並べて作るモード。<br>まちがえるとライフ−1で、正解が出るよ。まちがえた単語はあとでまた出るから、自然に覚えられる！`
