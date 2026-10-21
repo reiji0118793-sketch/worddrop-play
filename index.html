@@ -427,6 +427,21 @@ body { margin: 0; }
 .navbtn { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 0; background: linear-gradient(#ffe45c, #d9b45a); color: #1a1426; font: inherit; font-size: 14px; font-weight: 900; cursor: pointer; }
 .navbtn b { min-width: 1.6em; padding: 1px 6px; border-radius: 999px; background: #1a1426; color: #ffe45c; font-size: 12px; text-align: center; }
 .navbtn.empty b { background: #4a3a10; color: #fff; }
+/* プレイ中の設定ボタン（ナビの右はし）と設定シート */
+.setbtn { flex: none; display: inline-grid; place-items: center; width: 40px; margin-left: auto; padding: 0; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; }
+.setbtn svg { width: 20px; height: 20px; }
+.canwords .canbtn:not([hidden]) ~ .setbtn { margin-left: 6px; }
+.canwords:has(.setbtn) .canbtn { white-space: nowrap; padding: 8px 10px; gap: 6px; }
+.canwords:has(.setbtn) .canbtn > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.gs-in .controls { display: grid; gap: 8px; }
+.gs-in .controls label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--panel-2); font-size: 14px; }
+.gs-in .theme-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 0; }
+.gs-in .theme-sw { padding: 8px 4px; font-size: 12px; }
+.gs-in .theme-sw i { height: 26px; }
+.gs-in h4 { margin: 2px 0 0; font-size: 12px; color: var(--muted); font-weight: 700; }
+.gs-x { width: 32px; height: 32px; padding: 0 !important; font-size: 18px !important; line-height: 1; }
+body.gs-open #board { filter: blur(18px); }
+body.has-banner #gameSet { padding-bottom: calc(var(--safeB) + var(--bannerH) + var(--bannerPad) + 8px); }
 .adbtn { display: grid; justify-items: center; gap: 2px; background: linear-gradient(#6fd08a, #3f9c5b); color: #08210f; border: 0; font-weight: 900; }
 .adbtn small { font-size: 11px; font-weight: 700; }
 .adbtn[hidden] { display: none; }
@@ -809,6 +824,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
     <div class="canwords" id="canWords" hidden>
       <button type="button" class="canbtn" id="canBtn" aria-haspopup="dialog"><span>今の盤面で作れる単語</span><span class="cb-go">一覧を見る ▸</span></button>
       <button type="button" class="navbtn" id="navBtn" aria-label="ナビを使う"><span>ナビ</span><b id="navCount">3</b></button>
+      <button type="button" class="setbtn" id="setBtn" aria-label="設定" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="3.4 3.35"/><circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg></button>
     </div>
     <div class="recent" id="recent" aria-label="さっき作った単語">
       <div class="recent-head">さっき作った単語</div>
@@ -825,6 +841,17 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
     </div>
   </div>
 
+  <div class="cansheet" id="gameSet" role="dialog" aria-label="設定" hidden>
+    <div class="cs-in gs-in">
+      <div class="cs-head"><b>設定</b><button type="button" class="gs-x" id="gsClose" aria-label="閉じる">×</button></div>
+      <div class="controls">
+        <label><input type="checkbox" id="gsSound"> 効果音</label>
+        <label><input type="checkbox" id="gsFx"> 派手な演出（紙吹雪・画面ゆれ）</label>
+      </div>
+      <h4>盤面のテーマ</h4>
+      <div class="theme-grid" id="gsThemes"></div>
+    </div>
+  </div>
   <div class="cansheet" id="packSheet" role="dialog" aria-label="単語パックをえらぶ" hidden>
     <div class="cs-in">
       <div class="cs-head"><b>単語パックをえらぶ</b><button type="button" id="packClose">閉じる</button></div>
@@ -11900,9 +11927,9 @@ ${recent || "まだありません"}`;
   }
   function renderThemes() {
     const own = themeOwned(), cur = document.body.dataset.theme || "night";
-    $("themeGrid").innerHTML = THEMES.map(([id, name, sw]) => `<button type="button" class="theme-sw${id === cur ? " on" : ""}" data-theme-id="${id}" style="--sw:${sw}"><i></i>${name}<small>${id === cur ? "使用中" : own.has(id) ? "つかう" : "▶ 広告で解放"}</small></button>`).join("");
+    $("themeGrid").innerHTML = $("gsThemes").innerHTML = THEMES.map(([id, name, sw]) => `<button type="button" class="theme-sw${id === cur ? " on" : ""}" data-theme-id="${id}" style="--sw:${sw}"><i></i>${name}<small>${id === cur ? "使用中" : own.has(id) ? "つかう" : "▶ 広告で解放"}</small></button>`).join("");
   }
-  $("themeGrid").addEventListener("click", async e => {
+  async function onThemeClick(e) {
     const b = e.target.closest("[data-theme-id]"); if (!b) return;
     const id = b.dataset.themeId, own = themeOwned();
     if (!own.has(id)) {
@@ -11912,7 +11939,9 @@ ${recent || "まだありません"}`;
       SFX.levelUp(); buzz([20, 40, 20], "SUCCESS");
     }
     applyTheme(id);
-  });
+  }
+  $("themeGrid").addEventListener("click", onThemeClick);
+  $("gsThemes").addEventListener("click", onThemeClick);
   try { const t = localStorage.getItem(THEME_KEY); if (t && themeOwned().has(t) && THEMES.some(x => x[0] === t)) applyTheme(t); else renderThemes(); } catch (e) { renderThemes(); }
   $("modeChip").addEventListener("click", async () => {
     if (busy || dragging) return;
@@ -11979,6 +12008,26 @@ ${recent || "まだありません"}`;
   });
   $("canSheet").addEventListener("click", () => { $("canSheet").hidden = true; });
   $("navBtn").addEventListener("click", useNav);
+  // プレイ中の設定シート：タイトルの設定と同じチェックボックス・同じテーマの関数を使う（盤面・スコアには触らない）
+  // 時間はなぞっている間だけ減るので、なぞり中・判定中は開かない。開いている間は盤面をぼかし、自動ナビの待ち時間も止める
+  let gsOpenAt = 0;
+  $("setBtn").addEventListener("click", () => {
+    if (dragging || busy || !$("overlay").hidden || gsOpenAt) return;
+    SFX.ensure(); buzz(8);
+    $("gsSound").checked = $("soundToggle").checked; $("gsFx").checked = $("fxToggle").checked;
+    renderThemes();
+    gsOpenAt = performance.now(); document.body.classList.add("gs-open");
+    $("gameSet").hidden = false;
+  });
+  function closeGameSet() {
+    if (!gsOpenAt) return;
+    lastAction += performance.now() - gsOpenAt; gsOpenAt = 0;
+    $("gameSet").hidden = true; document.body.classList.remove("gs-open");
+  }
+  $("gsClose").addEventListener("click", closeGameSet);
+  $("gameSet").addEventListener("click", e => { if (e.target === $("gameSet")) closeGameSet(); });
+  $("gsSound").addEventListener("change", () => { $("soundToggle").checked = $("gsSound").checked; $("soundToggle").dispatchEvent(new Event("change")); });
+  $("gsFx").addEventListener("change", () => { $("fxToggle").checked = $("gsFx").checked; $("fxToggle").dispatchEvent(new Event("change")); });
   $("bonusBtn").addEventListener("click", async () => {
     $("bonusBtn").disabled = true;
     const ok = await Ads.rewarded();
@@ -12205,7 +12254,7 @@ ${recent || "まだありません"}`;
   // 自動のナビ（線）が出ているときは、触り始めても消さない（指をはなすまで残す）
   function poke() { lastAction = performance.now(); if (hintStage && !$("navRoute")) { hintStage = 0; applyHintStage(); } }
   setInterval(() => {
-    if (!board || busy || dragging || !$("overlay").hidden || !hints) return;
+    if (!board || busy || dragging || !$("overlay").hidden || !hints || gsOpenAt) return;
     const idle = performance.now() - lastAction;
     const first = hintFirstMs();
     const st = idle < first ? 0 : 1 + Math.floor((idle - first) / HINT_NEXT_MS);
