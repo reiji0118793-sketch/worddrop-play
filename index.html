@@ -431,8 +431,6 @@ body { margin: 0; }
 .setbtn { flex: none; display: inline-grid; place-items: center; width: 40px; margin-left: auto; padding: 0; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; }
 .setbtn svg { width: 20px; height: 20px; }
 .canwords .canbtn:not([hidden]) ~ .setbtn { margin-left: 6px; }
-.canwords:has(.setbtn) .canbtn { white-space: nowrap; padding: 8px 10px; gap: 6px; }
-.canwords:has(.setbtn) .canbtn > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .gs-in .controls { display: grid; gap: 8px; }
 .gs-in .controls label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--panel-2); font-size: 14px; }
 .gs-in .theme-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 0; }
@@ -822,7 +820,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
 
     <div class="status" id="status">文字をつかんでなぞると、通ったマスの文字と入れ替わります</div>
     <div class="canwords" id="canWords" hidden>
-      <button type="button" class="canbtn" id="canBtn" aria-haspopup="dialog"><span>今の盤面で作れる単語</span><span class="cb-go">一覧を見る ▸</span></button>
+      <button type="button" class="canbtn" id="canBtn" aria-haspopup="dialog" aria-label="この盤面で作れる単語の一覧を見る"><span class="cb-go">一覧を見る ▸</span></button>
       <button type="button" class="navbtn" id="navBtn" aria-label="ナビを使う"><span>ナビ</span><b id="navCount">3</b></button>
       <button type="button" class="setbtn" id="setBtn" aria-label="設定" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="3.4 3.35"/><circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg></button>
     </div>
@@ -835,9 +833,9 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
 
   <div class="cansheet" id="canSheet" role="dialog" aria-label="作れる単語" hidden>
     <div class="cs-in">
-      <div class="cs-head"><b>1回なぞるだけで作れる単語</b><button type="button" id="canClose">閉じる</button></div>
+      <div class="cs-head"><b>この盤面で作れる単語</b><button type="button" id="canClose">閉じる</button></div>
       <ul id="canList"></ul>
-      <p class="cs-note">場所は自分でさがそう。どこかをタップすると閉じます</p>
+      <p class="cs-note">どれも1回なぞるだけで作れます。場所は自分でさがそう。どこかをタップすると閉じます</p>
     </div>
   </div>
 
@@ -10155,6 +10153,11 @@ zoom|v2|ズームする・急上昇する`;
   let lastCombo = 0;
   // ---------- 演出 ----------
   const fxOn = () => $("fxToggle").checked;
+  // 効果音・派手な演出のオン／オフは端末に残す（タイトルの設定でも、プレイ中の ⚙ でも同じスイッチ）
+  const SOUNDFX_KEY = "wordDrop.soundFx.v1";
+  try { const v = JSON.parse(localStorage.getItem(SOUNDFX_KEY) || "null"); if (v) { $("soundToggle").checked = v.sound !== false; $("fxToggle").checked = v.fx !== false; } } catch (e) {}
+  const saveSoundFx = () => { try { localStorage.setItem(SOUNDFX_KEY, JSON.stringify({ sound: $("soundToggle").checked, fx: $("fxToggle").checked })); } catch (e) {} };
+  $("soundToggle").addEventListener("change", saveSoundFx); $("fxToggle").addEventListener("change", saveSoundFx);
   let heatT = 0;
   // 1. コンボが増えるほど、画面のふちが熱くなる（3:黄 → 5:オレンジ → 8:赤 → 10〜:虹）
   function heat(combo) {
