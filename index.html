@@ -443,6 +443,38 @@ body { margin: 0; }
 .gs-seg button { padding: 9px 2px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; min-width: 0; }
 .gs-seg button + button { border-left: 1px solid var(--line); }
 .gs-seg button[aria-pressed="true"] { background: var(--gold); color: #1a1426; }
+/* セットごとの「PERFECT!」の文字（「派手」のときだけ。transform / opacity の短いアニメだけ） */
+.pftext { position: fixed; z-index: 61; pointer-events: none; transform: translate(-50%, -50%); text-align: center; white-space: nowrap; font-family: var(--font-display); font-weight: 800; letter-spacing: .06em; line-height: 1.05; }
+.pftext b { display: block; font-size: 46px; }
+.pftext small { display: block; font-size: 17px; letter-spacing: .3em; }
+.pftext span { display: block; margin-top: 6px; font-family: var(--font-body); font-size: 13px; font-weight: 700; letter-spacing: .02em; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+.pftext > * { animation: 2.2s ease-out both; }
+.pftext::before { content: ""; position: absolute; z-index: -1; inset: -28px -44px; background: radial-gradient(ellipse at center, rgba(8,10,26,.82), rgba(8,10,26,.5) 45%, rgba(8,10,26,0) 72%); animation: ptBg 2.2s ease-out both; }
+@keyframes ptBg { 0% { opacity: 0; } 12%, 82% { opacity: 1; } 100% { opacity: 0; } }
+.pt-wave { color: #e8fbff; text-shadow: 0 3px 0 #0b4f7a, 0 0 14px rgba(91,192,255,.8); } .pt-wave > * { animation-name: ptSlide; }
+.pt-slash { color: #f4f8ff; text-shadow: 0 2px 0 #3a4658, 0 0 10px rgba(200,230,255,.8); } .pt-slash > * { animation-name: ptSnap; }
+.pt-neon { color: #ffe3f7; text-shadow: 0 0 6px #ff5fd2, 0 0 16px #ff5fd2, 0 2px 0 #6a1a55; } .pt-neon > * { animation-name: ptFlicker; }
+.pt-sakura { color: #fff0f6; text-shadow: 0 2px 0 #c9557f, 0 0 14px rgba(255,160,200,.8); } .pt-sakura > * { animation-name: ptFloat; }
+.pt-thunder { color: #fff9c4; text-shadow: 0 0 10px #7fb2ff, 0 2px 0 #2c3b8a; } .pt-thunder > * { animation-name: ptJolt; }
+.pt-hole { color: #f1e6ff; text-shadow: 0 0 16px #a070ff, 0 2px 0 #2a1650; } .pt-hole > * { animation-name: ptSpin; }
+.pt-glass { color: #fff3c4; text-shadow: 0 3px 0 #7a5410, 0 0 12px rgba(255,214,90,.7); } .pt-glass > * { animation-name: ptPop; }
+.pt-mega { color: #fff3b0; text-shadow: 0 0 14px #ffd84d, 0 3px 0 #8a5a00; } .pt-mega > * { animation-name: ptBoom; }
+.pt-blaze { color: #ffe9a8; text-shadow: 0 0 14px #ff5a1f, 0 3px 0 #6a1a00; } .pt-blaze > * { animation-name: ptRise; }
+.pt-zero { color: #f2fbff; text-shadow: 0 0 12px #8fd8ff, 0 2px 0 #2a5a7a; } .pt-zero > * { animation-name: ptPop; }
+.pt-meteor { color: #fffbe0; text-shadow: 0 0 12px #ffe07a, 0 2px 0 #3a3a7a; } .pt-meteor > * { animation-name: ptDiag; }
+.pt-festival { color: #fff; text-shadow: 2px 2px 0 #ff6b6b, -2px 2px 0 #4d96ff, 0 4px 0 #ffd93d, 0 0 12px rgba(255,255,255,.6); } .pt-festival > * { animation-name: ptBoom; }
+.pt-digital { color: #c8ffd9; text-shadow: 0 0 8px #3dff8a, 2px 0 0 rgba(255,60,120,.6), -2px 0 0 rgba(60,200,255,.6); } .pt-digital > * { animation-name: ptFlicker; }
+.pt-sumi { color: #f4f1ea; text-shadow: 0 3px 0 #111, 0 0 18px rgba(0,0,0,.85); } .pt-sumi > * { animation-name: ptPop; }
+@keyframes ptSlide { 0% { transform: translateX(-60px) skewX(-18deg); opacity: 0; } 14% { transform: translateX(6px) skewX(6deg); opacity: 1; } 22%, 82% { transform: none; opacity: 1; } 100% { transform: translateY(-18px); opacity: 0; } }
+@keyframes ptSnap { 0% { transform: scaleX(1.9); opacity: 0; } 10% { transform: scaleX(.94); opacity: 1; } 18%, 82% { transform: none; opacity: 1; } 100% { transform: translateY(-18px); opacity: 0; } }
+@keyframes ptFlicker { 0% { opacity: 0; } 5% { opacity: 1; } 8% { opacity: .2; } 12% { opacity: 1; } 15% { opacity: .4; } 19%, 82% { opacity: 1; } 100% { opacity: 0; transform: translateY(-14px); } }
+@keyframes ptFloat { 0% { transform: translateY(-26px) rotate(-5deg); opacity: 0; } 20%, 82% { transform: none; opacity: 1; } 100% { transform: translateY(14px) rotate(3deg); opacity: 0; } }
+@keyframes ptJolt { 0% { transform: scale(1.4); opacity: 0; } 6% { transform: translate(-4px, 2px); opacity: 1; } 10% { transform: translate(4px, -3px); } 14% { transform: translate(-2px, 1px); } 18%, 82% { transform: none; opacity: 1; } 100% { transform: translateY(-18px); opacity: 0; } }
+@keyframes ptSpin { 0% { transform: scale(0) rotate(-200deg); opacity: 0; } 22% { transform: scale(1.12) rotate(6deg); opacity: 1; } 30%, 82% { transform: none; opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
+@keyframes ptPop { 0% { transform: scale(.4); opacity: 0; } 14% { transform: scale(1.15); opacity: 1; } 22%, 82% { transform: none; opacity: 1; } 100% { transform: translateY(-18px); opacity: 0; } }
+@keyframes ptBoom { 0% { transform: scale(2.3); opacity: 0; } 12% { transform: scale(.92); opacity: 1; } 20%, 82% { transform: none; opacity: 1; } 100% { transform: scale(1.1); opacity: 0; } }
+@keyframes ptRise { 0% { transform: translateY(40px) scale(.9); opacity: 0; } 18%, 82% { transform: none; opacity: 1; } 100% { transform: translateY(-30px); opacity: 0; } }
+@keyframes ptDiag { 0% { transform: translate(60px, -40px); opacity: 0; } 16%, 82% { transform: none; opacity: 1; } 100% { transform: translate(-20px, 14px); opacity: 0; } }
 /* 単語が消えるときの演出（指をはなしたあとだけ動く。粒が残っている間だけ描く） */
 #fxCanvas { position: absolute; z-index: 8; pointer-events: none; }
 .gs-x { width: 32px; height: 32px; padding: 0 !important; font-size: 18px !important; line-height: 1; }
@@ -10592,17 +10624,18 @@ zoom|v2|ズームする・急上昇する`;
     let word = null;
     premiumRun = pf.kind === "premium" ? premiumRun + 1 : 0;
     if (!tut) { const ch = isDaily() ? dailyChain() : isEnergy() ? pfStreak : streak; if (ch >= 5) achTry("rainbow"); if (ch >= 10) achTry("rainbow10"); if (ch >= 20) achTry("rainbow20"); }
+    const themed = clearFx.themed();  // 「派手」：セットの PERFECT 演出と文字だけにする（今までのバナー・虹の演出は「控えめ」で出す）
     if (pf.kind === "premium") {
-      const v = lastRainbow = pickRainbow();
       SFX.bigCombo(12);
-      word = await gfx.rainbow(v, premiumRun);
+      if (!themed) { const v = lastRainbow = pickRainbow(); word = await gfx.rainbow(v, premiumRun); }
     }
     const sub = pf.mult > 1 ? `${premiumRun >= 2 ? `虹 ${premiumRun}連続　` : ""}ボーナス ×${pf.mult}　+${bonus.toLocaleString()}` : "";
-    gfx.perfectKind(pf.kind, sub, pf.kind === "normal" ? 2600 : 2800, word); leverBuzz(lastCombo);
+    if (themed) clearFx.perfectText(pf.kind, sub); else gfx.perfectKind(pf.kind, sub, pf.kind === "normal" ? 2600 : 2800, word);
+    leverBuzz(lastCombo);
     if (pf.kind !== "normal") { SFX.win(pf.kind !== "great"); SFX.coin(pf.kind === "great" ? 6 : 12); }
     await sleep(500);
     SFX.whoosh();
-    // 「派手」は、気に入った6つの PERFECT 演出からランダム。それ以外は今までの消え方
+    // 「派手」は、その盤面のセットの PERFECT 演出。それ以外は今までの消え方
     if (!(await clearFx.perfect(tiles))) {
       tiles.forEach((t, k) => { const el = elFor(t); el.style.animationDelay = ""; el.querySelector(".face").style.animationDelay = ((k % COLS) * 35 + Math.floor(k / COLS) * 35) + "ms"; el.classList.add("wipe"); });
       await sleep(700);
@@ -10872,7 +10905,7 @@ zoom|v2|ズームする・急上昇する`;
       localStorage.setItem(RESUME_KEY, JSON.stringify(a));
       localStorage.setItem("wordDrop.tutorial.v1", "1"); localStorage.removeItem("wordDrop.stageIntro.v1");
       localStorage.setItem("wordDrop.mode.v1", "stage");
-      history.replaceState(null, "", location.pathname);  // 読みこみ直しても、遊んだ続きが上書きされないように
+      { const q = new URLSearchParams(location.search); q.delete("stage"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "")); }  // 読みこみ直しても、遊んだ続きが上書きされないように（ほかのテスト用の指定は残す）
     }
   } catch (e) {}
   function statsTouchDay() { const st = statsLoad(), d = dayKey(); if (!st.days.includes(d)) { st.days.push(d); st.days = st.days.slice(-90); statsSave(st); } }
@@ -11270,11 +11303,16 @@ ${recent || "まだありません"}`;
   $("bgmSel").addEventListener("change", () => BGM.apply());
   // ---------- 単語が消えるときの演出（指をはなしたあと、単語がそろって消えるときだけ。盤面の上のキャンバスに短く描く） ----------
   // 「派手」のときだけ。消える演出と、その延長の PERFECT 演出を1セットにして、盤面が新しくなるたびにセットをランダムに選ぶ（統一感を出す）
-  // 水（水しぶき→大津波）・刀（一刀両断→千本斬り）・ネオン（→ネオン街）・桜（桜吹雪→千本桜）・雷（稲妻→雷神）・宇宙（ブラックホール→超ブラックホール）。5コンボ以上は同じ演出を2回重ねる
+  // 水しぶき→大津波・一刀両断→千本斬り・ネオン→ネオン街・桜吹雪→千本桜・稲妻→雷神・ブラックホール→超ブラックホール・くだけ散る→ガラスの崩壊・衝撃波→メガショック
+  // 炎→大炎上・氷→絶対零度・星くず→流星群・紙吹雪→お祭り・ピクセル分解→デジタル崩壊・墨→墨流し。5コンボ以上は同じ演出を2回重ねる
+  // PERFECT のときは、今までのバナー・虹の演出のかわりに、そのセットらしい「PERFECT!」の文字を出す
   const clearFx = (() => {
     let cv = null, cx = null, parts = [], bolts = [], rings = [], blobs = [], lines = [], holes = [], raf = 0, M = 0;
-    const SETS = [["splash", "wave"], ["slash", "slash"], ["neon", "neon"], ["sakura", "sakura"], ["lightning", "thunder"], ["hole", "hole"]];
-    let set = SETS[Math.floor(Math.random() * SETS.length)];
+    const SETS = [["splash", "wave"], ["slash", "slash"], ["neon", "neon"], ["sakura", "sakura"], ["lightning", "thunder"], ["hole", "hole"],
+      ["shatter", "glass"], ["shock", "mega"], ["fire", "blaze"], ["ice", "zero"], ["stars", "meteor"], ["confetti", "festival"], ["pixel", "digital"], ["ink", "sumi"]];
+    // テスト用（ブラウザの試遊版だけ）：URL に ?fxset=fire（または blaze）を付けると、そのセットだけを出す
+    const FORCE = (() => { try { if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return null; const v = new URLSearchParams(location.search).get("fxset"); return SETS.find(x => x[0] === v || x[1] === v) || null; } catch (e) { return null; } })();
+    let set = FORCE || SETS[Math.floor(Math.random() * SETS.length)];
     function fit() {
       if (!cv || !cv.isConnected) { cv = document.createElement("canvas"); cv.id = "fxCanvas"; tilesEl.appendChild(cv); cx = cv.getContext("2d"); }
       M = S; const w = (COLS + 2) * S, h = (ROWS + 2) * S, d = Math.min(2, devicePixelRatio || 1);
@@ -11383,7 +11421,71 @@ ${recent || "まだありません"}`;
         return 1300;
       },
     };
+    Object.assign(PF, {
+      async glass(T) {  // ガラスの崩壊：まん中から外へ、金色のかけらになって割れていく
+        const m = { x: M + COLS * S / 2, y: M + ROWS * S / 2 }; gfx.flash("#ffffff", .22); gfx.shake();
+        T.forEach(({ el, p }) => { const d = Math.hypot(p.x - m.x, p.y - m.y) / S; setTimeout(() => { go(el, { transform: "scale(1.1)", opacity: 0 }, 160); chips(p, 7, ["#ffe27a", "#fff7d1", "#ffffff", "#e2b84a"]); }, d * 70); });
+        return 900;
+      },
+      async mega(T) {  // メガショック：大きな光の輪が3重に広がり、全部のマスが外へ吹き飛ぶ
+        const m = { x: M + COLS * S / 2, y: M + ROWS * S / 2 };
+        rings.push({ x: m.x, y: m.y, r0: 10, r1: S * 5, t: 0, life: 36, c: "255,228,92", w: 9 }, { x: m.x, y: m.y, r0: 8, r1: S * 4, t: -6, life: 36, c: "255,255,255", w: 6 }, { x: m.x, y: m.y, r0: 6, r1: S * 3, t: -12, life: 36, c: "255,170,60", w: 5 });
+        gfx.flash("#fff3b0", .22); gfx.shake(); dots(m.x, m.y, 50, ["rgba(255,228,92,A)", "rgba(255,255,255,A)"], 8, "dot", 0, 34);
+        T.forEach(({ el, p }) => { const dx = p.x - m.x, dy = p.y - m.y, l = Math.hypot(dx, dy) || 1; go(el, { transform: `translate(${dx / l * S * 1.6}px, ${dy / l * S * 1.6}px) scale(.5)`, opacity: 0 }, 520, 100, "cubic-bezier(.2,.8,.4,1)"); });
+        return 850;
+      },
+      async blaze(T) {  // 大炎上：下の段から順に燃え上がり、火の粉の嵐
+        const W = (COLS + 2) * S, H = (ROWS + 2) * S; gfx.flash("#ff9a3c", .18);
+        for (let i = 0; i < 70; i++) parts.push({ x: Math.random() * W, y: H - 4, vx: (Math.random() - .5) * 1.5, vy: -3 - Math.random() * 4, g: -.03, drag: .985, t: -Math.random() * 30, life: 60, s: S * .07, c: ["rgba(255,180,70,A)", "rgba(255,110,40,A)", "rgba(255,240,170,A)"][i % 3], k: "ember", rot: 0, vr: 0, ph: 0 });
+        for (let r = ROWS - 1; r >= 0; r--) setTimeout(() => T.filter(x => x.r === r).forEach(({ el, p }) => { dots(p.x, p.y, 7, ["rgba(255,180,70,A)", "rgba(255,110,40,A)"], 2, "ember", -.09, 46, S * .07); go(el, { transform: `translateY(${-S * .8}px) scale(.6)`, opacity: 0 }, 460); }), (ROWS - 1 - r) * 90);
+        setTimeout(() => gfx.shake(), 200); return 950;
+      },
+      async zero(T) {  // 絶対零度：まん中から冷気が広がって凍りつき、いっせいに割れる
+        const m = { x: M + COLS * S / 2, y: M + ROWS * S / 2 };
+        rings.push({ x: m.x, y: m.y, r0: 6, r1: S * 4.5, t: 0, life: 40, c: "190,235,255", w: 10 }, { x: m.x, y: m.y, r0: 4, r1: S * 3.5, t: -8, life: 40, c: "255,255,255", w: 6 });
+        T.forEach(({ el }) => face(el).animate([{ opacity: 1 }, { opacity: .55 }, { opacity: 1 }], { duration: 420 }));
+        setTimeout(() => { gfx.flash("#dff6ff", .25); gfx.shake(); T.forEach(({ el, p }) => { go(el, { transform: "scale(1.15)", opacity: 0 }, 140); chips(p, 6, ["#e8f8ff", "#a9dcf5", "#ffffff"], { g: .25, drag: .97, life: 42 }); for (const q of parts.slice(-6)) { q.vx = (Math.random() - .5) * 8; q.vy = (Math.random() - .5) * 8; } }); }, 450);
+        return 950;
+      },
+      async meteor(T) {  // 流星群：流れ星が次々に走り、文字が星になって消える
+        const W = (COLS + 2) * S;
+        for (let i = 0; i < 9; i++) setTimeout(() => { const x = M + Math.random() * COLS * S + S * 2, y = Math.random() * S; lines.push({ pts: [{ x, y }, { x: x - S * 3, y: y + S * 3.2 }], grow: 8, life: 22, t: 0, w: 2.4, c: "255,240,170" }); }, i * 55);
+        T.forEach(({ el, p }) => { const d = Math.random() * 450; setTimeout(() => { go(el, { transform: "scale(0)", opacity: 0 }, 220); for (let i = 0; i < 5; i++) parts.push({ x: p.x, y: p.y, vx: (Math.random() - .5) * 1.4, vy: -Math.random() * 1.8 - .4, g: -.01, drag: .98, t: 0, life: 55, s: S * (.08 + Math.random() * .08), c: ["rgba(255,240,170,A)", "rgba(255,255,255,A)", "rgba(170,220,255,A)"][i % 3], k: "star", rot: 0, vr: 0, ph: Math.random() * 6 }); }, d); });
+        void W; return 950;
+      },
+      async festival(T) {  // お祭り：両すみから紙吹雪の大砲、マスが順にポンとはじける
+        const W = (COLS + 2) * S, H = (ROWS + 2) * S, cols = ["#ff6b6b", "#ffd93d", "#6bcb77", "#4d96ff", "#c77dff", "#ffffff"];
+        for (const [x0, dir] of [[0, 1], [W, -1]]) for (let i = 0; i < 60; i++) { const an = -Math.PI / 2 + dir * (.25 + Math.random() * .55), v = 7 + Math.random() * 6; parts.push({ x: x0, y: H, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: .2, drag: .965, t: -Math.random() * 6, life: 80, s: S * (.11 + Math.random() * .08), c: cols[i % cols.length], k: "conf", rot: Math.random() * 6, vr: (Math.random() - .5) * .4, ph: Math.random() * 6 }); }
+        gfx.flash("#fff5c0", .16);
+        T.forEach(({ el, r, c }) => face(el).animate([{ transform: "scale(1)", opacity: 1 }, { transform: "scale(1.3)", opacity: 1, offset: .4 }, { transform: "scale(0)", opacity: 0 }], { duration: 380, delay: (r + c) * 30, fill: "forwards" }));
+        return 950;
+      },
+      async digital(T) {  // デジタル崩壊：走査線が上から下へ走り、1段ずつ細かい四角にくずれる
+        for (let r = 0; r < ROWS; r++) setTimeout(() => { const y = M + (r + .5) * S; lines.push({ pts: [{ x: 0, y }, { x: (COLS + 2) * S, y }], grow: 4, life: 16, t: 0, w: 2.4, c: "120,255,170" });
+          T.filter(x => x.r === r).forEach(({ el, p }) => { face(el).style.opacity = "0"; const n = 4, sz = S / n; for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) parts.push({ x: p.x - S / 2 + sz * (b + .5), y: p.y - S / 2 + sz * (a + .5), vx: (Math.random() - .5) * 2, vy: -Math.random() * 2, g: .3, drag: .99, t: -((a + b) * 2 + Math.random() * 4), life: 46, s: sz * .9, c: (a + b) % 2 ? "#7dffb0" : "#e0fff0", k: "shard", rot: 0, vr: 0, ph: 0 }); }); }, r * 110);
+        gfx.flash("#b6ffcf", .12); return 1150;
+      },
+      async sumi(T) {  // 墨流し：まん中から大きな墨がにじんで盤面をのみこみ、すっと引いていく
+        const m = { x: M + COLS * S / 2, y: M + ROWS * S / 2 };
+        blobs.push({ x: m.x, y: m.y, r: S * 4, t: 0, life: 70, c: "14,12,30" });
+        for (let i = 0; i < 6; i++) blobs.push({ x: m.x + (Math.random() - .5) * S * 4, y: m.y + (Math.random() - .5) * S * 3, r: S * (.8 + Math.random() * .8), t: -4 - i * 3, life: 62, c: "22,18,44" });
+        T.forEach(({ el, p }) => go(el, { transform: "scale(.95)", opacity: 0 }, 300, 160 + Math.hypot(p.x - m.x, p.y - m.y) / S * 40));
+        return 1050;
+      },
+    });
+    // PERFECT の文字（セットごとのデザイン）。盤面のまん中に出して、2秒ほどで消える
+    const PF_NAME = { normal: "", great: "GREAT", super: "SUPER", hyper: "HYPER", premium: "PREMIUM" };
+    function perfectText(kind, sub) {
+      const r = boardEl.getBoundingClientRect(), d = document.createElement("div");
+      d.className = "pftext pt-" + set[1];
+      d.style.left = (r.left + r.width / 2) + "px"; d.style.top = (r.top + r.height * .42) + "px";
+      d.innerHTML = `${PF_NAME[kind] ? `<small>${PF_NAME[kind]}</small>` : ""}<b>PERFECT!</b>${sub ? `<span>${sub}</span>` : ""}`;
+      $("gfx").appendChild(d); setTimeout(() => d.remove(), 2400);
+    }
     return {
+      // 「派手」で、セットの PERFECT 演出を使うとき（今までのバナー・虹の演出は出さない）
+      themed: () => fxLv() === 2 && !matchMedia("(prefers-reduced-motion: reduce)").matches,
+      perfectText,
       // PERFECT で盤面ぜんぶが消える部分（「派手」のときだけ）。動かしたら true（そのぶん待つ）。それ以外は false で今までの消え方
       async perfect(tiles) {
         if (fxLv() < 2 || matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
@@ -11403,8 +11505,8 @@ ${recent || "まだありません"}`;
         if (combo >= 5) setTimeout(() => { FX[k](ps, col || "#ffe27a"); if (!raf) raf = requestAnimationFrame(loop); }, 140);  // 大きいコンボは2回重ねる
         if (!raf) raf = requestAnimationFrame(loop);
       },
-      // 盤面が新しくなったら、前とちがうセットを選ぶ（同じ盤面のやりなおしでは呼ばない）。セットに入っていない演出（shatter など）は、PERFECT 版ができたらセットに戻せる
-      newBoard() { const now = set; do { set = SETS[Math.floor(Math.random() * SETS.length)]; } while (set === now); },
+      // 盤面が新しくなったら、前とちがうセットを選ぶ（同じ盤面のやりなおしでは呼ばない）
+      newBoard() { if (FORCE) return; const now = set; do { set = SETS[Math.floor(Math.random() * SETS.length)]; } while (set === now); },
     };
   })();
 
@@ -11484,7 +11586,7 @@ ${recent || "まだありません"}`;
   try {
     const native = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
     if (!native && new URLSearchParams(location.search).get("ach") === "preview") {
-      achPreview = true; history.replaceState(null, "", location.pathname);
+      achPreview = true; { const q = new URLSearchParams(location.search); q.delete("ach"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "")); }
       for (const id of ["first", "allColor", "dict1", "combo3", "combo5", "stage20", "daily7", "combo8", "rainbow", "stage40", "combo10", "boss1", "daily100", "combo12", "score1m", "daily365"]) achData.u[id] = Date.now();
       achData.s = Object.assign({}, achData.s, { long6: 31, say: 22, studyOK: 640 });
     }
