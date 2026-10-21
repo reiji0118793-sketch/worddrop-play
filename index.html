@@ -11269,10 +11269,12 @@ ${recent || "まだありません"}`;
   })();
   $("bgmSel").addEventListener("change", () => BGM.apply());
   // ---------- 単語が消えるときの演出（指をはなしたあと、単語がそろって消えるときだけ。盤面の上のキャンバスに短く描く） ----------
-  // 「派手」のときだけ。14種類からランダムに1つ。5コンボ以上は稲妻も足す。PERFECT は気に入った6つを盤面ぜんぶに広げた版（大津波・千本斬り・ネオン街・千本桜・雷神・超ブラックホール）
+  // 「派手」のときだけ。消える演出と、その延長の PERFECT 演出を1セットにして、盤面が新しくなるたびにセットをランダムに選ぶ（統一感を出す）
+  // 水（水しぶき→大津波）・刀（一刀両断→千本斬り）・ネオン（→ネオン街）・桜（桜吹雪→千本桜）・雷（稲妻→雷神）・宇宙（ブラックホール→超ブラックホール）。5コンボ以上は同じ演出を2回重ねる
   const clearFx = (() => {
-    let cv = null, cx = null, parts = [], bolts = [], rings = [], blobs = [], lines = [], holes = [], raf = 0, M = 0, last = "";
-    const KINDS = ["lightning", "shatter", "shock", "fire", "ice", "sakura", "stars", "confetti", "splash", "pixel", "ink", "neon", "slash", "hole"];
+    let cv = null, cx = null, parts = [], bolts = [], rings = [], blobs = [], lines = [], holes = [], raf = 0, M = 0;
+    const SETS = [["splash", "wave"], ["slash", "slash"], ["neon", "neon"], ["sakura", "sakura"], ["lightning", "thunder"], ["hole", "hole"]];
+    let set = SETS[Math.floor(Math.random() * SETS.length)];
     function fit() {
       if (!cv || !cv.isConnected) { cv = document.createElement("canvas"); cv.id = "fxCanvas"; tilesEl.appendChild(cv); cx = cv.getContext("2d"); }
       M = S; const w = (COLS + 2) * S, h = (ROWS + 2) * S, d = Math.min(2, devicePixelRatio || 1);
@@ -11340,7 +11342,6 @@ ${recent || "まだありません"}`;
     // PERFECT：盤面ぜんぶの文字（.face）を動かして消す。どれも1秒前後で終わる
     const face = el => el.querySelector(".face");
     const go = (el, to, ms, delay = 0, ease = "cubic-bezier(.5,0,.8,1)") => face(el).animate([{ transform: "none", opacity: 1 }, to], { duration: ms, delay, easing: ease, fill: "forwards" });
-    const P_KINDS = ["wave", "slash", "neon", "sakura", "thunder", "hole"]; let lastP = "";
     const PF = {
       async wave(T) {
         T.forEach(({ el, p, r, c }) => { go(el, { transform: `translate(${S * (1 + Math.random() * .6)}px, ${-S * (.3 + Math.random() * .4)}px) rotate(${20 + Math.random() * 30}deg) scale(.4)`, opacity: 0 }, 520, c * 60);
@@ -11387,7 +11388,7 @@ ${recent || "まだありません"}`;
       async perfect(tiles) {
         if (fxLv() < 2 || matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
         fit();
-        let k; do { k = P_KINDS[Math.floor(Math.random() * P_KINDS.length)]; } while (k === lastP); lastP = k;
+        const k = set[1];
         const T = tiles.map((t, i) => { const r = Math.floor(i / COLS), c = i % COLS; return { el: elFor(t), r, c, p: pt({ r, c }) }; });
         const ms = await PF[k](T);
         if (!raf) raf = requestAnimationFrame(loop);
@@ -11397,12 +11398,13 @@ ${recent || "まだありません"}`;
       play(cells, col, combo) {
         if (fxLv() < 2 || matchMedia("(prefers-reduced-motion: reduce)").matches || !cells.length) return;
         fit();
-        let k; do { k = KINDS[Math.floor(Math.random() * KINDS.length)]; } while (k === last && KINDS.length > 1);
-        last = k; const ps = cells.map(pt);
+        const k = set[0], ps = cells.map(pt);
         FX[k](ps, col || "#ffe27a");
-        if (combo >= 5 && k !== "lightning") FX.lightning(ps);
+        if (combo >= 5) setTimeout(() => { FX[k](ps, col || "#ffe27a"); if (!raf) raf = requestAnimationFrame(loop); }, 140);  // 大きいコンボは2回重ねる
         if (!raf) raf = requestAnimationFrame(loop);
       },
+      // 盤面が新しくなったら、前とちがうセットを選ぶ（同じ盤面のやりなおしでは呼ばない）。セットに入っていない演出（shatter など）は、PERFECT 版ができたらセットに戻せる
+      newBoard() { const now = set; do { set = SETS[Math.floor(Math.random() * SETS.length)]; } while (set === now); },
     };
   })();
 
@@ -11864,6 +11866,7 @@ ${recent || "まだありません"}`;
     introOnce(it[0], `STAGE ${level}　${it[2]}`, it[3]);
   }
   function buildStagePuzzle() {
+    clearFx.newBoard();
     const sp = stageSpec(level), full = isFullStage(level), boss = isBossStage(level), ten = isTenStage(level) && !boss, speed = isSpeedStage(level), long = isLongStage(level);
     const opt = { stones: full || ten ? 0 : stageStones(level), decoy: level > 40 };
     for (let tries = 0; tries < 25; tries++) {
@@ -11899,6 +11902,7 @@ ${recent || "まだありません"}`;
   // レベルアップまでに必要な正解の盤面数：はじめはテンポよく（Lv.2までは1回）、中盤からはゆっくり
   const studyNeed = () => [1, 2, 2, 3, 4, 4][level - 1] || 5;
   function buildStudyPuzzle() {
+    clearFx.newBoard();
     if (reviewMode && !missList().some(w => DICT.has(w) && w.length <= COLS)) reviewMode = false;  // 復習する単語がなければ、ふつうのトレーニング
     if (reviewMode) {
       for (let tries = 0; tries < 25; tries++) {
@@ -12081,6 +12085,7 @@ ${recent || "まだありません"}`;
     return { w, ...v };
   }
   function buildDailyPuzzle(turnNo) {
+    clearFx.newBoard();
     const unseed = seedRandom(`worddrop-${dayKey()}-t${turnNo}`);
     try {
       for (let tries = 0; tries < 30; tries++) {
