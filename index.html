@@ -652,6 +652,15 @@ body.has-banner #gameSet { padding-bottom: calc(var(--safeB) + var(--bannerH) + 
 .ach-item b { display: block; font-size: 12.5px; line-height: 1.3; }
 .ach-item span { display: block; font-size: 11px; color: var(--muted); line-height: 1.3; }
 .ach-item:not(.got) b { color: var(--muted); }
+/* 難しさの色（とったメダル・解除の知らせ）：1 銅 / 2 銀 / 3 金 / 4 プラチナ / 5 虹 */
+.ach-item.got .m.t1, #achToast .medal.t1 { background: radial-gradient(circle at 35% 30%, #ffe0c2, #c98a4b 55%, #7a4a1f); color: #3a1f08; }
+.ach-item.got .m.t2, #achToast .medal.t2 { background: radial-gradient(circle at 35% 30%, #ffffff, #c9d1e0 55%, #7d879c); color: #2a3142; }
+.ach-item.got .m.t3, #achToast .medal.t3 { background: radial-gradient(circle at 35% 30%, #fff3c4, #e2b84a 55%, #9a7215); color: #3a2a05; }
+.ach-item.got .m.t4, #achToast .medal.t4 { background: radial-gradient(circle at 35% 30%, #ffffff, #a8ecff 50%, #4f8fd0); color: #0d2a4a; }
+.ach-item.got .m.t5, #achToast .medal.t5 { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.95), rgba(255,255,255,0) 45%), conic-gradient(#ff6b6b, #ffd84d, #6be08a, #5bb0ff, #c08bff, #ff6b6b); color: #2a1a40; }
+.ach-st { display: block; font-style: normal; font-size: 10px; letter-spacing: 1px; line-height: 1.2; color: var(--gold); }
+.ach-st s { text-decoration: none; color: var(--line); }
+#achToast .ach-st { margin: 1px 0 2px; }
 .ach-bar { height: 6px; border-radius: 999px; background: var(--panel-2); overflow: hidden; margin: -2px 0 12px; }
 .ach-bar i { display: block; height: 100%; background: var(--gold); transform-origin: left; }
 .ach-sub { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
@@ -11456,6 +11465,16 @@ ${recent || "まだありません"}`;
     ["単語・学習", ["study100", "study500", "study1000", "review", "book100", "book500", "book1000", "book3000", "say50", "packs5"]],
   ];
   const ACH_PACKS = ["all", "eiken3", "eikenp2", "eiken2", "code"];
+  // 実績の難しさ（1〜5）：メダルの色（銅・銀・金・プラチナ・虹）と星の数で見せる
+  const ACH_LV = {
+    first: 1, allColor: 1, dict1: 1, share: 1, combo3: 1, score10k: 1, colorDone: 1, daily3: 1, book100: 1,
+    combo5: 2, long6: 2, stage20: 2, score50k: 2, daily7: 2, study100: 2, review: 2, book500: 2, say50: 2, packs5: 2,
+    combo8: 3, long6x50: 3, rainbow: 3, stage40: 3, nonav30: 3, score100k: 3, extra10: 3, daily30: 3, study500: 3, book1000: 3,
+    combo10: 4, rainbow10: 4, stage60: 4, nomiss30: 4, boss1: 4, score300k: 4, extra30: 4, daily100: 4, study1000: 4, book3000: 4,
+    combo12: 5, rainbow20: 5, boss100: 5, score1m: 5, extra50: 5, daily365: 5,
+  };
+  const achLv = id => ACH_LV[id] || 1;
+  const achStars = id => `<i class="ach-st" aria-label="難しさ ${achLv(id)}/5">${"★".repeat(achLv(id))}<s>${"★".repeat(5 - achLv(id))}</s></i>`;
   let achData = { u: {}, s: { stones: 0, odai: 0, studyOK: 0 } };
   try { const a = JSON.parse(localStorage.getItem(ACH_KEY) || "null"); if (a && a.u) achData = { u: a.u, s: Object.assign({ stones: 0, odai: 0, studyOK: 0 }, a.s) }; } catch (e) {}
   const achSave = () => { try { localStorage.setItem(ACH_KEY, JSON.stringify(achData)); } catch (e) {} };
@@ -11469,7 +11488,8 @@ ${recent || "まだありません"}`;
   function achNext() {
     if (achShowing || !achQueue.length) return;
     const a = achQueue.shift(); achShowing = true;
-    $("achName").textContent = a[1]; $("achDesc").textContent = a[2];
+    $("achName").textContent = a[1]; $("achDesc").innerHTML = achStars(a[0]) + esc(a[2]);
+    document.querySelector("#achToast .medal").className = "medal t" + achLv(a[0]);
     $("achToast").classList.add("show"); SFX.levelUp(); buzz([20, 40, 20], "SUCCESS"); gfx.rain(24);
     setTimeout(() => { $("achToast").classList.remove("show"); setTimeout(() => { achShowing = false; achNext(); }, 400); }, 2300);
   }
@@ -11494,7 +11514,7 @@ ${recent || "まだありません"}`;
     return null;
   }
   const achItem = a => { const got = achData.u[a[0]], pr = !got && achProg(a[0]);
-    return `<div class="ach-item${got ? " got" : ""}"><div class="m">${got ? "★" : "？"}</div><div><b>${a[1]}</b><span>${a[2]}${pr ? `（${Math.min(pr[0], pr[1]).toLocaleString()}/${pr[1].toLocaleString()}）` : ""}</span></div></div>`; };
+    return `<div class="ach-item${got ? " got" : ""}"><div class="m t${achLv(a[0])}">${got ? "★" : "？"}</div><div>${achStars(a[0])}<b>${a[1]}</b><span>${a[2]}${pr ? `（${Math.min(pr[0], pr[1]).toLocaleString()}/${pr[1].toLocaleString()}）` : ""}</span></div></div>`; };
   // 一覧はたたんでおき、ふだんは「次にねらえる実績」（グループごとに、まだの最初の1つ。3つまで）だけ見せる
   function renderAch() {
     const byId = id => ACH.find(a => a[0] === id), got = ACH.filter(a => achData.u[a[0]]).length;
