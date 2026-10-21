@@ -10182,11 +10182,11 @@ zoom|v2|ズームする・急上昇する`;
   let lastCombo = 0;
   // ---------- 演出 ----------
   const fxOn = () => $("fxToggle").checked;
-  // 効果音・派手な演出のオン／オフは端末に残す（タイトルの設定でも、プレイ中の ⚙ でも同じスイッチ）
+  // 効果音・振動・派手な演出のオン／オフは端末に残す（タイトルの設定でも、プレイ中の ⚙ でも同じスイッチ）
   const SOUNDFX_KEY = "wordDrop.soundFx.v1";
-  try { const v = JSON.parse(localStorage.getItem(SOUNDFX_KEY) || "null"); if (v) { $("soundToggle").checked = v.sound !== false; $("fxToggle").checked = v.fx !== false; } } catch (e) {}
-  const saveSoundFx = () => { try { localStorage.setItem(SOUNDFX_KEY, JSON.stringify({ sound: $("soundToggle").checked, fx: $("fxToggle").checked })); } catch (e) {} };
-  $("soundToggle").addEventListener("change", saveSoundFx); $("fxToggle").addEventListener("change", saveSoundFx);
+  try { const v = JSON.parse(localStorage.getItem(SOUNDFX_KEY) || "null"); if (v) { $("soundToggle").checked = v.sound !== false; $("fxToggle").checked = v.fx !== false; $("vibeToggle").checked = v.vibe !== false; } } catch (e) {}
+  const saveSoundFx = () => { try { localStorage.setItem(SOUNDFX_KEY, JSON.stringify({ sound: $("soundToggle").checked, fx: $("fxToggle").checked, vibe: $("vibeToggle").checked })); } catch (e) {} };
+  $("soundToggle").addEventListener("change", saveSoundFx); $("fxToggle").addEventListener("change", saveSoundFx); $("vibeToggle").addEventListener("change", saveSoundFx);
   let heatT = 0;
   // 1. コンボが増えるほど、画面のふちが熱くなる（3:黄 → 5:オレンジ → 8:赤 → 10〜:虹）
   function heat(combo) {
