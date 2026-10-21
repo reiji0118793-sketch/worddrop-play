@@ -640,6 +640,16 @@ body.has-banner #gameSet { padding-bottom: calc(var(--safeB) + var(--bannerH) + 
 .ach-item b { display: block; font-size: 12.5px; line-height: 1.3; }
 .ach-item span { display: block; font-size: 11px; color: var(--muted); line-height: 1.3; }
 .ach-item:not(.got) b { color: var(--muted); }
+.ach-bar { height: 6px; border-radius: 999px; background: var(--panel-2); overflow: hidden; margin: -2px 0 12px; }
+.ach-bar i { display: block; height: 100%; background: var(--gold); transform-origin: left; }
+.ach-sub { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.ach-all { margin-top: 10px; }
+.ach-all summary { cursor: pointer; padding: 8px 0; color: var(--gold); font-size: 13px; font-weight: 700; list-style: none; }
+.ach-all summary::-webkit-details-marker { display: none; }
+.ach-all summary::after { content: " ▸"; }
+.ach-all[open] summary::after { content: " ▾"; }
+.ach-g { display: flex; justify-content: space-between; margin: 12px 0 6px; font-size: 12px; font-weight: 700; color: var(--fg); }
+.ach-g span { color: var(--muted); font-weight: 500; }
 #endAch { margin: 6px 0 0; font-size: 13px; color: #ffe45c; }
 #endAch:empty { display: none; }
 #gfx { position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
@@ -898,7 +908,9 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       <h2>単語帳</h2>
       <p class="sub" id="bookSummary">これまでに作った単語 0語</p>
     </header>
-    <div class="ach card"><div class="ach-head"><b>実績</b><span id="achCount">0 / 0</span></div><div class="ach-grid" id="achGrid"></div></div>
+    <div class="ach card"><div class="ach-head"><b>実績</b><span id="achCount">0 / 0</span></div><div class="ach-bar"><i id="achBar"></i></div>
+      <div class="ach-sub">次にねらえる実績</div><div class="ach-grid" id="achNext"></div>
+      <details class="ach-all" id="achAll"><summary>すべての実績を見る</summary><div id="achGrid"></div></details></div>
     <details class="card codelist" id="codeList"><summary><span>エンジニア英単語リスト</span><small id="codeListN"></small></summary>
       <input type="search" id="codeSearch" placeholder="さがす（例：arr、配列）" autocomplete="off">
       <ul id="codeListUl"></ul>
@@ -9815,7 +9827,11 @@ zoom|v2|ズームする・急上昇する`;
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   async function resolveTurn() {
     busy = true; turns++;
-    if (turns === 1 && !tut) statsTouchDay();
+    if (turns === 1 && !tut) {
+      statsTouchDay();
+      const pk = $("packSel").value, ps = achData.s.packs || (achData.s.packs = []);
+      if ((isStage() || isStudy()) && ACH_PACKS.includes(pk) && !ps.includes(pk)) { ps.push(pk); achSave(); if (ACH_PACKS.every(x => ps.includes(x))) achTry("packs5"); }
+    }
     // ナビの線（自動・アイテムどちらも）は、指をはなしたら消す
     paidNav = null; hintStage = 0; navClear();
     document.querySelectorAll(".navstart").forEach(e => e.classList.remove("navstart"));
@@ -9844,8 +9860,8 @@ zoom|v2|ズームする・急上昇する`;
           el.style.setProperty("--mc", POS[info.pos].color);
         });
         addLearned(f.w, info);
-        achTry("first"); if (f.w.length >= 6) achTry("long6");
-        const bn = Object.keys(book).length; if (bn >= 100) achTry("book100"); if (bn >= 500) achTry("book500"); if (bn >= 1000) achTry("book1000");
+        achTry("first"); if (f.w.length >= 6) { achTry("long6"); if (!tut) { achData.s.long6 = (achData.s.long6 || 0) + 1; achSave(); if (achData.s.long6 >= 50) achTry("long6x50"); } }
+        const bn = Object.keys(book).length; if (bn >= 100) achTry("book100"); if (bn >= 500) achTry("book500"); if (bn >= 1000) achTry("book1000"); if (bn >= 3000) achTry("book3000");
       }
       // エンドレス：単語に使った石と、となり合う石が壊れる
       if (isEndless()) {
@@ -9928,11 +9944,12 @@ zoom|v2|ズームする・急上昇する`;
           await perfectWipe();  // この中で次のステージへ
           if (heal) { lives++; SFX.levelUp(); buzz([20, 40, 20]); }
           if (level >= 20) achTry("stage20"); if (level >= 40) achTry("stage40"); if (level >= 60) achTry("stage60");
+          if (level >= 30 && !lifeLost && !contUsed) achTry("nomiss30"); if (level >= 30 && !navUsedGame) achTry("nonav30");
           setStatus(level === diagFrom()
             ? `<b>STAGE ${level}：答えの道にななめが登場！</b>　ななめに動かさないと全部消せない盤面も出てくる`
             : `${heal ? "<b>ノーミス3連続！ ライフ+1</b>　" : ""}<b>STAGE ${level}</b>　${isTenStage(level) ? "<b>10コンボボーナス！</b> 3文字の単語10個を1回なぞって全部消そう" : isSpeedStage(level) ? "<b>スピード勝負！</b> 答えの道がとても長い。急いでなぞろう" : isFullStage(level) ? "<b>全面ボーナス！</b> 白いマスなし。全部消せたら盤面まるごとPERFECT" : `${cwords.length}色を1回なぞって全部消そう`}`);
         } else {
-          streak = 0; lives--; noMiss = 0;
+          streak = 0; lives--; noMiss = 0; lifeLost = true;
           SFX.fail(); buzz([80, 60, 120]); gfx.shake();
           setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1${lives > 0 ? "　同じ盤面でもう一度！" : ""}`);
           updateHud();
@@ -9942,7 +9959,7 @@ zoom|v2|ズームする・急上昇する`;
         }
       } else {
         studyN += cwords.length; studyOK += exact.size; runLog.push(all ? 1 : 0);
-        achData.s.studyOK += exact.size; achSave(); if (achData.s.studyOK >= 100) achTry("study100"); if (achData.s.studyOK >= 500) achTry("study500");
+        achData.s.studyOK += exact.size; achSave(); if (achData.s.studyOK >= 100) achTry("study100"); if (achData.s.studyOK >= 500) achTry("study500"); if (achData.s.studyOK >= 1000) achTry("study1000");
         cwords.forEach((x, i) => { if (exact.has(i)) missDel(x.w); else missAdd(x.w); });
         if (all) {
           streak++; studyBoards++;
@@ -9997,7 +10014,7 @@ zoom|v2|ズームする・急上昇する`;
       // デイリーは、毎ターン次のパズル（その日・そのターンで決まった盤面）に入れかえる
       if (isDaily()) {
         touched.clear();
-        if (!tut) { runLog.push(all ? 1 : 0); { const ex = runLog.slice(COLOR_TURNS).filter(Boolean).length; if (ex >= 10) achTry("extra10"); if (ex >= 30) achTry("extra30"); } }
+        if (!tut) { runLog.push(all ? 1 : 0); { const ex = runLog.slice(COLOR_TURNS).filter(Boolean).length; if (ex >= 10) achTry("extra10"); if (ex >= 30) achTry("extra30"); if (ex >= 50) achTry("extra50"); } }
         // 10問のあとは「エクストラ」：ずっと続く。全消しできないとライフ−1（ライフ3）
         if (turns > COLOR_TURNS && !all) { lives--; noMiss = 0; SFX.fail(); buzz([80, 60, 120]); gfx.shake(); setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1`); }
         if (turns === COLOR_TURNS && !tut) markDaily();
@@ -10534,7 +10551,7 @@ zoom|v2|ズームする・急上昇する`;
     const bonus = Math.round(PERFECT_BONUS * pf.mult);
     let word = null;
     premiumRun = pf.kind === "premium" ? premiumRun + 1 : 0;
-    if (!tut) { const ch = isDaily() ? dailyChain() : isEnergy() ? pfStreak : streak; if (ch >= 5) achTry("rainbow"); if (ch >= 10) achTry("rainbow10"); }
+    if (!tut) { const ch = isDaily() ? dailyChain() : isEnergy() ? pfStreak : streak; if (ch >= 5) achTry("rainbow"); if (ch >= 10) achTry("rainbow10"); if (ch >= 20) achTry("rainbow20"); }
     if (pf.kind === "premium") {
       const v = lastRainbow = pickRainbow();
       SFX.bigCombo(12);
@@ -10660,6 +10677,7 @@ zoom|v2|ズームする・急上昇する`;
   function openWordSheet(W, idx) {
     W = String(W || "").toUpperCase(); if (!W) return;
     if (tutTapDone) tutTapDone();
+    achTry("dict1");
     // つづりトレーニングで、まだ答えが出ていない単語：意味だけ見せる（つづりは見せない）
     const secret = isStudy() && !tut && idx !== undefined && !(studyReveal && studyReveal.has(idx));
     wsStudyIdx = secret ? idx : -1;
@@ -10771,7 +10789,7 @@ zoom|v2|ズームする・急上昇する`;
   function markDaily() {
     const d = dailyInfo(), today = dayKey(), y = new Date(); y.setDate(y.getDate() - 1);
     if (d.last !== today) { d.streak = d.last === dayKey(y) ? d.streak + 1 : 1; d.last = today; try { localStorage.setItem(DAILY_KEY, JSON.stringify(d)); } catch (e) {} }
-    if (d.streak >= 3) achTry("daily3"); if (d.streak >= 7) achTry("daily7"); if (d.streak >= 30) achTry("daily30"); if (d.streak >= 100) achTry("daily100"); achTry("colorDone");
+    if (d.streak >= 3) achTry("daily3"); if (d.streak >= 7) achTry("daily7"); if (d.streak >= 30) achTry("daily30"); if (d.streak >= 100) achTry("daily100"); if (d.streak >= 365) achTry("daily365"); achTry("colorDone");
     return d;
   }
   // ---------- 試遊の記録（端末の中だけ） ----------
@@ -10791,7 +10809,7 @@ zoom|v2|ズームする・急上昇する`;
   function resumeSave() {
     if (tut || !board || busy || dragging || turns <= 0 || lives <= 0 || !$("overlay").hidden || !isColor() || !(isPuzzle() || isDaily())) return;
     const k = statMode();
-    const d = { level, score, lives, turns, streak, noMiss, contUsed, maxCombo, totalWords, studyN, studyOK, studyBoards, runLog: runLog.slice(-200), day: dayKey() };
+    const d = { level, score, lives, turns, streak, noMiss, contUsed, maxCombo, totalWords, studyN, studyOK, studyBoards, lifeLost, navUsed: navUsedGame, runLog: runLog.slice(-200), day: dayKey() };
     const j = k + JSON.stringify(d); if (j === lastResumeJson) return; lastResumeJson = j;
     const a = resumeAll(); a[k] = d; try { localStorage.setItem(RESUME_KEY, JSON.stringify(a)); } catch (e) {}
   }
@@ -10921,9 +10939,9 @@ ${recent || "まだありません"}`;
     $("cwords").hidden = !color;
     $("bonusText").textContent = isStage() ? "1回で全色消すとPERFECT!" : isStudy() ? "意味から英単語を作ろう" : color ? "同じ色で作ると2倍" : "作ると得点3倍";
     dailyRoute = null;
-    puzzleRoute = null; noMiss = 0; studyN = 0; studyOK = 0; studyBoards = 0; studyReveal = false;
+    puzzleRoute = null; noMiss = 0; lifeLost = false; navUsedGame = false; studyN = 0; studyOK = 0; studyBoards = 0; studyReveal = false;
     const rs = resumeData; resumeData = null; lastResumeJson = "";
-    if (rs) { ({ level, score, lives, turns, streak, noMiss, contUsed, maxCombo, totalWords, studyN, studyOK, studyBoards } = rs); runLog = rs.runLog || []; }
+    if (rs) { ({ level, score, lives, turns, streak, noMiss, contUsed, maxCombo, totalWords, studyN, studyOK, studyBoards } = rs); runLog = rs.runLog || []; lifeLost = !!rs.lifeLost; navUsedGame = !!rs.navUsed; }
     document.body.classList.toggle("puzzle", isPuzzle());
     if (color) { odai = { w: "", m: "" }; if (isDaily()) buildDailyPuzzle(rs ? turns : 0); else if (isStage()) buildStagePuzzle(); else if (isStudy()) buildStudyPuzzle(); else setupColor(); } else newOdai();
     if (unseed) unseed();
@@ -11128,7 +11146,30 @@ ${recent || "まだありません"}`;
     ["book500", "単語マスター", "単語帳に500語", "500"],
     ["book1000", "生き字引", "単語帳に1,000語", "千"],
     ["share", "はじめてのシェア", "結果をシェアする", "↗"],
+    ["dict1", "はじめての辞書", "上の単語をタップして意味を見る", "辞"],
+    ["say50", "発音マニア", "🔊で発音を50回聞く", "50"],
+    ["packs5", "パックめぐり", "いつでも選べる5つの単語パックで、ひと筆パーフェクトかつづりトレーニングを遊ぶ", "5"],
+    ["long6x50", "長文マスター", "6文字の単語を合計50個作る", "長"],
+    ["nomiss30", "ノーミス30", "ひと筆パーフェクトで、ライフを1つも減らさずにSTAGE 30に到達", "無"],
+    ["nonav30", "自力で30", "ひと筆パーフェクトで、ナビボタンを使わずにSTAGE 30に到達", "自"],
+    ["rainbow20", "虹の支配者", "PERFECTを20回連続", "虹"],
+    ["extra50", "天才の一手 50連発", "1日のエクストラで50問PERFECT", "天"],
+    ["book3000", "歩く辞書", "単語帳に3,000語", "3千"],
+    ["study1000", "つづり1000", "つづりトレーニングで合計1,000語正解", "千"],
+    ["score1m", "百万点", "1ゲームで1,000,000点", "百万"],
+    ["daily365", "1年皆勤", "デイリーを365日連続", "365"],
+    ["combo12", "神のコンボ", "1回で12コンボ", "12"],
   ];
+  // 実績一覧の見出し（この順で表示）。ACH の id はどれか1つのグループに入れる
+  const ACH_GROUPS = [
+    ["はじめて", ["first", "allColor", "dict1", "share"]],
+    ["コンボ・単語づくり", ["combo3", "combo5", "combo8", "combo10", "combo12", "long6", "long6x50"]],
+    ["ひと筆パーフェクト", ["rainbow", "rainbow10", "rainbow20", "stage20", "stage40", "stage60", "nomiss30", "nonav30"]],
+    ["スコア", ["score10k", "score50k", "score100k", "score300k", "score1m"]],
+    ["デイリー", ["colorDone", "extra10", "extra30", "extra50", "daily3", "daily7", "daily30", "daily100", "daily365"]],
+    ["単語・学習", ["study100", "study500", "study1000", "review", "book100", "book500", "book1000", "book3000", "say50", "packs5"]],
+  ];
+  const ACH_PACKS = ["all", "eiken3", "eikenp2", "eiken2", "code"];
   let achData = { u: {}, s: { stones: 0, odai: 0, studyOK: 0 } };
   try { const a = JSON.parse(localStorage.getItem(ACH_KEY) || "null"); if (a && a.u) achData = { u: a.u, s: Object.assign({ stones: 0, odai: 0, studyOK: 0 }, a.s) }; } catch (e) {}
   const achSave = () => { try { localStorage.setItem(ACH_KEY, JSON.stringify(achData)); } catch (e) {} };
@@ -11149,18 +11190,34 @@ ${recent || "まだありません"}`;
   // 1ターンの結果から判定する
   function achTurn(combo, broke, all, gotOdai) {
     if (tut) return;
-    if (combo >= 3) achTry("combo3"); if (combo >= 5) achTry("combo5"); if (combo >= 8) achTry("combo8"); if (combo >= 10) achTry("combo10");
+    if (combo >= 3) achTry("combo3"); if (combo >= 5) achTry("combo5"); if (combo >= 8) achTry("combo8"); if (combo >= 10) achTry("combo10"); if (combo >= 12) achTry("combo12");
     if (all) achTry("allColor");
     if (broke >= 8) achTry("breaker8");
     if (broke) { achData.s.stones += broke; if (achData.s.stones >= 100) achTry("stones100"); }
     if (gotOdai) { achData.s.odai++; if (achData.s.odai >= 30) achTry("odai30"); }
-    if (score >= 10000) achTry("score10k"); if (score >= 50000) achTry("score50k"); if (score >= 100000) achTry("score100k"); if (score >= 300000) achTry("score300k");
+    if (score >= 10000) achTry("score10k"); if (score >= 50000) achTry("score50k"); if (score >= 100000) achTry("score100k"); if (score >= 300000) achTry("score300k"); if (score >= 1000000) achTry("score1m");
     achSave();
   }
+  // 実績の進み具合（数えられるものだけ）：[今, 目標]
+  function achProg(id) {
+    const n = { study100: [achData.s.studyOK, 100], study500: [achData.s.studyOK, 500], study1000: [achData.s.studyOK, 1000],
+      say50: [achData.s.say || 0, 50], long6x50: [achData.s.long6 || 0, 50], packs5: [(achData.s.packs || []).length, ACH_PACKS.length],
+      stones100: [achData.s.stones, 100], odai30: [achData.s.odai, 30] }[id];
+    if (n) return n;
+    const bk = /^book(\d+)$/.exec(id); if (bk) return [Object.keys(book).length, Number(bk[1])];
+    return null;
+  }
+  const achItem = a => { const got = achData.u[a[0]], pr = !got && achProg(a[0]);
+    return `<div class="ach-item${got ? " got" : ""}"><div class="m">${got ? "★" : "？"}</div><div><b>${a[1]}</b><span>${a[2]}${pr ? `（${Math.min(pr[0], pr[1]).toLocaleString()}/${pr[1].toLocaleString()}）` : ""}</span></div></div>`; };
+  // 一覧はたたんでおき、ふだんは「次にねらえる実績」（グループごとに、まだの最初の1つ。3つまで）だけ見せる
   function renderAch() {
-    const got = ACH.filter(a => achData.u[a[0]]).length;
+    const byId = id => ACH.find(a => a[0] === id), got = ACH.filter(a => achData.u[a[0]]).length;
     $("achCount").textContent = `${got} / ${ACH.length}`;
-    $("achGrid").innerHTML = ACH.map(a => `<div class="ach-item${achData.u[a[0]] ? " got" : ""}"><div class="m">${achData.u[a[0]] ? "★" : "？"}</div><div><b>${a[1]}</b><span>${a[2]}${a[0] === "stones100" ? `（${Math.min(achData.s.stones, 100)}/100）` : a[0] === "odai30" ? `（${Math.min(achData.s.odai, 30)}/30）` : a[0] === "study100" ? `（${Math.min(achData.s.studyOK, 100)}/100）` : a[0] === "study500" ? `（${Math.min(achData.s.studyOK, 500)}/500）` : ""}</span></div></div>`).join("");
+    $("achBar").style.transform = `scaleX(${got / ACH.length})`;
+    const next = ACH_GROUPS.map(([, ids]) => ids.map(byId).find(a => a && !achData.u[a[0]])).filter(Boolean).slice(0, 3);
+    $("achNext").innerHTML = next.length ? next.map(achItem).join("") : '<div class="ach-sub">全部達成！ すごい！</div>';
+    $("achGrid").innerHTML = ACH_GROUPS.map(([name, ids]) => { const l = ids.map(byId).filter(Boolean);
+      return `<div class="ach-g">${name}<span>${l.filter(a => achData.u[a[0]]).length} / ${l.length}</span></div><div class="ach-grid">${l.map(achItem).join("")}</div>`; }).join("");
   }
   renderAch();
 
@@ -11425,6 +11482,7 @@ ${recent || "まだありません"}`;
   const allowDiag = () => true;
   // 答えの道に入れてよいななめの回数：解禁直後は1回まで、さらに10段階進むと2回まで
   const diagMax = () => level < diagFrom() ? 0 : level < diagFrom() + 10 ? 1 : 2;
+  let lifeLost = false, navUsedGame = false;  // このゲームでライフを減らしたか・ナビボタンを使ったか（実績用）
   let noMiss = 0, puzzleRoute = null, stageSnap = null, stageWords = null, studyN = 0, studyOK = 0, studyBoards = 0, studyReveal = false, studyRecent = [];
   // ステージの難しさ：単語の数（＝色の数）・答えの道の長さ・ななめ
   // 色の数ごとに何ステージ続けるか：2色×2・3色×4・4色×5・5色×6・6色×5・7色×5・そのあとは8色
@@ -11888,7 +11946,8 @@ ${recent || "まだありません"}`;
       openWordSheet(t.dataset.w, t.dataset.i !== undefined ? Number(t.dataset.i) : undefined);
     });
   }
-  $("wsSay").addEventListener("click", () => sayEn($("wsWord").textContent));
+  const achSay = () => { achData.s.say = (achData.s.say || 0) + 1; achSave(); if (achData.s.say >= 50) achTry("say50"); };
+  $("wsSay").addEventListener("click", () => { sayEn($("wsWord").textContent); achSay(); });
   $("wsHint").addEventListener("click", async () => {
     const i = wsStudyIdx; if (i < 0 || !cwords[i]) return;
     $("wsHint").disabled = true;
@@ -11898,7 +11957,7 @@ ${recent || "まだありません"}`;
     cwords[i].hint = true; SFX.levelUp(); buzz(15);
     renderCwords(); openWordSheet(cwords[i].w, i);
   });
-  $("wsSayEx").addEventListener("click", () => sayEn($("wsEn").textContent));
+  $("wsSayEx").addEventListener("click", () => { sayEn($("wsEn").textContent); achSay(); });
   $("wsClose").addEventListener("click", () => { $("wordSheet").hidden = true; try { speechSynthesis.cancel(); } catch (e) {} });
   $("wordSheet").addEventListener("click", e => { if (e.target === $("wordSheet")) { $("wordSheet").hidden = true; try { speechSynthesis.cancel(); } catch (e2) {} } });
   $("packList").addEventListener("click", e => {
@@ -12263,7 +12322,7 @@ ${recent || "まだありません"}`;
       if (!R) { setStatus("今は消える道が見つからない。大きくなぞって並べ替えよう"); return; }
       paidNav = R; hintStage = 0;
       drawPaidNav();
-      addNav(-1); SFX.levelUp(); statsAdd("nav");
+      addNav(-1); SFX.levelUp(); statsAdd("nav"); navUsedGame = true;
     } finally { navBusy = false; }
   }
   function drawPaidNav() {
