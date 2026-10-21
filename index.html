@@ -11477,7 +11477,17 @@ ${recent || "まだありません"}`;
   const achStars = id => `<i class="ach-st" aria-label="難しさ ${achLv(id)}/5">${"★".repeat(achLv(id))}<s>${"★".repeat(5 - achLv(id))}</s></i>`;
   let achData = { u: {}, s: { stones: 0, odai: 0, studyOK: 0 } };
   try { const a = JSON.parse(localStorage.getItem(ACH_KEY) || "null"); if (a && a.u) achData = { u: a.u, s: Object.assign({ stones: 0, odai: 0, studyOK: 0 }, a.s) }; } catch (e) {}
-  const achSave = () => { try { localStorage.setItem(ACH_KEY, JSON.stringify(achData)); } catch (e) {} };
+  // テスト用（ブラウザの試遊版だけ）：URL に ?ach=preview を付けると、5段階のメダルの見本を表示する（保存しない。読みこみ直すと元にもどる）
+  let achPreview = false;
+  try {
+    const native = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+    if (!native && new URLSearchParams(location.search).get("ach") === "preview") {
+      achPreview = true; history.replaceState(null, "", location.pathname);
+      for (const id of ["first", "allColor", "dict1", "combo3", "combo5", "stage20", "daily7", "combo8", "rainbow", "stage40", "combo10", "boss1", "daily100", "combo12", "score1m", "daily365"]) achData.u[id] = Date.now();
+      achData.s = Object.assign({}, achData.s, { long6: 31, say: 22, studyOK: 640 });
+    }
+  } catch (e) {}
+  const achSave = () => { if (achPreview) return; try { localStorage.setItem(ACH_KEY, JSON.stringify(achData)); } catch (e) {} };
   let gameAch = [], achQueue = [], achShowing = false;
   function achTry(id) {
     if (tut || achData.u[id]) return;
