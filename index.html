@@ -9986,12 +9986,13 @@ zoom|v2|ズームする・急上昇する`;
         const mult = (1 + 0.25 * (combo - 1)) * (all ? 2 : 1);
         const gained = Math.round(damage * mult);
         score += gained;
-        burstDamage(mult, gained, false, 1);
+        // 「派手」の PERFECT：まん中の得点カードは出さず、コンボと得点はセットの「PERFECT!」の下に出す（すぐ PERFECT 演出へ）
+        const themedPf = all && isStage() && clearFx.themed();
+        if (themedPf) pfGain = { combo, gained }; else burstDamage(mult, gained, false, 1);
         bumpScore(); SFX.score(combo);
         jackpot(all && isStage() ? 1 : combo >= 5 ? 2 : combo >= 3 ? 1 : 0, null, all && isStage());
         achTurn(combo, 0, all && isStage(), false);
-        await sleep(1000);
-        await burstHide();
+        if (themedPf) await sleep(120); else { await sleep(1000); await burstHide(); }
       }
       if (isStage()) {
         runLog.push(all ? 1 : 0);
@@ -10060,12 +10061,12 @@ zoom|v2|ズームする・急上昇する`;
         const smult = 1 + 0.1 * Math.min(streak, 10);
         gained = Math.round(damage * mult * smult);
         score += gained;
-        burstDamage(mult, gained, false, smult);
-        if (colorWords) $("bDmg").innerHTML += `<br>${all ? "PERFECT! ×2　" : ""}同じ色の単語 ${colorWords}個（得点2倍）${exact.size ? `・色のお題ぴったり ${exact.size}個（さらに2倍）` : ""}`;
+        const themedPf = all && clearFx.themed();
+        if (themedPf) pfGain = { combo, gained }; else burstDamage(mult, gained, false, smult);
+        if (colorWords && !themedPf) $("bDmg").innerHTML += `<br>${all ? "PERFECT! ×2　" : ""}同じ色の単語 ${colorWords}個（得点2倍）${exact.size ? `・色のお題ぴったり ${exact.size}個（さらに2倍）` : ""}`;
         bumpScore(); SFX.score(combo); jackpot(all ? 1 : combo >= 8 ? 3 : combo >= 5 ? 2 : combo >= 3 || exact.size >= 2 ? 1 : 0, null, all);  // 全色そろえは、このあと PERFECT! で大きく出す
         achTurn(combo, 0, all, false);
-        await sleep(1100);
-        await burstHide();
+        if (themedPf) await sleep(120); else { await sleep(1100); await burstHide(); }
         streak++;
         setStatus(`<b>+${gained}点</b>　${combo}コンボ${all ? "　PERFECT!" : ""}`);
         if (isEnergy()) pfStreak = all ? pfStreak + 1 : 0;
@@ -10286,7 +10287,7 @@ zoom|v2|ズームする・急上昇する`;
   function recordBanner() {
     const d = document.createElement("div"); d.className = "recbanner"; d.innerHTML = "<b>NEW RECORD!</b><small>ベスト更新中！</small>"; document.body.appendChild(d);
     d.animate([{ opacity: 0, translate: "-50% -30px", scale: .6 }, { opacity: 1, translate: "-50% 0", scale: 1.08, offset: .15 }, { opacity: 1, scale: 1, offset: .8 }, { opacity: 0, translate: "-50% -10px" }], { duration: 1800, easing: "ease-out" }).onfinish = () => d.remove();
-    SFX.record(); buzz([30, 40, 30], "SUCCESS"); if (fxOn()) gfx.rain(30);
+    SFX.record(); buzz([30, 40, 30], "SUCCESS"); if (fxOn() && !clearFx.themed()) gfx.rain(30);
   }
   // 4. 連続PERFECT中は、盤面のふちがオーラで光る（2連続〜）
   function pfChain() { if (!(isStage() || isDaily())) return 0; let n = 0; for (let i = runLog.length - 1; i >= 0 && runLog[i]; i--) n++; return n; }
@@ -10330,9 +10331,10 @@ zoom|v2|ズームする・急上昇する`;
     fitLabel(lab);
     lab.animate([{ transform: lab.style.transform || "", opacity: 0, scale: .5 }, { opacity: 1, scale: 1.08, offset: .6 }, { opacity: 1, scale: 1 }], { duration: 220, easing: "ease-out" });
     SFX.word(combo); buzz(Math.min(14 + combo * 8, 70));
-    gfx.burst(Math.min(8 + combo * 3, 30));
+    const themed = clearFx.themed();  // 「派手」は、今までの色とりどりの粒とフラッシュのかわりに、セットの消える演出だけ
+    if (!themed) gfx.burst(Math.min(8 + combo * 3, 30));
     heat(combo);
-    if (f.w.length >= 6 && !tut) bigWord(f.w, info.m, color); if (combo >= 3) { gfx.flash(combo >= 5 ? "#ff7a3a" : "#ffd84d", .12); }
+    if (f.w.length >= 6 && !tut) bigWord(f.w, info.m, color); if (combo >= 3 && !themed) { gfx.flash(combo >= 5 ? "#ff7a3a" : "#ffd84d", .12); }
     if (combo === 5 || combo === 8 || combo === 12) { SFX.bigCombo(combo); buzz([40, 30, 70]); shakeBoard(combo); gfx.shake(); }
     clearFx.play(f.cells, color, combo);
     await sleep(180);
@@ -10610,10 +10612,12 @@ zoom|v2|ズームする・急上昇する`;
   }
   // デイリーの「続けて全部消した回数」（今回をふくむ）。デイリーはどの問題も8語前後なので、コンボ数では上げない
   function dailyChain() { let ch = 1; for (let i = runLog.length - 1; i >= 0 && runLog[i]; i--) ch++; return ch; }
+  let pfGain = null;  // 「派手」の PERFECT で、文字の下に出すコンボ数と得点
   async function perfectWipe() {
     const tiles = board.flat();
     SFX.perfect();  // 「ため」の音が先に鳴る
-    if (fxOn()) {
+    if (clearFx.themed()) await sleep(80);  // 「派手」は、暗くなる「ため」を入れずにすぐ
+    else if (fxOn()) {
       // 一瞬、時間が止まったように暗く・ゆっくりにしてから、ドーン！
       boardEl.classList.add("slowmo"); $("slowmoVeil").classList.add("on"); buzz(10);
       await sleep(400);
@@ -10630,10 +10634,11 @@ zoom|v2|ズームする・急上昇する`;
       if (!themed) { const v = lastRainbow = pickRainbow(); word = await gfx.rainbow(v, premiumRun); }
     }
     const sub = pf.mult > 1 ? `${premiumRun >= 2 ? `虹 ${premiumRun}連続　` : ""}ボーナス ×${pf.mult}　+${bonus.toLocaleString()}` : "";
-    if (themed) clearFx.perfectText(pf.kind, sub); else gfx.perfectKind(pf.kind, sub, pf.kind === "normal" ? 2600 : 2800, word);
+    if (themed) { const g = pfGain; pfGain = null; clearFx.perfectText(pf.kind, [g ? `${g.combo}コンボ　+${g.gained.toLocaleString()}点` : "", sub].filter(Boolean).join("<br>")); }
+    else gfx.perfectKind(pf.kind, sub, pf.kind === "normal" ? 2600 : 2800, word);
     leverBuzz(lastCombo);
     if (pf.kind !== "normal") { SFX.win(pf.kind !== "great"); SFX.coin(pf.kind === "great" ? 6 : 12); }
-    await sleep(500);
+    await sleep(themed ? 200 : 500);
     SFX.whoosh();
     // 「派手」は、その盤面のセットの PERFECT 演出。それ以外は今までの消え方
     if (!(await clearFx.perfect(tiles))) {
@@ -10708,7 +10713,7 @@ zoom|v2|ズームする・急上昇する`;
   }
   function jackpot(lv, label, quiet) {
     if (!lv) return;
-    gfx.party(lv, label);
+    if (!(quiet && clearFx.themed())) gfx.party(lv, label);  // 「派手」の PERFECT は、このあとのセットの演出にまかせる
     if (lv >= 2) shakeBoard(lv * 4);
     if (lv >= 3) SFX.bigCombo(12);
     if (quiet || !$("vibeToggle").checked) return;  // PERFECTのときは、このあとのレバブル振動にまかせる
@@ -11604,7 +11609,7 @@ ${recent || "まだありません"}`;
     const a = achQueue.shift(); achShowing = true;
     $("achName").textContent = a[1]; $("achDesc").innerHTML = achStars(a[0]) + esc(a[2]);
     document.querySelector("#achToast .medal").className = "medal t" + achLv(a[0]);
-    $("achToast").classList.add("show"); SFX.levelUp(); buzz([20, 40, 20], "SUCCESS"); gfx.rain(24);
+    $("achToast").classList.add("show"); SFX.levelUp(); buzz([20, 40, 20], "SUCCESS"); if (!clearFx.themed()) gfx.rain(24);  // 「派手」はセットの演出と重ならないよう、紙吹雪なし
     setTimeout(() => { $("achToast").classList.remove("show"); setTimeout(() => { achShowing = false; achNext(); }, 400); }, 2300);
   }
   // 1ターンの結果から判定する
