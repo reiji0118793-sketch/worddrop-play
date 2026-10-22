@@ -450,6 +450,11 @@ body { margin: 0; }
 .pftext small { display: block; font-size: 20px; letter-spacing: .3em; }
 /* うしろの帯（セットの色）：横にシュッとのびて、少し残る */
 .pftext::after { content: ""; position: absolute; z-index: -1; left: -40vw; right: -40vw; top: 50%; height: 64%; background: linear-gradient(90deg, transparent, var(--pc, #ffd84d) 22%, var(--pc, #ffd84d) 78%, transparent); opacity: 0; transform: translateY(-50%) scaleX(0); animation: ptBand 2.2s ease-out both; }
+.pftext.res b, .pftext.miss b { font-size: clamp(32px, 10.5vw, 46px); }
+.pftext.res > * { animation-duration: 1.5s; } .pftext.res::before, .pftext.res::after { animation-duration: 1.5s; }
+.pftext.miss > * { animation: ptMiss 1.7s ease-out both; } .pftext.miss::before, .pftext.miss::after { animation-duration: 1.7s; }
+.pftext.miss::after { opacity: .25; }
+@keyframes ptMiss { 0% { transform: scale(.6); opacity: 0; } 14% { transform: scale(1.06); opacity: 1; } 22% { transform: translateX(-6px) rotate(-2deg); } 30% { transform: translateX(5px) rotate(1deg); } 38%, 70% { transform: translateY(4px) rotate(-3deg); opacity: 1; } 100% { transform: translateY(16px) rotate(-5deg); opacity: 0; } }
 @keyframes ptBand { 0% { opacity: 0; transform: translateY(-50%) scaleX(0); } 14% { opacity: .5; transform: translateY(-50%) scaleX(1); } 80% { opacity: .32; transform: translateY(-50%) scaleX(1); } 100% { opacity: 0; transform: translateY(-50%) scaleX(1.1); } }
 .pftext span { display: block; margin-top: 6px; font-family: var(--font-body); font-size: 13px; font-weight: 700; letter-spacing: .02em; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
 .pftext > * { animation: 2.2s ease-out both; }
@@ -10021,12 +10026,12 @@ zoom|v2|ズームする・急上昇する`;
         const gained = Math.round(damage * mult);
         score += gained;
         // 「派手」の PERFECT：まん中の得点カードは出さず、コンボと得点はセットの「PERFECT!」の下に出す（すぐ PERFECT 演出へ）
-        const themedPf = all && isStage() && clearFx.themed();
-        if (themedPf) pfGain = { combo, gained }; else burstDamage(mult, gained, false, 1);
+        const themedPf = all && isStage() && clearFx.themed(), themedRes = clearFx.themed() && !themedPf;
+        if (themedPf || themedRes) pfGain = { combo, gained }; else burstDamage(mult, gained, false, 1);
         bumpScore(); SFX.score(combo);
         jackpot(all && isStage() ? 1 : combo >= 5 ? 2 : combo >= 3 ? 1 : 0, null, all && isStage());
         achTurn(combo, 0, all && isStage(), false);
-        if (themedPf) await sleep(120); else { await sleep(1000); await burstHide(); }
+        if (themedPf || themedRes) await sleep(120); else { await sleep(1000); await burstHide(); }
       }
       if (isStage()) {
         runLog.push(all ? 1 : 0);
@@ -10048,6 +10053,7 @@ zoom|v2|ズームする・急上昇する`;
           streak = 0; lives--; noMiss = 0; lifeLost = true;
           if (lives > 0) introOnce("heal", "ライフ回復", "ライフが減っても大丈夫！<br><b>PERFECTを3回連続</b>でとると、ライフが<b>1つ戻る</b>よ（空いたハートの中の数字が、あと何回か）");
           SFX.fail(); buzz([80, 60, 120]); gfx.shake();
+          if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("おしい！", [`${exact.size}/${cwords.length}色`, g ? `${g.combo}コンボ　+${g.gained.toLocaleString()}点` : "", "ライフ −1"].filter(Boolean).join("　"), true); }
           setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1${lives > 0 ? "　同じ盤面でもう一度！" : ""}`);
           updateHud();
           await sleep(900);
@@ -10061,6 +10067,7 @@ zoom|v2|ズームする・急上昇する`;
         if (all) {
           streak++; studyBoards++;
           const bonus = 50 * level * cwords.length; score += bonus; bumpScore(); SFX.levelUp(); buzz([20, 40, 20]);
+          if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("正解！", [g ? `${g.combo}コンボ　+${g.gained.toLocaleString()}点` : "", `ボーナス +${bonus.toLocaleString()}`].filter(Boolean).join("　")); }
           setStatus(`<b>正解！</b>　${cwords.map(x => `${x.w}（${esc(x.m)}）`).join("・")}　+${bonus}`);
           if (studyBoards >= studyNeed()) {
             level++; studyBoards = 0;
@@ -10071,6 +10078,7 @@ zoom|v2|ズームする・急上昇する`;
           streak = 0; lives--;
           studyReveal = new Set(cwords.map((x, i) => i).filter(i => !exact.has(i))); renderCwords();
           SFX.fail(); buzz([80, 60, 120]); gfx.shake();
+          if (clearFx.themed()) { pfGain = null; clearFx.resultText("おしい！", `${exact.size}/${cwords.length}語　ライフ −1`, true); }
           const miss = cwords.filter((x, i) => !exact.has(i));
           setStatus(`正解は ${miss.map(x => `<b>${x.w}</b>（${esc(x.m)}）`).join("・")}　ライフ −1　まちがえた単語はあとでまた出るよ`);
           updateHud();
@@ -10095,12 +10103,13 @@ zoom|v2|ズームする・急上昇する`;
         const smult = 1 + 0.1 * Math.min(streak, 10);
         gained = Math.round(damage * mult * smult);
         score += gained;
-        const themedPf = all && clearFx.themed();
-        if (themedPf) pfGain = { combo, gained }; else burstDamage(mult, gained, false, smult);
-        if (colorWords && !themedPf) $("bDmg").innerHTML += `<br>${all ? "PERFECT! ×2　" : ""}同じ色の単語 ${colorWords}個（得点2倍）${exact.size ? `・色のお題ぴったり ${exact.size}個（さらに2倍）` : ""}`;
+        const themedPf = all && clearFx.themed(), themedRes = !all && clearFx.themed();
+        if (themedPf || themedRes) pfGain = { combo, gained }; else burstDamage(mult, gained, false, smult);
+        if (themedRes && !(isDaily() && turns > COLOR_TURNS)) { pfGain = null; clearFx.resultText(`${combo} COMBO!`, `+${gained.toLocaleString()}点`); }
+        if (colorWords && !themedPf && !themedRes) $("bDmg").innerHTML += `<br>${all ? "PERFECT! ×2　" : ""}同じ色の単語 ${colorWords}個（得点2倍）${exact.size ? `・色のお題ぴったり ${exact.size}個（さらに2倍）` : ""}`;
         bumpScore(); SFX.score(combo); jackpot(all ? 1 : combo >= 8 ? 3 : combo >= 5 ? 2 : combo >= 3 || exact.size >= 2 ? 1 : 0, null, all);  // 全色そろえは、このあと PERFECT! で大きく出す
         achTurn(combo, 0, all, false);
-        if (themedPf) await sleep(120); else { await sleep(1100); await burstHide(); }
+        if (themedPf || themedRes) await sleep(themedRes ? 700 : 120); else { await sleep(1100); await burstHide(); }
         streak++;
         setStatus(`<b>+${gained}点</b>　${combo}コンボ${all ? "　PERFECT!" : ""}`);
         if (isEnergy()) pfStreak = all ? pfStreak + 1 : 0;
@@ -10113,7 +10122,9 @@ zoom|v2|ズームする・急上昇する`;
         touched.clear();
         if (!tut) { runLog.push(all ? 1 : 0); { const ex = runLog.slice(COLOR_TURNS).filter(Boolean).length; if (ex >= 10) achTry("extra10"); if (ex >= 30) achTry("extra30"); if (ex >= 50) achTry("extra50"); } }
         // 10問のあとは「エクストラ」：ずっと続く。全消しできないとライフ−1（ライフ3）
-        if (turns > COLOR_TURNS && !all) { lives--; noMiss = 0; SFX.fail(); buzz([80, 60, 120]); gfx.shake(); setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1`); }
+        if (turns > COLOR_TURNS && !all) { lives--; noMiss = 0; SFX.fail(); buzz([80, 60, 120]); gfx.shake();
+          if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("おしい！", [`${exact.size}/${cwords.length}色`, g ? `${g.combo}コンボ　+${g.gained.toLocaleString()}点` : "", "ライフ −1"].filter(Boolean).join("　"), true); }
+          setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1`); }
         if (turns === COLOR_TURNS && !tut) markDaily();
         if (turns === COLOR_TURNS) { lives = LIVES; setTimeout(() => setStatus("<b>ここからエクストラ！</b>　ずっと続くよ。全部消せないとライフ−1（ライフ3）"), 900); }
         if (lives > 0) {
@@ -10747,7 +10758,7 @@ zoom|v2|ズームする・急上昇する`;
   }
   function jackpot(lv, label, quiet) {
     if (!lv) return;
-    if (!(quiet && clearFx.themed())) gfx.party(lv, label);  // 「派手」の PERFECT は、このあとのセットの演出にまかせる
+    if (!clearFx.themed()) gfx.party(lv, label);  // 「派手」は紙吹雪・バナーを出さず、セットの文字と演出にまかせる
     if (lv >= 2) shakeBoard(lv * 4);
     if (lv >= 3) SFX.bigCombo(12);
     if (quiet || !$("vibeToggle").checked) return;  // PERFECTのときは、このあとのレバブル振動にまかせる
@@ -11522,21 +11533,24 @@ ${recent || "まだありません"}`;
     const PF_NAME = { normal: "", great: "GREAT", super: "SUPER", hyper: "HYPER", premium: "PREMIUM" };
     // 文字のまわりに飛ばす光の粒の色（セットごと）
     const TXT_COL = { wave: ["140,210,255", "255,255,255"], slash: ["210,235,255", "255,255,255"], neon: ["255,95,210", "120,220,255"], sakura: ["255,170,205", "255,240,246"], thunder: ["255,240,140", "150,190,255"], hole: ["180,130,255", "255,255,255"], glass: ["255,226,122", "255,255,255"], mega: ["255,216,77", "255,255,255"], blaze: ["255,150,60", "255,230,150"], zero: ["170,225,255", "255,255,255"], meteor: ["255,240,170", "170,220,255"], festival: ["255,107,107", "77,150,255", "255,217,61", "107,203,119"], digital: ["120,255,170", "220,255,235"], sumi: ["200,200,220", "60,55,90"] };
-    function perfectText(kind, sub) {
+    // セットのデザインの文字を盤面のまん中に出す。mode："" PERFECT／"res" 正解・コンボ（少し小さめ）／"miss" おしい（よろけて、粒は下へこぼれる）
+    function showText(main, small, sub, mode = "") {
       const r = boardEl.getBoundingClientRect(), d = document.createElement("div");
-      d.className = "pftext pt-" + set[1];
+      d.className = "pftext pt-" + set[1] + (mode ? " " + mode : "");
       d.style.left = (r.left + r.width / 2) + "px"; d.style.top = (r.top + r.height * .42) + "px";
-      const letters = [..."PERFECT!"].map((ch, i) => `<i style="--i:${i}">${ch}</i>`).join("");  // 1文字ずつ、セットらしい動きで登場
-      d.innerHTML = `${PF_NAME[kind] ? `<small>${PF_NAME[kind]}</small>` : ""}<b>${letters}</b>${sub ? `<span>${sub}</span>` : ""}`;
+      const letters = [...main].map((ch, i) => `<i style="--i:${i}">${ch}</i>`).join("");  // 1文字ずつ、セットらしい動きで登場
+      d.innerHTML = `${small ? `<small>${small}</small>` : ""}<b>${letters}</b>${sub ? `<span>${sub}</span>` : ""}`;
       $("gfx").appendChild(d); setTimeout(() => d.remove(), 2400);
-      // 文字のまわりに光の粒と輪
-      fit(); const c = (TXT_COL[set[1]] || TXT_COL.glass).map(x => `rgba(${x},A)`), m = { x: M + COLS * S / 2, y: M + ROWS * S * .42 };
-      setTimeout(() => { for (let i = 0; i < 4; i++) dots(m.x + (i - 1.5) * S * 1.1, m.y, 14, c, 6, "dot", .04, 46, S * .06); rings.push({ x: m.x, y: m.y, r0: S * .4, r1: S * 3.6, t: 0, life: 30, c: (TXT_COL[set[1]] || TXT_COL.glass)[0], w: 5 }); kick(); }, 420);
+      fit(); const cols = TXT_COL[set[1]] || TXT_COL.glass, c = cols.map(x => `rgba(${x},A)`), m = { x: M + COLS * S / 2, y: M + ROWS * S * .42 };
+      if (mode === "miss") setTimeout(() => { for (let i = 0; i < 3; i++) dots(m.x + (i - 1) * S * 1.2, m.y + S * .3, 6, c, 2, "dot", .18, 40, S * .05); kick(); }, 300);
+      else setTimeout(() => { const n = mode ? 2 : 4; for (let i = 0; i < n; i++) dots(m.x + (i - (n - 1) / 2) * S * 1.1, m.y, mode ? 9 : 14, c, mode ? 4.5 : 6, "dot", .04, 46, S * .06); rings.push({ x: m.x, y: m.y, r0: S * .4, r1: S * (mode ? 2.4 : 3.6), t: 0, life: 30, c: cols[0], w: mode ? 3 : 5 }); kick(); }, mode ? 250 : 420);
     }
+    const perfectText = (kind, sub) => showText("PERFECT!", PF_NAME[kind], sub);
     return {
       // 「派手」で、セットの PERFECT 演出を使うとき（今までのバナー・虹の演出は出さない）
       themed: () => fxLv() === 2 && !matchMedia("(prefers-reduced-motion: reduce)").matches,
       perfectText,
+      resultText: (main, sub, miss) => showText(main, "", sub, miss ? "miss" : "res"),
       // PERFECT で盤面ぜんぶが消える部分（「派手」のときだけ）。動かしたら true（そのぶん待つ）。それ以外は false で今までの消え方
       async perfect(tiles) {
         if (fxLv() < 2 || matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
