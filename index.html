@@ -167,7 +167,15 @@ header.top p { margin: 0; color: var(--muted); font-size: 13px; }
 }
 .tile.vowel .face { color: #7a3f1c; }
 .tile.hint .face { border-color: var(--gold); box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 70%, transparent), 0 3px 0 #8c7f5c; }
-.tile.pulse .face { animation: pulse 1s ease-in-out infinite alternate; }
+.tile.pulse .face { animation: pulseS 1s ease-in-out infinite alternate; }
+/* 発熱対策：光（box-shadow）は動かさず、光を描いた層（::after）の濃さだけを変える。石マスは ::before/::after を使っているので対象外 */
+.tile.pulse:not(.stone) .face, .tile.match:not(.stone) .face { position: relative; }
+.tile.pulse:not(.stone) .face::after, .tile.match:not(.stone) .face::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; will-change: opacity; }
+.tile.pulse:not(.stone) .face::after { box-shadow: 0 0 0 4px var(--gold), 0 0 20px var(--gold); animation: glowO 1s ease-in-out infinite alternate; }
+.tile.match:not(.stone) .face::after { box-shadow: 0 0 0 4px var(--mc, var(--gold)), 0 0 22px var(--mc, var(--gold)); animation: glowO .4s ease-in-out infinite alternate; }
+@keyframes pulseS { to { transform: scale(1.05); } }
+@keyframes glowS { to { transform: scale(1.06); } }
+@keyframes glowO { to { opacity: 1; } }
 .tile.cand .face { border-color: #35c9de; box-shadow: 0 0 0 2px #35c9de, 0 3px 0 #8c7f5c; }
 .tile.mover .face { border-color: #35c9de; box-shadow: 0 0 0 3px #35c9de, 0 0 14px rgba(53, 201, 222, .8), 0 3px 0 #8c7f5c; }
 .hintarrow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; overflow: visible; }
@@ -175,7 +183,6 @@ header.top p { margin: 0; color: var(--muted); font-size: 13px; }
 .hintarrow .head { fill: #35c9de; filter: drop-shadow(0 0 4px rgba(0,0,0,.5)); }
 .hintarrow .slot { fill: rgba(53, 201, 222, .18); stroke: #35c9de; stroke-width: 2; stroke-dasharray: 6 5; animation: slotdash 1s linear 8; }
 @keyframes slotdash { to { stroke-dashoffset: -22; } }
-@keyframes pulse { to { box-shadow: 0 0 0 4px var(--gold), 0 0 20px var(--gold); transform: scale(1.05); } }
 .tile.held { transition: none; z-index: 5; }
 .tile.held .face { transform: scale(1.12); box-shadow: 0 0 0 3px var(--gold), 0 12px 18px rgba(0,0,0,.5); }
 .tile.fall { transition: transform .32s cubic-bezier(.3,.1,.4,1.3); }
@@ -190,8 +197,7 @@ header.top p { margin: 0; color: var(--muted); font-size: 13px; }
 .wl-c b { font-size: 20px; }
 .wl-w { font-family: var(--font-display); font-weight: 800; font-size: 24px; letter-spacing: .08em; color: var(--wc); }
 .wl-m { font-size: 12px; margin-left: 8px; color: var(--fg); }
-.tile.match .face { animation: glow .4s ease-in-out infinite alternate; border-color: var(--mc, var(--gold)); }
-@keyframes glow { to { box-shadow: 0 0 0 4px var(--mc, var(--gold)), 0 0 22px var(--mc, var(--gold)); transform: scale(1.06); } }
+.tile.match .face { animation: glowS .4s ease-in-out infinite alternate; border-color: var(--mc, var(--gold)); }
 .tile.gone { opacity: 0; }
 .tile.gone .face { transform: scale(.4); transition: transform .25s; }
 
@@ -360,8 +366,13 @@ body[data-theme="sunset"] { --bg: #24140f; --panel: #361f17; --panel-2: #43271c;
 body[data-theme="royal"] { --bg: #1a1230; --panel: #271b45; --panel-2: #302155; --line: #4b3680; --gold: #e0c36a; --boardbg: #120c24; --boardline: #302155; --mshi: #3a2766; }
 /* 演出：コンボで画面のふちが熱くなる */
 #heat { position: fixed; inset: 0; pointer-events: none; z-index: 30; opacity: 0; transition: opacity .35s ease; background: radial-gradient(ellipse at 50% 55%, transparent 38%, var(--heatc, rgba(255,170,60,.5)) 100%); }
-#heat.rainbow { background: radial-gradient(ellipse at 50% 55%, transparent 34%, rgba(255,80,120,.55) 80%, rgba(255,210,60,.7) 100%); animation: heatHue 1.2s linear infinite; }
-@keyframes heatHue { to { filter: hue-rotate(360deg); } }
+#heat.rainbow { background: radial-gradient(ellipse at 50% 55%, transparent 34%, rgba(255,80,120,.55) 80%, rgba(255,210,60,.7) 100%); }
+/* 発熱対策：hue-rotate を動かすかわりに、ちがう色（青・紫・緑）を描いた層を重ね、その濃さだけを変える */
+#heat.rainbow::before, #heat.rainbow::after { content: ""; position: absolute; inset: 0; opacity: 0; will-change: opacity; }
+#heat.rainbow::before { background: radial-gradient(ellipse at 50% 55%, transparent 34%, rgba(80,170,255,.55) 80%, rgba(150,110,255,.7) 100%); animation: heatA 1.2s ease-in-out infinite; }
+#heat.rainbow::after { background: radial-gradient(ellipse at 50% 55%, transparent 34%, rgba(90,230,150,.55) 80%, rgba(60,200,255,.7) 100%); animation: heatB 1.2s ease-in-out infinite; }
+@keyframes heatA { 0%, 100% { opacity: 0; } 33% { opacity: 1; } 66% { opacity: 0; } }
+@keyframes heatB { 0%, 33% { opacity: 0; } 66% { opacity: 1; } 100% { opacity: 0; } }
 /* 演出：消えた文字が得点へ飛んでいく */
 .flyL { position: fixed; z-index: 60; pointer-events: none; width: 26px; height: 26px; margin: -13px 0 0 -13px; display: grid; place-items: center; border-radius: 7px; font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #1a1426; background: var(--fc, #ffe45c); box-shadow: 0 0 12px var(--fc, #ffe45c); }
 /* 演出：PERFECTの直前のスローモーション */
@@ -763,12 +774,17 @@ body.has-banner #gameSet { padding-bottom: calc(var(--safeB) + var(--bannerH) + 
 /* PERFECT!（全色そろえ）：虹色の大きな文字 */
 #gfx .pftxt { position: absolute; left: -220px; width: 440px; top: -52px; text-align: center; font-family: var(--font-display); font-weight: 900; font-size: 64px; line-height: 1; letter-spacing: .04em; white-space: nowrap;
   background: linear-gradient(90deg, #ff4d6d, #ff9f1c, #ffe45c, #4ade80, #38bdf8, #a78bfa, #ff4d6d); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
-  -webkit-text-stroke: 2px rgba(255,255,255,.9); filter: drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 18px rgba(255,255,255,.55)); animation: rainbow 2.4s linear infinite; }
+  -webkit-text-stroke: 2px rgba(255,255,255,.9); filter: drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 18px rgba(255,255,255,.55)); }
+/* 発熱対策：虹を流す（background-position を動かす）かわりに、半分ずらした虹を描いた層の濃さだけを変える */
+#gfx .pftxt::after { content: attr(data-t); position: absolute; inset: 0; background: linear-gradient(90deg, #4ade80, #38bdf8, #a78bfa, #ff4d6d, #ff9f1c, #ffe45c, #4ade80); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: inherit; opacity: 0; will-change: opacity; animation: pfShift 1.2s ease-in-out infinite alternate; }
+#gfx .pftxt.gold::after, #gfx .pftxt.silver::after { content: none; }
+@keyframes pfShift { to { opacity: 1; } }
+/* アプリが裏に回っている間は、くり返しのアニメを全部止める */
+html.app-bg *, html.app-bg *::before, html.app-bg *::after { animation-play-state: paused !important; }
 #gfx .pfsub { position: absolute; left: -200px; width: 400px; top: 22px; text-align: center; font-family: "Zen Maru Gothic", sans-serif; font-weight: 900; font-size: 24px; color: #fff; -webkit-text-stroke: 1.5px #1a1020; paint-order: stroke fill; text-shadow: 0 3px 0 #000; }
 #gfx .pfrays { position: absolute; left: -260px; top: -260px; width: 520px; height: 520px; border-radius: 50%;
   background: repeating-conic-gradient(#ff4d6d 0 8deg, transparent 8deg 15deg, #ffe45c 15deg 23deg, transparent 23deg 30deg, #38bdf8 30deg 38deg, transparent 38deg 45deg, #4ade80 45deg 53deg, transparent 53deg 60deg);
   opacity: .55; -webkit-mask: radial-gradient(circle, #000 22%, transparent 70%); mask: radial-gradient(circle, #000 22%, transparent 70%); }
-@keyframes rainbow { to { background-position: 200% 0; } }
 /* GREAT PERFECT：金色 */
 #gfx .pftxt.gold { background: linear-gradient(180deg, #fff6c2, #ffd84d 45%, #c98a14 55%, #ffe680); -webkit-background-clip: text; background-clip: text; animation: none; filter: drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 22px rgba(255,200,60,.8)); }
 #gfx .pfrays.gold { background: repeating-conic-gradient(rgba(255,215,80,.9) 0 9deg, transparent 9deg 18deg); }
@@ -11142,7 +11158,7 @@ ${recent || "まだありません"}`;
       // PERFECT!（全色そろえ）：虹色の文字＋虹の光
       perfect(ms = 2200) {
         if (!on()) return; const c = center();
-        const e = add("banner", { top: (c.y) + "px" }, `<div class="pfrays"></div><div class="pftxt">PERFECT!</div>`);
+        const e = add("banner", { top: (c.y) + "px" }, `<div class="pfrays"></div><div class="pftxt" data-t="PERFECT!">PERFECT!</div>`);
         e.querySelector(".pfrays").animate([{ transform: "rotate(0) scale(.2)", opacity: 0 }, { transform: "rotate(60deg) scale(1)", opacity: .6, offset: .2 }, { transform: "rotate(220deg) scale(1.15)", opacity: .6, offset: .85 }, { transform: "rotate(260deg) scale(1.3)", opacity: 0 }], { duration: ms, fill: "both" });
         e.querySelector(".pftxt").animate([{ transform: "scale(4) rotate(-8deg)", opacity: 0 }, { transform: "scale(.85) rotate(2deg)", opacity: 1, offset: .14 }, { transform: "scale(1.05)", opacity: 1, offset: .22 }, { transform: "scale(1)", opacity: 1, offset: .85 }, { transform: "scale(1.4)", opacity: 0 }], { duration: ms, easing: "ease-out", fill: "both" });
         this.flash("#fff", .55); this.rain(160); this.shake();
@@ -11154,7 +11170,7 @@ ${recent || "まだありません"}`;
         // ふつう＝銀、GREAT・SUPER・HYPER＝金、PREMIUM（いちばん上）＝虹
         const gold = kind !== "normal" && kind !== "premium", tone = kind === "normal" ? " silver" : gold ? " gold" : "";
         const word = wordOverride || kind === "premium" ? (wordOverride || "PREMIUM!") : kind === "hyper" ? "HYPER PERFECT!" : kind === "super" ? "SUPER PERFECT!" : kind === "great" ? "GREAT PERFECT!" : "PERFECT!";
-        const e = add("banner", { top: (c.y) + "px" }, `<div class="pfrays${tone}"></div><div class="pftxt${tone}" style="${word.length > 10 ? "font-size:36px;top:-34px;letter-spacing:0" : word.length > 8 ? "font-size:52px;top:-44px" : ""}">${word}</div>${sub ? `<div class="pfsub">${sub}</div>` : ""}`);
+        const e = add("banner", { top: (c.y) + "px" }, `<div class="pfrays${tone}"></div><div class="pftxt${tone}" data-t="${word}" style="${word.length > 10 ? "font-size:36px;top:-34px;letter-spacing:0" : word.length > 8 ? "font-size:52px;top:-44px" : ""}">${word}</div>${sub ? `<div class="pfsub">${sub}</div>` : ""}`);
         e.querySelector(".pfrays").animate([{ transform: "rotate(0) scale(.2)", opacity: 0 }, { transform: "rotate(60deg) scale(1)", opacity: .6, offset: .2 }, { transform: "rotate(220deg) scale(1.15)", opacity: .6, offset: .85 }, { transform: "rotate(260deg) scale(1.3)", opacity: 0 }], { duration: ms, fill: "both" });
         e.querySelector(".pftxt").animate([{ transform: "scale(4) rotate(-8deg)", opacity: 0 }, { transform: "scale(.85) rotate(2deg)", opacity: 1, offset: .14 }, { transform: "scale(1.05)", opacity: 1, offset: .22 }, { transform: "scale(1)", opacity: 1, offset: .85 }, { transform: "scale(1.4)", opacity: 0 }], { duration: ms, easing: "ease-out", fill: "both" });
         if (sub) e.querySelector(".pfsub").animate([{ transform: "translateY(20px)", opacity: 0 }, { transform: "none", opacity: 1, offset: .25 }, { opacity: 1, offset: .85 }, { opacity: 0 }], { duration: ms, fill: "both" });
@@ -11264,9 +11280,10 @@ ${recent || "まだありません"}`;
       },
     };
   })();
-  // ---------- BGM（その場で作曲するオリジナル。しっとり3曲・元気3曲） ----------
-  // 効果音とは別の音の部品で鳴らす（効果音は6秒鳴らないと休ませるため）。最初は「オフ」。3分ごとに同じ系統の別の曲へ
-  // アプリを離れている間と、広告の間は止める。ブラウザ・iPhoneは最初のタップまで音を出せないので、保存された設定は最初のタップで流す
+  // ---------- BGM（オリジナル。しっとり3曲・元気3曲） ----------
+  // 発熱対策：曲は鳴らす前に OfflineAudioContext でまとめて作り（響きも入れて）、あとは録音をくり返し流すだけ（30秒前後のループ）
+  // 鳴らすのはプレイ中の画面だけ。タイトル・単語帳・設定・アプリが裏に回ったとき・広告の間は止めて、音の部品も休ませる（suspend）
+  // BGM がオフのときは、音の部品も監視も作らない。3分ごとに同じ系統の別の曲へ（そのときだけ次の曲を作る）
   const BGM = (() => {
     const N = n => 440 * 2 ** ((n - 69) / 12);
     const TRACKS = [
@@ -11277,91 +11294,110 @@ ${recent || "まだありません"}`;
       { mood: "pop", bpm: 120, chords: [[45, 48, 52, 57], [41, 45, 48, 53], [48, 52, 55, 60], [43, 47, 50, 55]], scale: [69, 72, 74, 76, 79, 81], lead: "piano", kick: 1, saw: true },
       { mood: "pop", bpm: 100, chords: [[41, 45, 48, 53], [48, 52, 55, 60], [50, 53, 57, 62], [46, 50, 53, 58]], scale: [72, 74, 77, 79, 81, 84], lead: "bell", kick: 0, strum: true },
     ];
-    let ac = null, master = null, verb = null, noise = null, cur = null, timer = 0, nextT = 0, step = 0, rain = null, startedAt = 0, held = false, want = false;
+    const SR = 32000;
+    let ac = null, gain = null, src = null, cur = null, want = false, held = false, inPlay = false, rotT = 0, busyRender = false, obs = null, noise = null;
     const idx = { calm: 0, pop: 0 };
-    function init() {
-      if (ac) return true;
-      try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return false; }
-      master = ac.createGain(); master.gain.value = 0; master.connect(ac.destination);
-      verb = ac.createConvolver(); const len = ac.sampleRate * 3, ir = ac.createBuffer(2, len, ac.sampleRate);
-      for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 2.6; }
-      verb.buffer = ir; const wet = ac.createGain(); wet.gain.value = .45; verb.connect(wet); wet.connect(master);
-      noise = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const nd = noise.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
-      return true;
-    }
-    function out(wet = true, dryAmt = .6) { const o = ac.createGain(), dry = ac.createGain(); dry.gain.value = dryAmt; o.connect(dry); dry.connect(master); if (wet) o.connect(verb); return o; }
-    function voice(t, f, dur, kind, g) {
-      const o = out(kind !== "bass", kind === "bass" ? 1 : .6), env = o.gain, osc = []; env.setValueAtTime(0, t);
-      if (kind === "pad") {
-        for (const det of [-6, 6]) { const s = ac.createOscillator(); s.type = "triangle"; s.frequency.value = f; s.detune.value = det; osc.push(s); }
-        const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 900; osc.forEach(s => s.connect(lp)); lp.connect(o);
-        env.linearRampToValueAtTime(g, t + Math.min(2.2, dur / 3)); env.setValueAtTime(g, t + dur * .7); env.linearRampToValueAtTime(0, t + dur);
-      } else if (kind === "bass") {
-        const s = ac.createOscillator(); s.type = "sawtooth"; s.frequency.value = f; const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(900, t); lp.frequency.exponentialRampToValueAtTime(220, t + dur); s.connect(lp); lp.connect(o); osc.push(s);
-        env.linearRampToValueAtTime(g, t + .01); env.exponentialRampToValueAtTime(.001, t + dur);
-      } else {
-        const ps = kind === "piano" ? [[1, "sine", 1], [2, "triangle", .18], [3, "sine", .06]] : kind === "marimba" ? [[1, "sine", 1], [4, "sine", .12]] : kind === "pluck" ? [[1, "triangle", 1], [2, "square", .08]] : [[1, "sine", 1], [3, "sine", .25], [5.4, "sine", .08]];
-        for (const [m, type, a] of ps) { const s = ac.createOscillator(), gg = ac.createGain(); s.type = type; s.frequency.value = f * m; gg.gain.value = a; s.connect(gg); gg.connect(o); osc.push(s); }
-        const dec = kind === "piano" ? 2.6 : kind === "marimba" ? .9 : kind === "pluck" ? .35 : 1.8;
-        env.linearRampToValueAtTime(g, t + .008); env.exponentialRampToValueAtTime(.0008, t + dec); dur = dec + .1;
+    // 1曲ぶん（和音が一回りする長さ）を作る。最後の響きは、ループの頭に重ねて、つなぎ目が切れないようにする
+    async function render(T) {
+      const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return null;
+      const stepDur = 60 / T.bpm / 2, steps = T.mood === "calm" ? 64 : 128, loopLen = steps * stepDur, tail = 3;
+      const L = Math.round(loopLen * SR), oc = new OAC(2, L + tail * SR, SR);
+      const master = oc.createGain(); master.connect(oc.destination);
+      const verb = oc.createConvolver(), irLen = SR * 3, ir = oc.createBuffer(2, irLen, SR);
+      for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < irLen; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / irLen) ** 2.6; }
+      verb.buffer = ir; const wet = oc.createGain(); wet.gain.value = .45; verb.connect(wet); wet.connect(master);
+      if (!noise) { noise = oc.createBuffer(1, SR, SR); const nd = noise.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1; }
+      const out = (w = true, dryAmt = .6) => { const o = oc.createGain(), dry = oc.createGain(); dry.gain.value = dryAmt; o.connect(dry); dry.connect(master); if (w) o.connect(verb); return o; };
+      function voice(t, f, dur, kind, g) {
+        const o = out(kind !== "bass", kind === "bass" ? 1 : .6), env = o.gain, osc = []; env.setValueAtTime(0, t);
+        if (kind === "pad") {
+          for (const det of [-6, 6]) { const v = oc.createOscillator(); v.type = "triangle"; v.frequency.value = f; v.detune.value = det; osc.push(v); }
+          const lp = oc.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 900; osc.forEach(v => v.connect(lp)); lp.connect(o);
+          env.linearRampToValueAtTime(g, t + Math.min(2.2, dur / 3)); env.setValueAtTime(g, t + dur * .7); env.linearRampToValueAtTime(0, t + dur);
+        } else if (kind === "bass") {
+          const v = oc.createOscillator(); v.type = "sawtooth"; v.frequency.value = f; const lp = oc.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(900, t); lp.frequency.exponentialRampToValueAtTime(220, t + dur); v.connect(lp); lp.connect(o); osc.push(v);
+          env.linearRampToValueAtTime(g, t + .01); env.exponentialRampToValueAtTime(.001, t + dur);
+        } else {
+          const ps = kind === "piano" ? [[1, "sine", 1], [2, "triangle", .18], [3, "sine", .06]] : kind === "marimba" ? [[1, "sine", 1], [4, "sine", .12]] : kind === "pluck" ? [[1, "triangle", 1], [2, "square", .08]] : [[1, "sine", 1], [3, "sine", .25], [5.4, "sine", .08]];
+          for (const [m, type, a] of ps) { const v = oc.createOscillator(), gg = oc.createGain(); v.type = type; v.frequency.value = f * m; gg.gain.value = a; v.connect(gg); gg.connect(o); osc.push(v); }
+          const dec = kind === "piano" ? 2.6 : kind === "marimba" ? .9 : kind === "pluck" ? .35 : 1.8;
+          env.linearRampToValueAtTime(g, t + .008); env.exponentialRampToValueAtTime(.0008, t + dec); dur = dec + .1;
+        }
+        osc.forEach(v => { v.start(t); v.stop(t + dur + .1); });
       }
-      osc.forEach(s => { s.start(t); s.stop(t + dur + .1); });
-    }
-    function drum(t, kind, g) {
-      if (kind === "kick") { const s = ac.createOscillator(), o = out(false, 1); s.frequency.setValueAtTime(140, t); s.frequency.exponentialRampToValueAtTime(42, t + .14); o.gain.setValueAtTime(g, t); o.gain.exponentialRampToValueAtTime(.001, t + .22); s.connect(o); s.start(t); s.stop(t + .25); return; }
-      const n = ac.createBufferSource(); n.buffer = noise; const f = ac.createBiquadFilter(), o = out(kind === "clap", 1);
-      if (kind === "hat") { f.type = "highpass"; f.frequency.value = 7000; } else { f.type = "bandpass"; f.frequency.value = 1500; f.Q.value = .8; }
-      const d = kind === "hat" ? .045 : .16; o.gain.setValueAtTime(g, t); o.gain.exponentialRampToValueAtTime(.001, t + d); n.connect(f); f.connect(o); n.start(t, Math.random() * .5); n.stop(t + d + .02);
-    }
-    function schedule() {
-      const T = cur; if (!T || ac.state !== "running") return;
-      if (ac.currentTime - startedAt > 180) { next(); return; }  // 3分ごとに別の曲へ
+      function drum(t, kind, g) {
+        if (kind === "kick") { const v = oc.createOscillator(), o = out(false, 1); v.frequency.setValueAtTime(140, t); v.frequency.exponentialRampToValueAtTime(42, t + .14); o.gain.setValueAtTime(g, t); o.gain.exponentialRampToValueAtTime(.001, t + .22); v.connect(o); v.start(t); v.stop(t + .25); return; }
+        const n = oc.createBufferSource(); n.buffer = noise; const f = oc.createBiquadFilter(), o = out(kind === "clap", 1);
+        if (kind === "hat") { f.type = "highpass"; f.frequency.value = 7000; } else { f.type = "bandpass"; f.frequency.value = 1500; f.Q.value = .8; }
+        const d = kind === "hat" ? .045 : .16; o.gain.setValueAtTime(g, t); o.gain.exponentialRampToValueAtTime(.001, t + d); n.connect(f); f.connect(o); n.start(t, Math.random() * .5); n.stop(t + d + .02);
+      }
       const beat = 60 / T.bpm;
-      while (nextT < ac.currentTime + .4) {
+      for (let step = 0; step < steps; step++) {
+        const t = step * stepDur;
         if (T.mood === "calm") {
           const chord = T.chords[Math.floor(step / 16) % T.chords.length];
-          if (step % 16 === 0) chord.forEach((n, i) => voice(nextT, N(n), beat * 8 + 2.4, "pad", i ? .045 : .06));
-          if (T.arp) { const ns = [...chord.slice(1), chord[1] + 12, chord[2] + 12]; if (Math.random() < .8) voice(nextT, N(ns[(step * 3) % ns.length] + 24), 2, T.lead, .07); }
-          if (step % 2 === 0 && Math.random() < T.density) voice(nextT + (Math.random() < .3 ? beat / 2 : 0), N(T.scale[Math.floor(Math.random() * T.scale.length)]), 3, T.lead, T.lead === "marimba" ? .12 : .09);
-          if (T.rain && Math.random() < .25) voice(nextT + Math.random() * beat, N(96 + Math.floor(Math.random() * 12)), .3, "marimba", .015);
+          if (step % 16 === 0) chord.forEach((n, i) => voice(t, N(n), beat * 8 + 2.4, "pad", i ? .045 : .06));
+          if (T.arp) { const ns = [...chord.slice(1), chord[1] + 12, chord[2] + 12]; if (Math.random() < .8) voice(t, N(ns[(step * 3) % ns.length] + 24), 2, T.lead, .07); }
+          if (step % 2 === 0 && Math.random() < T.density) voice(t + (Math.random() < .3 ? beat / 2 : 0), N(T.scale[Math.floor(Math.random() * T.scale.length)]), 3, T.lead, T.lead === "marimba" ? .12 : .09);
+          if (T.rain && Math.random() < .25) voice(t + Math.random() * beat, N(96 + Math.floor(Math.random() * 12)), .3, "marimba", .015);
         } else {
           const s8 = step % 8, chord = T.chords[Math.floor(step / 8) % T.chords.length];
-          if (step % 32 === 0) chord.forEach(n => voice(nextT, N(n + 12), beat * 16, "pad", .03));
-          if (T.kick && s8 % 2 === 0) drum(nextT, "kick", .55);
-          if (s8 % 2 === 1) drum(nextT, "hat", .1);
-          if (s8 === 2 || s8 === 6) drum(nextT, "clap", .22);
-          voice(nextT, N(chord[0] - 12 + (s8 % 4 === 3 ? 12 : 0)), beat * .45, "bass", T.saw ? .16 : .1);
-          if (T.strum) { if (s8 !== 3 && s8 !== 7) chord.slice(1).forEach((n, i) => voice(nextT + i * .012, N(n + 12), .3, "pluck", .045)); }
-          else { const ns = [chord[1], chord[2], chord[3], chord[2]].map(n => n + 12); voice(nextT, N(ns[s8 % 4] + (s8 >= 4 ? 12 : 0)), .3, "pluck", .06); }
-          if (s8 % 2 === 0 && Math.random() < .35) voice(nextT, N(T.scale[Math.floor(Math.random() * T.scale.length)]), 1, T.lead, .06);
+          if (step % 32 === 0) chord.forEach(n => voice(t, N(n + 12), beat * 16, "pad", .03));
+          if (T.kick && s8 % 2 === 0) drum(t, "kick", .55);
+          if (s8 % 2 === 1) drum(t, "hat", .1);
+          if (s8 === 2 || s8 === 6) drum(t, "clap", .22);
+          voice(t, N(chord[0] - 12 + (s8 % 4 === 3 ? 12 : 0)), beat * .45, "bass", T.saw ? .16 : .1);
+          if (T.strum) { if (s8 !== 3 && s8 !== 7) chord.slice(1).forEach((n, i) => voice(t + i * .012, N(n + 12), .3, "pluck", .045)); }
+          else { const ns = [chord[1], chord[2], chord[3], chord[2]].map(n => n + 12); voice(t, N(ns[s8 % 4] + (s8 >= 4 ? 12 : 0)), .3, "pluck", .06); }
+          if (s8 % 2 === 0 && Math.random() < .35) voice(t, N(T.scale[Math.floor(Math.random() * T.scale.length)]), 1, T.lead, .06);
         }
-        nextT += beat / 2; step++;
       }
+      if (T.rain) { const r = oc.createBufferSource(); r.buffer = noise; r.loop = true; const bp = oc.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1800; bp.Q.value = .6; const g = oc.createGain(); g.gain.value = .05; r.connect(bp); bp.connect(g); g.connect(master); r.start(0); }
+      const rendered = await new Promise((res, rej) => { oc.oncomplete = e => res(e.renderedBuffer); const pr = oc.startRendering(); if (pr && pr.then) pr.then(res, rej); });
+      const buf = ac.createBuffer(2, L, SR), tl = rendered.length - L;
+      for (let ch = 0; ch < 2; ch++) { const d = buf.getChannelData(ch), r = rendered.getChannelData(ch); d.set(r.subarray(0, L)); for (let i = 0; i < tl; i++) d[i] += r[L + i]; }
+      return buf;
     }
-    function stopRain() { if (rain) { try { rain.stop(); } catch (e) {} rain = null; } }
-    function begin(T) {
-      cur = T; step = 0; startedAt = ac.currentTime; nextT = ac.currentTime + .15; stopRain();
-      if (T.rain) { rain = ac.createBufferSource(); rain.buffer = noise; rain.loop = true; const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1800; bp.Q.value = .6; const g = ac.createGain(); g.gain.value = .05; rain.connect(bp); bp.connect(g); g.connect(master); rain.start(); }
-      master.gain.cancelScheduledValues(ac.currentTime); master.gain.setTargetAtTime(.16, ac.currentTime, .8);
-      clearInterval(timer); timer = setInterval(schedule, 100); schedule();
+    function startBuf(buf) {
+      if (src) { const old = src, og = gain; og.gain.setTargetAtTime(0, ac.currentTime, .4); setTimeout(() => { try { old.stop(); old.disconnect(); og.disconnect(); } catch (e) {} }, 1500); }
+      gain = ac.createGain(); gain.gain.value = 0; gain.connect(ac.destination);
+      src = ac.createBufferSource(); src.buffer = buf; src.loop = true; src.connect(gain); src.start();
+      gain.gain.setTargetAtTime(.16, ac.currentTime, .8);
     }
-    function next() { const list = TRACKS.filter(T => T.mood === cur.mood); idx[cur.mood] = (idx[cur.mood] + 1) % list.length; begin(list[idx[cur.mood]]); }
-    function play(mood) {
-      if (!init()) return;
-      const p = ac.resume(); if (p && p.catch) p.catch(() => {});
-      const list = TRACKS.filter(T => T.mood === mood); begin(list[idx[mood] % list.length]);
+    async function load(mood) {
+      if (busyRender) return; busyRender = true;
+      try { const list = TRACKS.filter(T => T.mood === mood), T = list[idx[mood] % list.length]; const buf = await render(T); if (buf && want && $("bgmSel").value === mood) { cur = T; startBuf(buf); } }
+      catch (e) {} finally { busyRender = false; }
+      sync();
     }
-    function stop() { clearInterval(timer); timer = 0; cur = null; stopRain(); if (ac) { master.gain.cancelScheduledValues(ac.currentTime); master.gain.setTargetAtTime(0, ac.currentTime, .3); setTimeout(() => { if (!cur && ac.state === "running") ac.suspend().catch(() => {}); }, 1500); } }
-    // 設定どおりに鳴らす／止める（タップの中で呼ぶ）
-    function apply() { const m = $("bgmSel").value; want = m !== "off"; if (!want) { stop(); return; } if (held || document.hidden) return; if (!cur || cur.mood !== m) play(m); else if (ac.state !== "running") ac.resume().catch(() => {}); }
-    // 広告の間・アプリを離れている間は止める
-    function hold(on) { held = on; if (!ac || !cur) return; if (on) ac.suspend().catch(() => {}); else if (!document.hidden) ac.resume().catch(() => {}); }
-    document.addEventListener("visibilitychange", () => { if (!ac || !cur) return; if (document.hidden) ac.suspend().catch(() => {}); else if (!held) ac.resume().catch(() => {}); });
-    document.addEventListener("pointerdown", () => { if (want && !held && (!cur || ac.state !== "running")) apply(); }, true);
-    want = $("bgmSel").value !== "off";
+    function armRotate() { clearTimeout(rotT); rotT = setTimeout(() => { if (!cur) return; idx[cur.mood]++; cur = null; load($("bgmSel").value); }, 180000); }
+    // 鳴らす条件：オン・プレイ中の画面・アプリが表・広告中でない
+    function sync() {
+      const active = want && inPlay && !document.hidden && !held;
+      if (!active) { clearTimeout(rotT); if (ac && ac.state === "running") ac.suspend().catch(() => {}); return; }
+      if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; } }
+      if (ac.state !== "running") ac.resume().catch(() => {});
+      const mood = $("bgmSel").value;
+      if (!cur || cur.mood !== mood) { if (!busyRender) load(mood); return; }
+      armRotate();
+    }
+    const checkPlay = () => { inPlay = !$("view-game").hidden && $("modeScreen").hidden; sync(); };
+    function apply() {
+      want = $("bgmSel").value !== "off";
+      if (!want) { obs && obs.disconnect(); obs = null; clearTimeout(rotT); if (src) { try { src.stop(); src.disconnect(); } catch (e) {} src = null; } cur = null; if (ac) ac.suspend().catch(() => {}); return; }
+      if (!obs) { obs = new MutationObserver(checkPlay); for (const id of ["view-game", "modeScreen"]) obs.observe($(id), { attributes: true, attributeFilter: ["hidden"] }); }
+      if (cur && cur.mood !== $("bgmSel").value) cur = null;
+      checkPlay();
+    }
+    function hold(on) { held = on; if (want) sync(); }
+    document.addEventListener("visibilitychange", () => { if (want) sync(); });
+    // iPhone・ブラウザは最初のタップまで音を出せないので、オンのときだけ、タップで鳴らしなおす
+    document.addEventListener("pointerdown", () => { if (want && inPlay && !held && (!ac || ac.state !== "running")) sync(); }, true);
+    setTimeout(apply, 0);  // 起動の瞬間はまだタイトル画面が出ていないので、画面ができてから判定する
     return { apply, hold };
   })();
   $("bgmSel").addEventListener("change", () => BGM.apply());
+  document.addEventListener("visibilitychange", () => document.documentElement.classList.toggle("app-bg", document.hidden));
   // ---------- 単語が消えるときの演出（指をはなしたあと、単語がそろって消えるときだけ。盤面の上のキャンバスに短く描く） ----------
   // 「派手」のときだけ。消える演出と、その延長の PERFECT 演出を1セットにして、盤面が新しくなるたびにセットをランダムに選ぶ（統一感を出す）
   // 水しぶき→大津波・一刀両断→千本斬り・ネオン→ネオン街・桜吹雪→千本桜・稲妻→雷神・ブラックホール→超ブラックホール・くだけ散る→ガラスの崩壊・衝撃波→メガショック
@@ -11376,9 +11412,10 @@ ${recent || "まだありません"}`;
     let set = FORCE || SETS[Math.floor(Math.random() * SETS.length)];
     function fit() {
       if (!cv || !cv.isConnected) { cv = document.createElement("canvas"); cv.id = "fxCanvas"; tilesEl.appendChild(cv); cx = cv.getContext("2d"); }
-      M = S; const w = (COLS + 2) * S, h = (ROWS + 2) * S, d = Math.min(2, devicePixelRatio || 1);
+      // 描く板は盤面ぴったり（＋4px）。座標は今までどおり、盤面の外に1マス（M）ある前提で計算する
+      M = S; const P = 4, w = COLS * S + P * 2, h = ROWS * S + P * 2, d = Math.min(2, devicePixelRatio || 1);
       if (cv.width !== Math.round(w * d) || cv.height !== Math.round(h * d)) { cv.width = Math.round(w * d); cv.height = Math.round(h * d); }
-      Object.assign(cv.style, { left: -M + "px", top: -M + "px", width: w + "px", height: h + "px" }); cx.setTransform(d, 0, 0, d, 0, 0);
+      Object.assign(cv.style, { left: -P + "px", top: -P + "px", width: w + "px", height: h + "px" }); cx.setTransform(d, 0, 0, d, -(M - P) * d, -(M - P) * d);
     }
     const lite = () => fxLv() < 2, amt = n => Math.max(1, Math.round(n * (lite() ? .35 : 1)));
     const pt = q => ({ x: M + (q.c + .5) * S, y: M + (q.r + .5) * S });
@@ -11387,13 +11424,22 @@ ${recent || "まだありません"}`;
     function dots(x, y, n, c, sp, k = "dot", g = .1, life = 34, size = S * .05) { n = amt(n); for (let i = 0; i < n; i++) { const an = Math.random() * 6.283, v = sp * (.4 + Math.random()); parts.push({ x, y, vx: Math.cos(an) * v, vy: Math.sin(an) * v - (k === "ember" ? 1.4 : 0), g, drag: .965, t: 0, life: life * (.7 + Math.random() * .6), s: size * (.6 + Math.random() * .8), c: Array.isArray(c) ? c[i % c.length] : c, k, rot: Math.random() * 6, vr: (Math.random() - .5) * .4, ph: Math.random() * 6 }); } }
     function chips(p, n, cols, o = {}) { n = amt(n); for (let i = 0; i < n; i++) parts.push(Object.assign({ x: p.x + (Math.random() - .5) * S * .6, y: p.y + (Math.random() - .5) * S * .6, vx: (Math.random() - .5) * 7, vy: -Math.random() * 6 - 1, g: .35, drag: .99, t: 0, life: 50, s: S * (.12 + Math.random() * .14), c: cols[i % cols.length], k: "shard", rot: Math.random() * 6, vr: (Math.random() - .5) * .5, ph: Math.random() * 6 }, o)); }
     // 描く仕組み：1秒に60回まで（120回の画面でも同じ速さ・発熱も少なく）。少しあとから足す演出があるあいだ（holdUntil まで）は止めない
-    let lastF = 0, holdUntil = 0;
+    let lastF = 0, holdUntil = 0, lastRaw = 0, slow = 0, autoLite = false;
     const alive = () => parts.length || bolts.length || rings.length || blobs.length || lines.length || holes.length;
-    const kick = (ms = 0) => { holdUntil = Math.max(holdUntil, performance.now() + ms); if (!raf) raf = requestAnimationFrame(loop); };
+    const kick = (ms = 0) => { holdUntil = Math.max(holdUntil, performance.now() + ms); if (!raf) { lastRaw = 0; raf = requestAnimationFrame(loop); } };
+    // 一度に出す数の上限（古いものから消す）
+    const CAP = { parts: 420, bolts: 30, rings: 24, blobs: 16, lines: 30, holes: 4 };
+    function capAll() { for (const [k, a] of [["parts", parts], ["bolts", bolts], ["rings", rings], ["blobs", blobs], ["lines", lines], ["holes", holes]]) if (a.length > CAP[k]) a.splice(0, a.length - CAP[k]); }
     function loop(now) {
+      // 低電力モード（1秒30回までに落ちる）や、重くて間に合わないとき：書きかえの間隔が 30ms をこえる状態が続いたら、このあとは「控えめ」相当にする
+      if (lastRaw) { const dt = now - lastRaw; slow = dt > 30 ? slow + 1 : Math.max(0, slow - 2); if (slow >= 24 && !autoLite) autoLite = true; }
+      lastRaw = now;
       if (now - lastF < 15) { raf = requestAnimationFrame(loop); return; }
       lastF = now;
-      cx.clearRect(0, 0, cv.width, cv.height);
+      capAll();
+      cx.save(); cx.setTransform(1, 0, 0, 1, 0, 0); cx.clearRect(0, 0, cv.width, cv.height); cx.restore();
+      // 盤面の外（上の単語の列・下のボタンや広告）には描かない
+      cx.save(); cx.beginPath(); cx.rect(M - 4, M - 4, COLS * S + 8, ROWS * S + 8); cx.clip();
       for (const o of blobs) { o.t++; if (o.t <= 0) continue; const k = o.t / o.life, a = k < .5 ? .8 : .8 * (1 - (k - .5) * 2); cx.fillStyle = `rgba(${o.c},${Math.max(0, a)})`; cx.beginPath(); cx.arc(o.x, o.y, o.r * Math.min(1, k * 2.4), 0, 7); cx.fill(); }
       blobs = blobs.filter(o => o.t < o.life);
       for (const h of holes) { h.t++; const rr = h.r * Math.sin(Math.PI * Math.min(1, h.t / h.life)); cx.globalCompositeOperation = "lighter"; const g = cx.createRadialGradient(h.x, h.y, 0, h.x, h.y, rr * 1.8 + 1); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(.55, "rgba(140,90,255,.55)"); g.addColorStop(1, "rgba(140,90,255,0)"); cx.fillStyle = g; cx.beginPath(); cx.arc(h.x, h.y, rr * 1.8 + 1, 0, 7); cx.fill(); cx.globalCompositeOperation = "source-over"; cx.fillStyle = "#05030c"; cx.beginPath(); cx.arc(h.x, h.y, rr, 0, 7); cx.fill(); }
@@ -11424,7 +11470,8 @@ ${recent || "まだありません"}`;
       }
       parts = parts.filter(p => p.t < p.life);
       cx.globalCompositeOperation = "source-over";
-      raf = alive() || performance.now() < holdUntil ? requestAnimationFrame(loop) : (cx.clearRect(0, 0, cv.width, cv.height), 0);
+      cx.restore();
+      raf = alive() || performance.now() < holdUntil ? requestAnimationFrame(loop) : (cx.save(), cx.setTransform(1, 0, 0, 1, 0, 0), cx.clearRect(0, 0, cv.width, cv.height), cx.restore(), 0);
     }
     const mid = ps => ({ x: ps.reduce((s, p) => s + p.x, 0) / ps.length, y: ps.reduce((s, p) => s + p.y, 0) / ps.length });
     const FX = {
@@ -11445,6 +11492,9 @@ ${recent || "まだありません"}`;
       slash(ps) { const a = ps[0], b = ps[ps.length - 1], d = Math.hypot(b.x - a.x, b.y - a.y), len = d || 1, ux = d ? (b.x - a.x) / len : 1, uy = (b.y - a.y) / len, e = S * .9; lines.push({ pts: [{ x: a.x - ux * e - 6, y: a.y - uy * e + 10 }, { x: b.x + ux * e + 6, y: b.y + uy * e - 10 }], grow: 7, life: 22, t: 0, w: 3, c: "200,230,255" }); ps.forEach(p => dots(p.x, p.y, 5, "rgba(220,240,255,A)", 4, "dot", .1, 22)); },
     };
     // PERFECT：盤面ぜんぶの文字（.face）を動かして消す。どれも1秒前後で終わる
+    // 演出は盤面全体に広げる（まん中は「PERFECT!」の文字があるので、四すみや上下の段から出す）
+    const spots = () => [{ x: M + S * 1, y: M + S * .7 }, { x: M + S * (COLS - 1), y: M + S * .7 }, { x: M + S * 1, y: M + S * (ROWS - .7) }, { x: M + S * (COLS - 1), y: M + S * (ROWS - .7) }];
+    const nearest = (p, pts) => pts.reduce((a, b) => Math.hypot(b.x - p.x, b.y - p.y) < Math.hypot(a.x - p.x, a.y - p.y) ? b : a);
     const face = el => el.querySelector(".face");
     const go = (el, to, ms, delay = 0, ease = "cubic-bezier(.5,0,.8,1)") => face(el).animate([{ transform: "none", opacity: 1 }, to], { duration: ms, delay, easing: ease, fill: "forwards" });
     const PF = {
@@ -11482,23 +11532,24 @@ ${recent || "まだありません"}`;
         return 880;
       },
       async hole(T) {
-        const m = { x: M + COLS * S / 2, y: M + ROWS * S / 2 }; holes.push({ x: m.x, y: m.y, r: S * 1.1, t: 0, life: 80 });
-        T.slice().sort((a, b) => Math.hypot(b.p.x - m.x, b.p.y - m.y) - Math.hypot(a.p.x - m.x, a.p.y - m.y)).forEach(({ el, p }, i) => go(el, { transform: `translate(${m.x - p.x}px, ${m.y - p.y}px) rotate(${i % 2 ? 400 : -400}deg) scale(.05)`, opacity: 0 }, 560, i * 15, "cubic-bezier(.6,0,.9,.4)"));
-        setTimeout(() => { gfx.flash("#c8a8ff", .22); gfx.shake(); rings.push({ x: m.x, y: m.y, r0: 10, r1: S * 4, t: 0, life: 36, c: "200,160,255", w: 8 }, { x: m.x, y: m.y, r0: 6, r1: S * 2.6, t: -6, life: 36, c: "255,255,255" }); dots(m.x, m.y, 70, ["rgba(170,120,255,A)", "rgba(255,255,255,A)", "rgba(255,228,92,A)"], 8, "dot", 0, 50); }, 1000);
+        const H4 = spots(); H4.forEach(h => holes.push({ x: h.x, y: h.y, r: S * .62, t: 0, life: 80 }));
+        T.slice().sort((a, b) => Math.hypot(b.p.x - nearest(b.p, H4).x, b.p.y - nearest(b.p, H4).y) - Math.hypot(a.p.x - nearest(a.p, H4).x, a.p.y - nearest(a.p, H4).y))
+          .forEach(({ el, p }, i) => { const m = nearest(p, H4); go(el, { transform: `translate(${m.x - p.x}px, ${m.y - p.y}px) rotate(${i % 2 ? 400 : -400}deg) scale(.05)`, opacity: 0 }, 560, i * 15, "cubic-bezier(.6,0,.9,.4)"); });
+        setTimeout(() => { gfx.flash("#c8a8ff", .22); gfx.shake(); H4.forEach(h => { rings.push({ x: h.x, y: h.y, r0: 6, r1: S * 2.2, t: 0, life: 34, c: "200,160,255", w: 6 }); dots(h.x, h.y, 18, ["rgba(170,120,255,A)", "rgba(255,255,255,A)", "rgba(255,228,92,A)"], 6, "dot", 0, 46); }); }, 1000);
         return 1300;
       },
     };
     Object.assign(PF, {
-      async glass(T) {  // ガラスの崩壊：まん中から外へ、金色のかけらになって割れていく
-        const m = { x: M + COLS * S / 2, y: M + ROWS * S / 2 }; gfx.flash("#ffffff", .22); gfx.shake();
-        T.forEach(({ el, p }) => { const d = Math.hypot(p.x - m.x, p.y - m.y) / S; setTimeout(() => { go(el, { transform: "scale(1.1)", opacity: 0 }, 160); chips(p, 7, ["#ffe27a", "#fff7d1", "#ffffff", "#e2b84a"]); }, d * 70); });
+      async glass(T) {  // ガラスの崩壊：盤面の四すみから、金色のかけらになって割れが広がる
+        const H4 = spots(); gfx.flash("#ffffff", .22); gfx.shake();
+        T.forEach(({ el, p }) => { const m = nearest(p, H4), d = Math.hypot(p.x - m.x, p.y - m.y) / S; setTimeout(() => { go(el, { transform: "scale(1.1)", opacity: 0 }, 160); chips(p, 6, ["#ffe27a", "#fff7d1", "#ffffff", "#e2b84a"]); }, d * 90); });
         return 900;
       },
       async mega(T) {  // メガショック：大きな光の輪が3重に広がり、全部のマスが外へ吹き飛ぶ
-        const m = { x: M + COLS * S / 2, y: M + ROWS * S / 2 };
-        rings.push({ x: m.x, y: m.y, r0: 10, r1: S * 5, t: 0, life: 36, c: "255,228,92", w: 9 }, { x: m.x, y: m.y, r0: 8, r1: S * 4, t: -6, life: 36, c: "255,255,255", w: 6 }, { x: m.x, y: m.y, r0: 6, r1: S * 3, t: -12, life: 36, c: "255,170,60", w: 5 });
-        gfx.flash("#fff3b0", .22); gfx.shake(); dots(m.x, m.y, 50, ["rgba(255,228,92,A)", "rgba(255,255,255,A)"], 8, "dot", 0, 34);
-        T.forEach(({ el, p }) => { const dx = p.x - m.x, dy = p.y - m.y, l = Math.hypot(dx, dy) || 1; go(el, { transform: `translate(${dx / l * S * 1.6}px, ${dy / l * S * 1.6}px) scale(.5)`, opacity: 0 }, 520, 100, "cubic-bezier(.2,.8,.4,1)"); });
+        const H4 = spots(), c0 = { x: M + COLS * S / 2, y: M + ROWS * S / 2 };
+        H4.forEach((h, i) => { rings.push({ x: h.x, y: h.y, r0: 8, r1: S * 3.2, t: -i * 3, life: 34, c: "255,228,92", w: 7 }, { x: h.x, y: h.y, r0: 6, r1: S * 2.2, t: -i * 3 - 6, life: 34, c: "255,255,255", w: 5 }); dots(h.x, h.y, 14, ["rgba(255,228,92,A)", "rgba(255,255,255,A)"], 7, "dot", 0, 32); });
+        gfx.flash("#fff3b0", .22); gfx.shake();
+        T.forEach(({ el, p }) => { const dx = p.x - c0.x, dy = p.y - c0.y, l = Math.hypot(dx, dy) || 1; go(el, { transform: `translate(${dx / l * S * 1.6}px, ${dy / l * S * 1.6}px) scale(.5)`, opacity: 0 }, 520, 100, "cubic-bezier(.2,.8,.4,1)"); });
         return 850;
       },
       async blaze(T) {  // 大炎上：下の段から順に燃え上がり、火の粉の嵐
@@ -11508,8 +11559,7 @@ ${recent || "まだありません"}`;
         setTimeout(() => gfx.shake(), 200); return 950;
       },
       async zero(T) {  // 絶対零度：まん中から冷気が広がって凍りつき、いっせいに割れる
-        const m = { x: M + COLS * S / 2, y: M + ROWS * S / 2 };
-        rings.push({ x: m.x, y: m.y, r0: 6, r1: S * 4.5, t: 0, life: 40, c: "190,235,255", w: 10 }, { x: m.x, y: m.y, r0: 4, r1: S * 3.5, t: -8, life: 40, c: "255,255,255", w: 6 });
+        spots().forEach((h, i) => rings.push({ x: h.x, y: h.y, r0: 6, r1: S * 3, t: -i * 2, life: 40, c: "190,235,255", w: 8 }, { x: h.x, y: h.y, r0: 4, r1: S * 2.2, t: -i * 2 - 8, life: 40, c: "255,255,255", w: 5 }));
         T.forEach(({ el }) => face(el).animate([{ opacity: 1 }, { opacity: .55 }, { opacity: 1 }], { duration: 420 }));
         setTimeout(() => { gfx.flash("#dff6ff", .25); gfx.shake(); T.forEach(({ el, p }) => { go(el, { transform: "scale(1.15)", opacity: 0 }, 140); chips(p, 6, ["#e8f8ff", "#a9dcf5", "#ffffff"], { g: .25, drag: .97, life: 42 }); for (const q of parts.slice(-6)) { q.vx = (Math.random() - .5) * 8; q.vy = (Math.random() - .5) * 8; } }); }, 450);
         return 950;
@@ -11533,10 +11583,10 @@ ${recent || "まだありません"}`;
         gfx.flash("#b6ffcf", .12); return 1150;
       },
       async sumi(T) {  // 墨流し：まん中から大きな墨がにじんで盤面をのみこみ、すっと引いていく
-        const m = { x: M + COLS * S / 2, y: M + ROWS * S / 2 };
-        blobs.push({ x: m.x, y: m.y, r: S * 4, t: 0, life: 70, c: "14,12,30" });
-        for (let i = 0; i < 6; i++) blobs.push({ x: m.x + (Math.random() - .5) * S * 4, y: m.y + (Math.random() - .5) * S * 3, r: S * (.8 + Math.random() * .8), t: -4 - i * 3, life: 62, c: "22,18,44" });
-        T.forEach(({ el, p }) => go(el, { transform: "scale(.95)", opacity: 0 }, 300, 160 + Math.hypot(p.x - m.x, p.y - m.y) / S * 40));
+        const H4 = spots();
+        H4.forEach((h, i) => blobs.push({ x: h.x, y: h.y, r: S * 2.1, t: -i * 3, life: 70, c: "14,12,30" }));
+        for (let i = 0; i < 6; i++) blobs.push({ x: M + S * (.5 + Math.random() * (COLS - 1)), y: M + S * (i % 2 ? ROWS - .8 : .8), r: S * (.7 + Math.random() * .6), t: -6 - i * 3, life: 62, c: "22,18,44" });
+        T.forEach(({ el, p }) => { const m = nearest(p, H4); go(el, { transform: "scale(.95)", opacity: 0 }, 300, 160 + Math.hypot(p.x - m.x, p.y - m.y) / S * 40); });
         return 1050;
       },
     });
@@ -11561,9 +11611,9 @@ ${recent || "まだありません"}`;
     const PREMIUM = {
       fireworks() { const W = (COLS + 2) * S, H = (ROWS + 2) * S, cs = [["255,107,107", "255,255,255"], ["255,217,61", "255,255,255"], ["107,203,119", "255,255,255"], ["77,150,255", "255,255,255"], ["199,125,255", "255,255,255"]];
         for (let i = 0; i < 7; i++) setTimeout(() => { const x = W * (.15 + Math.random() * .7), y = H * (.12 + Math.random() * .5); dots(x, y, 36, cs[i % cs.length].map(c => `rgba(${c},A)`), 6, "dot", .05, 55, S * .06); rings.push({ x, y, r0: 4, r1: S * 1.4, t: 0, life: 22, c: cs[i % cs.length][0], w: 3 }); if (i % 2) gfx.flash("#fff", .14); kick(); }, 150 + i * 170); },
-      goldstorm() { const m = { x: M + COLS * S / 2, y: M + ROWS * S / 2 }, R = S * 4.2;
-        for (let i = 0; i < 150; i++) { const an = Math.random() * 6.283, d = R * (.7 + Math.random() * .5), sp = d / 30; parts.push({ x: m.x + Math.cos(an) * d, y: m.y + Math.sin(an) * d, vx: -Math.cos(an) * sp - Math.sin(an) * sp * 1.2, vy: -Math.sin(an) * sp + Math.cos(an) * sp * 1.2, g: 0, drag: .97, t: -Math.random() * 14, life: 34, s: S * .06, c: ["rgba(255,216,77,A)", "rgba(255,245,200,A)", "rgba(226,184,74,A)"][i % 3], k: "dot", rot: 0, vr: 0, ph: 0 }); }
-        setTimeout(() => { gfx.flash("#ffe680", .28); dots(m.x, m.y, 90, ["rgba(255,216,77,A)", "rgba(255,255,255,A)"], 9, "dot", .06, 55, S * .07); rings.push({ x: m.x, y: m.y, r0: 10, r1: S * 5, t: 0, life: 34, c: "255,216,77", w: 9 }); kick(); }, 620); },
+      goldstorm() { const P2 = [{ x: M + S * 1.2, y: M + S * (ROWS - 1) }, { x: M + S * (COLS - 1.2), y: M + S }], R = S * 3;
+        for (let i = 0; i < 150; i++) { const m = P2[i % 2]; const an = Math.random() * 6.283, d = R * (.7 + Math.random() * .5), sp = d / 30; parts.push({ x: m.x + Math.cos(an) * d, y: m.y + Math.sin(an) * d, vx: -Math.cos(an) * sp - Math.sin(an) * sp * 1.2, vy: -Math.sin(an) * sp + Math.cos(an) * sp * 1.2, g: 0, drag: .97, t: -Math.random() * 14, life: 34, s: S * .06, c: ["rgba(255,216,77,A)", "rgba(255,245,200,A)", "rgba(226,184,74,A)"][i % 3], k: "dot", rot: 0, vr: 0, ph: 0 }); }
+        setTimeout(() => { gfx.flash("#ffe680", .28); P2.forEach(m => { dots(m.x, m.y, 45, ["rgba(255,216,77,A)", "rgba(255,255,255,A)"], 8, "dot", .06, 55, S * .07); rings.push({ x: m.x, y: m.y, r0: 10, r1: S * 3.6, t: 0, life: 34, c: "255,216,77", w: 8 }); }); kick(); }, 620); },
       aurora() { const W = (COLS + 2) * S, cs = ["120,255,200", "120,180,255", "220,130,255"];
         cs.forEach((c, j) => setTimeout(() => { const y0 = M + S * (.8 + j * 1.1), pts = []; for (let i = 0; i <= 24; i++) pts.push({ x: W * i / 24, y: y0 + Math.sin(i * .6 + j * 1.7) * S * .5 }); lines.push({ pts, grow: 16, life: 80, t: 0, w: 7, c }); kick(); }, j * 160));
         setTimeout(() => { for (let i = 0; i < 40; i++) parts.push({ x: Math.random() * W, y: M + Math.random() * ROWS * S, vx: 0, vy: -.3, g: 0, drag: 1, t: -Math.random() * 20, life: 60, s: S * (.06 + Math.random() * .06), c: ["rgba(255,255,255,A)", "rgba(180,255,230,A)"][i % 2], k: "star", rot: 0, vr: 0, ph: Math.random() * 6 }); kick(); }, 300); },
@@ -11582,12 +11632,12 @@ ${recent || "まだありません"}`;
     }
     return {
       // 「派手」で、セットの PERFECT 演出を使うとき（今までのバナー・虹の演出は出さない）
-      themed: () => fxLv() === 2 && !matchMedia("(prefers-reduced-motion: reduce)").matches,
+      themed: () => fxLv() === 2 && !autoLite && !matchMedia("(prefers-reduced-motion: reduce)").matches,
       perfectText,
       resultText: (main, sub, miss) => showText(main, "", sub, miss ? "miss" : "res"),
       // PERFECT で盤面ぜんぶが消える部分（「派手」のときだけ）。動かしたら true（そのぶん待つ）。それ以外は false で今までの消え方
       async perfect(tiles) {
-        if (fxLv() < 2 || matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+        if (fxLv() < 2 || autoLite || matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
         fit();
         const k = set[1];
         const T = tiles.map((t, i) => { const r = Math.floor(i / COLS), c = i % COLS; return { el: elFor(t), r, c, p: pt({ r, c }) }; });
@@ -11597,7 +11647,7 @@ ${recent || "まだありません"}`;
       },
       // cells：消える単語のマス（{r, c}）、col：単語の色、combo：このなぞりで何語目か
       play(cells, col, combo) {
-        if (fxLv() < 2 || matchMedia("(prefers-reduced-motion: reduce)").matches || !cells.length) return;
+        if (fxLv() < 2 || autoLite || matchMedia("(prefers-reduced-motion: reduce)").matches || !cells.length) return;
         fit();
         const k = set[0], ps = cells.map(pt);
         FX[k](ps, col || "#ffe27a");
