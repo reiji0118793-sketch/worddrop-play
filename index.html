@@ -450,6 +450,13 @@ body { margin: 0; }
 .pftext small { display: block; font-size: 20px; letter-spacing: .3em; }
 /* うしろの帯（セットの色）：横にシュッとのびて、少し残る */
 .pftext::after { content: ""; position: absolute; z-index: -1; left: -40vw; right: -40vw; top: 50%; height: 64%; background: linear-gradient(90deg, transparent, var(--pc, #ffd84d) 22%, var(--pc, #ffd84d) 78%, transparent); opacity: 0; transform: translateY(-50%) scaleX(0); animation: ptBand 2.2s ease-out both; }
+/* HYPER・PREMIUM：文字のうしろで光線が回る（transform だけ。#gfx .rays・.pfrays とは別の部品）。PREMIUM は文字も光線も虹色 */
+.pftext .ptx-rays { position: absolute; z-index: -1; left: 50%; top: 50%; width: 360px; height: 360px; margin: -180px 0 0 -180px; border-radius: 50%; background: repeating-conic-gradient(rgba(255,226,120,.42) 0 7deg, transparent 7deg 20deg); -webkit-mask: radial-gradient(circle, #000 25%, transparent 70%); mask: radial-gradient(circle, #000 25%, transparent 70%); animation: ptRays 2.2s linear both; }
+.pftext.premium .ptx-rays { background: repeating-conic-gradient(rgba(255,107,107,.45) 0 6deg, transparent 6deg 12deg, rgba(255,217,61,.45) 12deg 18deg, transparent 18deg 24deg, rgba(107,203,119,.45) 24deg 30deg, transparent 30deg 36deg, rgba(77,150,255,.45) 36deg 42deg, transparent 42deg 48deg, rgba(199,125,255,.45) 48deg 54deg, transparent 54deg 60deg); }
+@keyframes ptRays { 0% { transform: scale(.3) rotate(0); opacity: 0; } 15% { transform: scale(1) rotate(30deg); opacity: 1; } 82% { transform: scale(1.05) rotate(140deg); opacity: 1; } 100% { transform: scale(1.2) rotate(170deg); opacity: 0; } }
+.pftext.premium small { color: #fff; text-shadow: 2px 0 0 #ff6b6b, -2px 0 0 #4d96ff, 0 2px 0 #ffd93d; }
+.pftext.premium b i:nth-child(1) { color: #ff8a8a; } .pftext.premium b i:nth-child(2) { color: #ffb86b; } .pftext.premium b i:nth-child(3) { color: #ffe066; } .pftext.premium b i:nth-child(4) { color: #8ff0a4; }
+.pftext.premium b i:nth-child(5) { color: #7fd8ff; } .pftext.premium b i:nth-child(6) { color: #8fa8ff; } .pftext.premium b i:nth-child(7) { color: #d0a0ff; } .pftext.premium b i:nth-child(8) { color: #ffffff; }
 .pftext.res b, .pftext.miss b { font-size: clamp(32px, 10.5vw, 46px); }
 .pftext.res > * { animation-duration: 1.5s; } .pftext.res::before, .pftext.res::after { animation-duration: 1.5s; }
 .pftext.miss > * { animation: ptMiss 1.7s ease-out both; } .pftext.miss::before, .pftext.miss::after { animation-duration: 1.7s; }
@@ -10053,7 +10060,7 @@ zoom|v2|ズームする・急上昇する`;
           streak = 0; lives--; noMiss = 0; lifeLost = true;
           if (lives > 0) introOnce("heal", "ライフ回復", "ライフが減っても大丈夫！<br><b>PERFECTを3回連続</b>でとると、ライフが<b>1つ戻る</b>よ（空いたハートの中の数字が、あと何回か）");
           SFX.fail(); buzz([80, 60, 120]); gfx.shake();
-          if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("おしい！", [`${exact.size}/${cwords.length}色`, g ? `${g.combo}コンボ　+${g.gained.toLocaleString()}点` : "", "ライフ −1"].filter(Boolean).join("　"), true); }
+          if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("SO CLOSE!", [`${exact.size}/${cwords.length} COLORS`, g ? `${g.combo} COMBO　+${g.gained.toLocaleString()}` : "", "LIFE −1"].filter(Boolean).join("　"), true); }
           setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1${lives > 0 ? "　同じ盤面でもう一度！" : ""}`);
           updateHud();
           await sleep(900);
@@ -10067,7 +10074,7 @@ zoom|v2|ズームする・急上昇する`;
         if (all) {
           streak++; studyBoards++;
           const bonus = 50 * level * cwords.length; score += bonus; bumpScore(); SFX.levelUp(); buzz([20, 40, 20]);
-          if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("正解！", [g ? `${g.combo}コンボ　+${g.gained.toLocaleString()}点` : "", `ボーナス +${bonus.toLocaleString()}`].filter(Boolean).join("　")); }
+          if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("CORRECT!", [g ? `${g.combo} COMBO　+${g.gained.toLocaleString()}` : "", `BONUS +${bonus.toLocaleString()}`].filter(Boolean).join("　")); }
           setStatus(`<b>正解！</b>　${cwords.map(x => `${x.w}（${esc(x.m)}）`).join("・")}　+${bonus}`);
           if (studyBoards >= studyNeed()) {
             level++; studyBoards = 0;
@@ -10078,7 +10085,7 @@ zoom|v2|ズームする・急上昇する`;
           streak = 0; lives--;
           studyReveal = new Set(cwords.map((x, i) => i).filter(i => !exact.has(i))); renderCwords();
           SFX.fail(); buzz([80, 60, 120]); gfx.shake();
-          if (clearFx.themed()) { pfGain = null; clearFx.resultText("おしい！", `${exact.size}/${cwords.length}語　ライフ −1`, true); }
+          if (clearFx.themed()) { pfGain = null; clearFx.resultText("SO CLOSE!", `${exact.size}/${cwords.length} WORDS　LIFE −1`, true); }
           const miss = cwords.filter((x, i) => !exact.has(i));
           setStatus(`正解は ${miss.map(x => `<b>${x.w}</b>（${esc(x.m)}）`).join("・")}　ライフ −1　まちがえた単語はあとでまた出るよ`);
           updateHud();
@@ -10105,7 +10112,7 @@ zoom|v2|ズームする・急上昇する`;
         score += gained;
         const themedPf = all && clearFx.themed(), themedRes = !all && clearFx.themed();
         if (themedPf || themedRes) pfGain = { combo, gained }; else burstDamage(mult, gained, false, smult);
-        if (themedRes && !(isDaily() && turns > COLOR_TURNS)) { pfGain = null; clearFx.resultText(`${combo} COMBO!`, `+${gained.toLocaleString()}点`); }
+        if (themedRes && !(isDaily() && turns > COLOR_TURNS)) { pfGain = null; clearFx.resultText(`${combo} COMBO!`, `+${gained.toLocaleString()}`); }
         if (colorWords && !themedPf && !themedRes) $("bDmg").innerHTML += `<br>${all ? "PERFECT! ×2　" : ""}同じ色の単語 ${colorWords}個（得点2倍）${exact.size ? `・色のお題ぴったり ${exact.size}個（さらに2倍）` : ""}`;
         bumpScore(); SFX.score(combo); jackpot(all ? 1 : combo >= 8 ? 3 : combo >= 5 ? 2 : combo >= 3 || exact.size >= 2 ? 1 : 0, null, all);  // 全色そろえは、このあと PERFECT! で大きく出す
         achTurn(combo, 0, all, false);
@@ -10123,7 +10130,7 @@ zoom|v2|ズームする・急上昇する`;
         if (!tut) { runLog.push(all ? 1 : 0); { const ex = runLog.slice(COLOR_TURNS).filter(Boolean).length; if (ex >= 10) achTry("extra10"); if (ex >= 30) achTry("extra30"); if (ex >= 50) achTry("extra50"); } }
         // 10問のあとは「エクストラ」：ずっと続く。全消しできないとライフ−1（ライフ3）
         if (turns > COLOR_TURNS && !all) { lives--; noMiss = 0; SFX.fail(); buzz([80, 60, 120]); gfx.shake();
-          if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("おしい！", [`${exact.size}/${cwords.length}色`, g ? `${g.combo}コンボ　+${g.gained.toLocaleString()}点` : "", "ライフ −1"].filter(Boolean).join("　"), true); }
+          if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("SO CLOSE!", [`${exact.size}/${cwords.length} COLORS`, g ? `${g.combo} COMBO　+${g.gained.toLocaleString()}` : "", "LIFE −1"].filter(Boolean).join("　"), true); }
           setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1`); }
         if (turns === COLOR_TURNS && !tut) markDaily();
         if (turns === COLOR_TURNS) { lives = LIVES; setTimeout(() => setStatus("<b>ここからエクストラ！</b>　ずっと続くよ。全部消せないとライフ−1（ライフ3）"), 900); }
@@ -10679,7 +10686,11 @@ zoom|v2|ズームする・急上昇する`;
       if (!themed) { const v = lastRainbow = pickRainbow(); word = await gfx.rainbow(v, premiumRun); }
     }
     const sub = pf.mult > 1 ? `${premiumRun >= 2 ? `虹 ${premiumRun}連続　` : ""}ボーナス ×${pf.mult}　+${bonus.toLocaleString()}` : "";
-    if (themed) { const g = pfGain; pfGain = null; clearFx.perfectText(pf.kind, [g ? `${g.combo}コンボ　+${g.gained.toLocaleString()}点` : "", sub].filter(Boolean).join("<br>")); }
+    if (themed) {  // 文字はすべて英語。連続 PERFECT ほど豪華に（GREAT→SUPER→HYPER→PREMIUM）
+      const g = pfGain; pfGain = null;
+      const subEn = pf.mult > 1 ? `${premiumRun >= 2 ? `STREAK ×${premiumRun}　` : ""}BONUS ×${pf.mult}　+${bonus.toLocaleString()}` : "";
+      clearFx.perfectText(pf.kind, [g ? `${g.combo} COMBO　+${g.gained.toLocaleString()}` : "", subEn].filter(Boolean).join("<br>"));
+    }
     else gfx.perfectKind(pf.kind, sub, pf.kind === "normal" ? 2600 : 2800, word);
     leverBuzz(lastCombo);
     if (pf.kind !== "normal") { SFX.win(pf.kind !== "great"); SFX.coin(pf.kind === "great" ? 6 : 12); }
@@ -11534,18 +11545,41 @@ ${recent || "まだありません"}`;
     // 文字のまわりに飛ばす光の粒の色（セットごと）
     const TXT_COL = { wave: ["140,210,255", "255,255,255"], slash: ["210,235,255", "255,255,255"], neon: ["255,95,210", "120,220,255"], sakura: ["255,170,205", "255,240,246"], thunder: ["255,240,140", "150,190,255"], hole: ["180,130,255", "255,255,255"], glass: ["255,226,122", "255,255,255"], mega: ["255,216,77", "255,255,255"], blaze: ["255,150,60", "255,230,150"], zero: ["170,225,255", "255,255,255"], meteor: ["255,240,170", "170,220,255"], festival: ["255,107,107", "77,150,255", "255,217,61", "107,203,119"], digital: ["120,255,170", "220,255,235"], sumi: ["200,200,220", "60,55,90"] };
     // セットのデザインの文字を盤面のまん中に出す。mode："" PERFECT／"res" 正解・コンボ（少し小さめ）／"miss" おしい（よろけて、粒は下へこぼれる）
-    function showText(main, small, sub, mode = "") {
+    function showText(main, small, sub, mode = "", tier = "") {
       const r = boardEl.getBoundingClientRect(), d = document.createElement("div");
-      d.className = "pftext pt-" + set[1] + (mode ? " " + mode : "");
+      d.className = "pftext pt-" + set[1] + (mode ? " " + mode : "") + (tier ? " " + tier : "");
       d.style.left = (r.left + r.width / 2) + "px"; d.style.top = (r.top + r.height * .42) + "px";
-      const letters = [...main].map((ch, i) => `<i style="--i:${i}">${ch}</i>`).join("");  // 1文字ずつ、セットらしい動きで登場
-      d.innerHTML = `${small ? `<small>${small}</small>` : ""}<b>${letters}</b>${sub ? `<span>${sub}</span>` : ""}`;
+      const letters = [...main].map((ch, i) => `<i style="--i:${i}">${ch === " " ? "&nbsp;" : ch}</i>`).join("");  // 1文字ずつ、セットらしい動きで登場（空白は幅を残す）
+      d.innerHTML = `${tier === "hyper" || tier === "premium" ? '<em class="ptx-rays"></em>' : ""}${small ? `<small>${small}</small>` : ""}<b>${letters}</b>${sub ? `<span>${sub}</span>` : ""}`;
       $("gfx").appendChild(d); setTimeout(() => d.remove(), 2400);
       fit(); const cols = TXT_COL[set[1]] || TXT_COL.glass, c = cols.map(x => `rgba(${x},A)`), m = { x: M + COLS * S / 2, y: M + ROWS * S * .42 };
       if (mode === "miss") setTimeout(() => { for (let i = 0; i < 3; i++) dots(m.x + (i - 1) * S * 1.2, m.y + S * .3, 6, c, 2, "dot", .18, 40, S * .05); kick(); }, 300);
       else setTimeout(() => { const n = mode ? 2 : 4; for (let i = 0; i < n; i++) dots(m.x + (i - (n - 1) / 2) * S * 1.1, m.y, mode ? 9 : 14, c, mode ? 4.5 : 6, "dot", .04, 46, S * .06); rings.push({ x: m.x, y: m.y, r0: S * .4, r1: S * (mode ? 2.4 : 3.6), t: 0, life: 30, c: cols[0], w: mode ? 3 : 5 }); kick(); }, mode ? 250 : 420);
     }
-    const perfectText = (kind, sub) => showText("PERFECT!", PF_NAME[kind], sub);
+    // 連続 PERFECT の特別演出：GREAT 金の輪／SUPER 左右から光の粒／HYPER 金の光線／PREMIUM 虹の文字・光線＋特別演出4種からランダム
+    let lastPrem = "";
+    const PREMIUM = {
+      fireworks() { const W = (COLS + 2) * S, H = (ROWS + 2) * S, cs = [["255,107,107", "255,255,255"], ["255,217,61", "255,255,255"], ["107,203,119", "255,255,255"], ["77,150,255", "255,255,255"], ["199,125,255", "255,255,255"]];
+        for (let i = 0; i < 7; i++) setTimeout(() => { const x = W * (.15 + Math.random() * .7), y = H * (.12 + Math.random() * .5); dots(x, y, 36, cs[i % cs.length].map(c => `rgba(${c},A)`), 6, "dot", .05, 55, S * .06); rings.push({ x, y, r0: 4, r1: S * 1.4, t: 0, life: 22, c: cs[i % cs.length][0], w: 3 }); if (i % 2) gfx.flash("#fff", .14); kick(); }, 150 + i * 170); },
+      goldstorm() { const m = { x: M + COLS * S / 2, y: M + ROWS * S / 2 }, R = S * 4.2;
+        for (let i = 0; i < 150; i++) { const an = Math.random() * 6.283, d = R * (.7 + Math.random() * .5), sp = d / 30; parts.push({ x: m.x + Math.cos(an) * d, y: m.y + Math.sin(an) * d, vx: -Math.cos(an) * sp - Math.sin(an) * sp * 1.2, vy: -Math.sin(an) * sp + Math.cos(an) * sp * 1.2, g: 0, drag: .97, t: -Math.random() * 14, life: 34, s: S * .06, c: ["rgba(255,216,77,A)", "rgba(255,245,200,A)", "rgba(226,184,74,A)"][i % 3], k: "dot", rot: 0, vr: 0, ph: 0 }); }
+        setTimeout(() => { gfx.flash("#ffe680", .28); dots(m.x, m.y, 90, ["rgba(255,216,77,A)", "rgba(255,255,255,A)"], 9, "dot", .06, 55, S * .07); rings.push({ x: m.x, y: m.y, r0: 10, r1: S * 5, t: 0, life: 34, c: "255,216,77", w: 9 }); kick(); }, 620); },
+      aurora() { const W = (COLS + 2) * S, cs = ["120,255,200", "120,180,255", "220,130,255"];
+        cs.forEach((c, j) => setTimeout(() => { const y0 = M + S * (.8 + j * 1.1), pts = []; for (let i = 0; i <= 24; i++) pts.push({ x: W * i / 24, y: y0 + Math.sin(i * .6 + j * 1.7) * S * .5 }); lines.push({ pts, grow: 16, life: 80, t: 0, w: 7, c }); kick(); }, j * 160));
+        setTimeout(() => { for (let i = 0; i < 40; i++) parts.push({ x: Math.random() * W, y: M + Math.random() * ROWS * S, vx: 0, vy: -.3, g: 0, drag: 1, t: -Math.random() * 20, life: 60, s: S * (.06 + Math.random() * .06), c: ["rgba(255,255,255,A)", "rgba(180,255,230,A)"][i % 2], k: "star", rot: 0, vr: 0, ph: Math.random() * 6 }); kick(); }, 300); },
+      supernova() { const m = { x: M + COLS * S / 2, y: M + ROWS * S * .45 }; gfx.flash("#ffffff", .42);
+        ["255,107,107", "255,217,61", "107,203,119", "77,150,255", "199,125,255"].forEach((c, i) => rings.push({ x: m.x, y: m.y, r0: 6, r1: S * (2.4 + i * .7), t: -i * 4, life: 38, c, w: 7 }));
+        for (let i = 0; i < 60; i++) { const an = Math.random() * 6.283, v = 4 + Math.random() * 7; parts.push({ x: m.x, y: m.y, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: 0, drag: .95, t: 0, life: 50, s: S * (.08 + Math.random() * .08), c: ["rgba(255,255,255,A)", "rgba(255,240,170,A)", "rgba(170,220,255,A)"][i % 3], k: "star", rot: 0, vr: 0, ph: Math.random() * 6 }); }
+        gfx.shake(); kick(); },
+    };
+    function perfectText(kind, sub) {
+      const tier = kind === "premium" ? "premium" : kind === "hyper" ? "hyper" : "";
+      showText("PERFECT!", PF_NAME[kind], sub, "", tier);
+      fit(); const m = { x: M + COLS * S / 2, y: M + ROWS * S * .42 }, W = (COLS + 2) * S, H = (ROWS + 2) * S;
+      if (kind !== "normal") setTimeout(() => { rings.push({ x: m.x, y: m.y, r0: S * .6, r1: S * 4.4, t: 0, life: 34, c: "255,216,77", w: 6 }); kick(); }, 300);  // GREAT〜：金の輪
+      if (kind === "super" || kind === "hyper" || kind === "premium") setTimeout(() => { for (const [x0, dir] of [[0, 1], [W, -1]]) for (let i = 0; i < 40; i++) { const an = -Math.PI / 2 + dir * (.2 + Math.random() * .5), v = 6 + Math.random() * 6; parts.push({ x: x0, y: H, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: .16, drag: .97, t: -Math.random() * 8, life: 60, s: S * .06, c: ["rgba(255,216,77,A)", "rgba(255,255,255,A)"][i % 2], k: "dot", rot: 0, vr: 0, ph: 0 }); } kick(); }, 380);  // SUPER〜：左右から光の粒
+      if (kind === "premium") { let k; do { k = Object.keys(PREMIUM)[Math.floor(Math.random() * 4)]; } while (k === lastPrem); lastPrem = k; PREMIUM[k](); kick(1600); }
+    }
     return {
       // 「派手」で、セットの PERFECT 演出を使うとき（今までのバナー・虹の演出は出さない）
       themed: () => fxLv() === 2 && !matchMedia("(prefers-reduced-motion: reduce)").matches,
