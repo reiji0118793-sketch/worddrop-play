@@ -203,6 +203,7 @@ header.top p { margin: 0; color: var(--muted); font-size: 13px; }
 
 .burst { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 8; background: rgba(12, 15, 28, .55); transition: opacity .3s; }
 .burst.out { opacity: 0; }
+.burst-in.plain .bcombo { display: none; }
 .burst-in {
   --bc: var(--gold);
   min-width: 62%; max-width: calc(100% - 24px);
@@ -253,6 +254,9 @@ aside.side { display: grid; gap: 16px; min-width: 0; }
 .rules { margin: 0; padding-left: 1.2em; font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
 .rules b { color: var(--fg); }
 .credit { font-size: 11.5px; color: var(--muted); margin: 10px 0 0; }
+.credit.ver { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#perfMeter { position: fixed; left: 6px; top: calc(env(safe-area-inset-top, 0px) + 6px); z-index: 9999; pointer-events: none; font: 11px/1.45 ui-monospace, Menlo, monospace; color: #e8f0ff; background: rgba(0,0,0,.72); border: 1px solid rgba(255,255,255,.25); border-radius: 8px; padding: 6px 8px; white-space: nowrap; }
+#perfMeter b { color: #ffe27a; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
 .overlay {
@@ -383,8 +387,11 @@ body[data-theme="royal"] { --bg: #1a1230; --panel: #271b45; --panel-2: #302155; 
 .view.game .board.aura1 { box-shadow: inset 0 0 0 2px var(--boardline, #232b4d), 0 0 14px 2px rgba(255,214,90,.5); --auraIn: rgba(255,214,90,.45); --auraT: 2.4s; }
 .view.game .board.aura2 { box-shadow: inset 0 0 0 2px #ffb347, 0 0 20px 4px rgba(255,150,60,.6); --auraIn: rgba(255,150,60,.5); --auraT: 2s; }
 .view.game .board.aura3 { box-shadow: inset 0 0 0 2px #ffd6e8, 0 0 26px 6px rgba(255,110,170,.6), 0 0 6px 2px rgba(255,220,120,.5); --auraIn: rgba(255,110,170,.55); --auraT: 2s; }
-.view.game .board.aura1::after, .view.game .board.aura2::after, .view.game .board.aura3::after { content: ""; position: absolute; inset: 0; z-index: 8; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 14px 3px var(--auraIn); opacity: 0; will-change: opacity; animation: auraPulse var(--auraT) ease-in-out infinite; }
+.view.game .board.aura1::after, .view.game .board.aura2::after, .view.game .board.aura3::after { content: ""; position: absolute; inset: 0; z-index: 8; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 14px 3px var(--auraIn); opacity: 0; will-change: opacity; animation: auraPulse var(--auraT) ease-in-out 3, auraRest .8s ease-out calc(var(--auraT) * 3) forwards; }
 @keyframes auraPulse { 50% { opacity: 1; } }  /* 盤面に filter をかけない：タイルの色が変わって見づらくなる */
+/* 発熱対策：光の脈は3回だけ（PERFECT のたびにやり直す）。そのあとは光ったまま止める（考えている間に画面を書きかえ続けない） */
+@keyframes auraRest { to { opacity: .5; } }
+html.hot .view.game .board.aura1::after, html.hot .view.game .board.aura2::after, html.hot .view.game .board.aura3::after { animation: none; opacity: .5; }
 @media (prefers-reduced-motion: reduce) { .view.game .board.aura1::after, .view.game .board.aura2::after, .view.game .board.aura3::after { animation: none; } #heat { transition: none; } }
 #auraWrap { display: contents; }
 .auraTag { position: fixed; z-index: 26; padding: 1px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 900; color: #1a1426; background: linear-gradient(90deg, #ffe45c, #ff9f1c); pointer-events: none; }
@@ -979,6 +986,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       <div class="gs-row"><span>BGM</span><div class="gs-seg" id="gsBgm" role="group" aria-label="BGM"><button type="button" data-v="off">オフ</button><button type="button" data-v="calm">しっとり</button><button type="button" data-v="pop">元気</button></div></div>
       <h4>盤面のテーマ</h4>
       <div class="theme-grid" id="gsThemes"></div>
+      <p class="credit ver" id="gsVer">バージョン 1.0.3</p>
     </div>
   </div>
   <div class="cansheet" id="packSheet" role="dialog" aria-label="単語パックをえらぶ" hidden>
@@ -1142,6 +1150,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
         <button type="button" id="clearBookBtn">単語帳の記録を消す</button>
       </div>
       <p class="credit">単語の意味：EJDict-hand（パブリックドメイン）／品詞：WordNet 3.1／よく使う度：wordfreq</p>
+      <p class="credit ver" id="verLabel">バージョン 1.0.3</p>
     </div>
   </section>
 
@@ -9416,6 +9425,9 @@ zoom|v2|ズームする・急上昇する`;
   const PLAYER_MAX = 1000;
 
   const $ = id => document.getElementById(id);
+  // 演出・音だけで使う乱数。ゲームの乱数（Math.random：盤面・単語・お題）とは分ける。
+  // 同じ乱数を使うと、演出の強さや音のオン／オフで乱数の進み方が変わり、そのあとの盤面（＝スコア）まで変わってしまうため
+  const fxRand = (() => { let a = (Date.now() ^ 0x5bd1e995) | 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
   // ---------- 効果音と振動（音はすべてプログラムで合成。音声ファイルは使わない） ----------
   const SFX = (() => {
     let ctx = null, master = null;
@@ -9449,7 +9461,7 @@ zoom|v2|ズームする・急上昇する`;
           master.connect(comp); comp.connect(ctx.destination);
           // きらきら感を出す残響（短いホール）
           const len = Math.floor(ctx.sampleRate * 1.6), ir = ctx.createBuffer(2, len, ctx.sampleRate);
-          for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
+          for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (fxRand() * 2 - 1) * Math.pow(1 - i / len, 3); }
           const conv = ctx.createConvolver(); conv.buffer = ir;
           verb = ctx.createGain(); verb.gain.value = 0.28;
           verb.connect(conv); conv.connect(comp);
@@ -9488,7 +9500,7 @@ zoom|v2|ズームする・急上昇する`;
       const t = ctx.currentTime + (o.when || 0);
       const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
       const d = buf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+      for (let i = 0; i < d.length; i++) d[i] = (fxRand() * 2 - 1) * (1 - i / d.length);
       const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
       src.buffer = buf; f.type = o.filter || "bandpass"; f.frequency.value = o.freq || 2000; f.Q.value = o.q || 1;
       g.gain.value = o.vol == null ? 0.2 : o.vol;
@@ -9501,6 +9513,7 @@ zoom|v2|ズームする・急上昇する`;
     let lastStep = 0;
     return {
       ensure, reset,
+      state: () => !ctx ? "なし" : napping ? "休み" : ctx.state === "running" ? "動作中" : ctx.state,
       grab() { tone(700, 0.06, { type: "triangle", vol: 0.25 }); noise(0.03, { freq: 3000, vol: 0.12 }); },
       step(n) {
         const now = performance.now(); if (now - lastStep < 28) return; lastStep = now;
@@ -9547,7 +9560,7 @@ zoom|v2|ズームする・急上昇する`;
       },
       record() { [0, 4, 7, 12, 16, 19, 24].forEach((k, i) => tone(note(k), 0.25, { vol: 0.15, type: "triangle", when: i * 0.08 })); },
       win(big) { const ks = big ? [0, 4, 7, 12, 16, 19, 24, 28, 31, 36] : [0, 4, 7, 12, 16, 19, 24]; ks.forEach((k, i) => { tone(note(k), 0.3, { vol: 0.13, type: "triangle", when: i * 0.06, wet: 0.6 }); tone(note(k + 12), 0.2, { vol: 0.05, type: "square", when: i * 0.06 + 0.03 }); }); },
-      coin(n = 8) { for (let i = 0; i < n; i++) { tone(1800 + Math.random() * 600, 0.08, { type: "square", vol: 0.04, when: i * 0.07 }); tone(2600, 0.06, { type: "triangle", vol: 0.04, when: i * 0.07 + 0.03 }); } },
+      coin(n = 8) { for (let i = 0; i < n; i++) { tone(1800 + fxRand() * 600, 0.08, { type: "square", vol: 0.04, when: i * 0.07 }); tone(2600, 0.06, { type: "triangle", vol: 0.04, when: i * 0.07 + 0.03 }); } },
       stone() { tone(150, 0.18, { to: 70, vol: 0.35 }); noise(0.12, { filter: "lowpass", freq: 500, vol: 0.3 }); },
       crack() { noise(0.25, { filter: "bandpass", freq: 1800, q: 0.8, vol: 0.4 }); tone(320, 0.12, { to: 120, vol: 0.2, type: "square" }); },
       over() { [7, 4, 0, -5].forEach((k, i) => tone(note(k - 12), 0.35, { vol: 0.15, when: i * 0.16 })); }
@@ -10337,8 +10350,8 @@ zoom|v2|ズームする・急上昇する`;
     const d = document.createElement("div"); d.className = "flyL"; d.textContent = ch; d.style.setProperty("--fc", color || "#ffe45c");
     const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2, x1 = b.left + b.width / 2, y1 = b.top + b.height / 2;
     d.style.left = x0 + "px"; d.style.top = y0 + "px"; document.body.appendChild(d);
-    const mx = (x0 + x1) / 2 + (Math.random() - .5) * 120, my = Math.min(y0, y1) - 40 - Math.random() * 60;
-    d.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${mx - x0}px, ${my - y0}px) scale(.9)`, opacity: 1, offset: .45 }, { transform: `translate(${x1 - x0}px, ${y1 - y0}px) scale(.35)`, opacity: .2 }], { duration: 560 + Math.random() * 160, easing: "cubic-bezier(.3,.1,.5,1)" }).onfinish = () => { d.remove(); bumpScoreFx(); };
+    const mx = (x0 + x1) / 2 + (fxRand() - .5) * 120, my = Math.min(y0, y1) - 40 - fxRand() * 60;
+    d.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${mx - x0}px, ${my - y0}px) scale(.9)`, opacity: 1, offset: .45 }, { transform: `translate(${x1 - x0}px, ${y1 - y0}px) scale(.35)`, opacity: .2 }], { duration: 560 + fxRand() * 160, easing: "cubic-bezier(.3,.1,.5,1)" }).onfinish = () => { d.remove(); bumpScoreFx(); };
   }
   let fxBumpT = 0;
   function bumpScoreFx() { const now = performance.now(); if (now - fxBumpT < 60) return; fxBumpT = now; const el = $("score"); el.classList.remove("up"); void el.offsetWidth; el.classList.add("up"); }
@@ -10359,8 +10372,12 @@ zoom|v2|ズームする・急上昇する`;
   }
   // 4. 連続PERFECT中は、盤面のふちがオーラで光る（2連続〜）
   function pfChain() { if (!(isStage() || isDaily())) return 0; let n = 0; for (let i = runLog.length - 1; i >= 0 && runLog[i]; i--) n++; return n; }
+  let auraN = 0;
   function updateAura() {
     const n = fxOn() && !tut ? pfChain() : 0;
+    // PERFECT が続いたら、光の脈を最初からやり直す（脈は3回で止まる）
+    if (n !== auraN && n >= 2) { boardEl.classList.remove("aura1", "aura2", "aura3"); void boardEl.offsetWidth; }
+    auraN = n;
     boardEl.classList.toggle("aura1", n >= 2 && n < 4); boardEl.classList.toggle("aura2", n >= 4 && n < 7); boardEl.classList.toggle("aura3", n >= 7);
     // 盤面の外（すぐ上）に「PERFECT n連続」を出す（盤面の中は見切れるため）
     let wrap = document.getElementById("auraWrap");
@@ -10419,6 +10436,7 @@ zoom|v2|ズームする・急上昇する`;
   }
   function burstDamage(mult, pts, gotOdai, smult) {
     // 最後にまとめて：何コンボで何点
+    clearTimeout(plainT); $("burstIn").classList.remove("plain");
     burstShow();
     const card = $("burstIn");
     card.style.setProperty("--bc", lastCombo >= 5 ? "var(--fire)" : lastCombo >= 3 ? "var(--orange)" : "var(--gold)");
@@ -10430,6 +10448,17 @@ zoom|v2|ズームする・急上昇する`;
     $("bDmg").innerHTML = `コンボ ×${mult.toFixed(2)}${smult > 1 ? `・連続 ×${smult.toFixed(1)}` : ""}${gotOdai ? "・お題" : ""}`;
   }
 
+  // 演出が出ないとき（「なし」・動きを減らす設定）の PERFECT：ボーナスが見えるように、まん中のカードに動かさずに出す
+  let plainT = 0;
+  function plainPerfect(pf, bonus) {
+    clearTimeout(plainT); burstShow();
+    const card = $("burstIn"); card.classList.add("plain"); card.style.setProperty("--bc", pf.mult > 1 ? "var(--fire)" : "var(--gold)");
+    $("bWord").textContent = pf.kind === "premium" ? "PREMIUM PERFECT!" : pf.kind === "hyper" ? "HYPER PERFECT!" : pf.kind === "super" ? "SUPER PERFECT!" : pf.kind === "great" ? "GREAT PERFECT!" : "PERFECT!";
+    $("bWord").style.setProperty("--wc", "#ffe27a");
+    $("bMean").textContent = `全消しボーナス +${bonus.toLocaleString()}点`;
+    $("bDmg").textContent = pf.mult > 1 ? `ボーナス ×${pf.mult}` : "";
+    plainT = setTimeout(async () => { await burstHide(); card.classList.remove("plain"); }, 1300);
+  }
   async function burstHide() {
     const b = $("burst");
     b.classList.add("out");
@@ -10676,7 +10705,7 @@ zoom|v2|ズームする・急上昇する`;
   function pickRainbow() {
     if (premiumRun === 1) return "band";
     const opts = RAINBOWS.filter(v => v !== lastRainbow);
-    return opts[Math.floor(Math.random() * opts.length)];
+    return opts[Math.floor(fxRand() * opts.length)];
   }
   // デイリーの「続けて全部消した回数」（今回をふくむ）。デイリーはどの問題も8語前後なので、コンボ数では上げない
   function dailyChain() { let ch = 1; for (let i = runLog.length - 1; i >= 0 && runLog[i]; i--) ch++; return ch; }
@@ -10707,7 +10736,8 @@ zoom|v2|ズームする・急上昇する`;
       const subEn = pf.mult > 1 ? `${premiumRun >= 2 ? `STREAK ×${premiumRun}　` : ""}BONUS ×${pf.mult}　+${bonus.toLocaleString()}` : "";
       clearFx.perfectText(pf.kind, [g ? `${g.combo} COMBO　+${g.gained.toLocaleString()}` : "", subEn].filter(Boolean).join("<br>"));
     }
-    else gfx.perfectKind(pf.kind, sub, pf.kind === "normal" ? 2600 : 2800, word);
+    else if (gfx.shown()) gfx.perfectKind(pf.kind, sub, pf.kind === "normal" ? 2600 : 2800, word);
+    else plainPerfect(pf, bonus);  // 演出「なし」・動きを減らす設定：ボーナスを動かない表示で出す
     leverBuzz(lastCombo);
     if (pf.kind !== "normal") { SFX.win(pf.kind !== "great"); SFX.coin(pf.kind === "great" ? 6 : 12); }
     await sleep(themed ? 200 : 500);
@@ -10810,7 +10840,7 @@ zoom|v2|ズームする・急上昇する`;
     const cx = m.m41 + S / 2, cy = m.m42 + S / 2, c = getComputedStyle(el).getPropertyValue("--mc") || "#d9b45a";
     for (let i = 0; i < 7; i++) {
       const d = document.createElement("i"); d.className = "spark";
-      const a = Math.random() * Math.PI * 2, r = S * (0.5 + Math.random() * 0.6);
+      const a = fxRand() * Math.PI * 2, r = S * (0.5 + fxRand() * 0.6);
       d.style.cssText = `left:${cx}px;top:${cy}px;--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r}px;background:${c}`;
       $("tiles").appendChild(d); setTimeout(() => d.remove(), 520);
     }
@@ -11125,26 +11155,29 @@ ${recent || "まだありません"}`;
     const COLS = ["#ff6b6b", "#ffd84d", "#6be08a", "#5bb0ff", "#c08bff", "#ffffff"];
     const add = (cls, css, html) => { const e = document.createElement("div"); e.className = cls; if (html) e.innerHTML = html; Object.assign(e.style, css || {}); L().appendChild(e); return e; };
     const kill = (e, ms) => setTimeout(() => e.remove(), ms);
+    // iPhone が熱いとき（html.hot）は、粒の数を半分に
+    const few = n => document.documentElement.classList.contains("hot") ? Math.ceil(n / 2) : n;
     const center = () => { const r = boardEl.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, bottom: r.bottom }; };
     return {
+      shown: () => on(),  // 演出を出すか（「なし」や、動きを減らす設定では出さない）
       flash(c, o) { if (!on()) return; const e = add("flash", { background: c }); e.animate([{ opacity: o }, { opacity: 0 }], { duration: 280, easing: "ease-out", fill: "both" }); kill(e, 320); },
       shake() { if (!on()) return; const a = document.querySelector(".app"); a.classList.remove("gshake"); void a.offsetWidth; a.classList.add("gshake"); },
-      burst(n) {
+      burst(n) { n = few(n);
         if (!on()) return; const c = center();
         for (let i = 0; i < n; i++) {
           const e = add("bit", { left: c.x + "px", top: c.y + "px", background: COLS[i % COLS.length] });
-          const a = Math.random() * Math.PI * 2, v = 90 + Math.random() * 170;
-          e.animate([{ transform: "translate(0,0) rotate(0)", opacity: 1 }, { transform: `translate(${Math.cos(a) * v}px,${Math.sin(a) * v + 130}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }],
-            { duration: 650 + Math.random() * 400, easing: "cubic-bezier(.2,.7,.4,1)", fill: "both" });
+          const a = fxRand() * Math.PI * 2, v = 90 + fxRand() * 170;
+          e.animate([{ transform: "translate(0,0) rotate(0)", opacity: 1 }, { transform: `translate(${Math.cos(a) * v}px,${Math.sin(a) * v + 130}px) rotate(${fxRand() * 720}deg)`, opacity: 0 }],
+            { duration: 650 + fxRand() * 400, easing: "cubic-bezier(.2,.7,.4,1)", fill: "both" });
           kill(e, 1100);
         }
       },
-      rain(n) {
+      rain(n) { n = few(n);
         if (!on()) return;
         for (let i = 0; i < n; i++) {
-          const e = add("bit", { left: (Math.random() * 100) + "%", top: "-16px", background: COLS[i % COLS.length] });
-          e.animate([{ transform: "translateY(0) rotate(0)" }, { transform: `translate(${(Math.random() - .5) * 100}px,${innerHeight + 60}px) rotate(${Math.random() * 900}deg)` }],
-            { duration: 1300 + Math.random() * 900, delay: Math.random() * 350, easing: "linear", fill: "both" });
+          const e = add("bit", { left: (fxRand() * 100) + "%", top: "-16px", background: COLS[i % COLS.length] });
+          e.animate([{ transform: "translateY(0) rotate(0)" }, { transform: `translate(${(fxRand() - .5) * 100}px,${innerHeight + 60}px) rotate(${fxRand() * 900}deg)` }],
+            { duration: 1300 + fxRand() * 900, delay: fxRand() * 350, easing: "linear", fill: "both" });
           kill(e, 2700);
         }
       },
@@ -11180,12 +11213,12 @@ ${recent || "まだありません"}`;
         if (kind === "hyper" || kind === "premium") { this.flash("#fff", .35); setTimeout(() => this.shake(), 250); }
         kill(e, ms + 30);
       },
-      coins(n) {
+      coins(n) { n = few(n);
         if (!on()) return;
         for (let i = 0; i < n; i++) {
-          const e = add("bit coin", { left: (Math.random() * 100) + "%", top: "-20px" });
-          e.animate([{ transform: "translateY(0) rotateY(0)" }, { transform: `translate(${(Math.random() - .5) * 80}px,${innerHeight + 60}px) rotateY(${720 + Math.random() * 720}deg)` }],
-            { duration: 1100 + Math.random() * 900, delay: Math.random() * 500, easing: "cubic-bezier(.4,0,.8,.6)", fill: "both" });
+          const e = add("bit coin", { left: (fxRand() * 100) + "%", top: "-20px" });
+          e.animate([{ transform: "translateY(0) rotateY(0)" }, { transform: `translate(${(fxRand() - .5) * 80}px,${innerHeight + 60}px) rotateY(${720 + fxRand() * 720}deg)` }],
+            { duration: 1100 + fxRand() * 900, delay: fxRand() * 500, easing: "cubic-bezier(.4,0,.8,.6)", fill: "both" });
           kill(e, 2600);
         }
       },
@@ -11222,7 +11255,7 @@ ${recent || "まだありません"}`;
             const x = innerWidth * fx, y = innerHeight * fy;
             for (let i = 0; i < 28; i++) {
               const e = add("bit gem", { left: x + "px", top: y + "px", background: G[i % G.length] });
-              const a = i / 28 * Math.PI * 2, d = 90 + Math.random() * 50;
+              const a = i / 28 * Math.PI * 2, d = 90 + fxRand() * 50;
               e.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d + 40}px) scale(.4)`, opacity: 0 }], { duration: 900, easing: "cubic-bezier(.1,.8,.3,1)", fill: "both" });
               kill(e, 950);
             }
@@ -11233,9 +11266,9 @@ ${recent || "まだありません"}`;
         if (v === "storm") {  // 虹色のアルファベットがふる
           const A = "WORDDROPPERFECTRAINBOW";
           for (let i = 0; i < 40; i++) {
-            const e = add("rbletter", { left: (Math.random() * 100) + "%", top: "-50px", color: G[i % G.length] });
+            const e = add("rbletter", { left: (fxRand() * 100) + "%", top: "-50px", color: G[i % G.length] });
             e.textContent = A[i % A.length];
-            e.animate([{ transform: "translateY(0) rotate(0)" }, { transform: `translate(${(Math.random() - .5) * 60}px,${innerHeight + 80}px) rotate(${(Math.random() - .5) * 360}deg)` }], { duration: 1400 + Math.random() * 900, delay: Math.random() * 500, easing: "cubic-bezier(.4,0,.8,.6)", fill: "both" });
+            e.animate([{ transform: "translateY(0) rotate(0)" }, { transform: `translate(${(fxRand() - .5) * 60}px,${innerHeight + 80}px) rotate(${(fxRand() - .5) * 360}deg)` }], { duration: 1400 + fxRand() * 900, delay: fxRand() * 500, easing: "cubic-bezier(.4,0,.8,.6)", fill: "both" });
             kill(e, 2900);
           }
           await wait(450); return "WORD STORM!";
@@ -11245,21 +11278,21 @@ ${recent || "まだありません"}`;
         big.animate([{ transform: "translate(-50%,-50%) scale(.2) rotate(0)", opacity: 0 }, { transform: "translate(-50%,-50%) scale(1) rotate(180deg)", opacity: .9, offset: .3 }, { transform: "translate(-50%,-50%) scale(1.15) rotate(330deg)", opacity: .9, offset: .8 }, { transform: "translate(-50%,-50%) scale(1.4) rotate(360deg)", opacity: 0 }], { duration: 2800, easing: "ease-out", fill: "both" });
         kill(big, 2850);
         for (let i = 0; i < 36; i++) {
-          const e = add("rbletter", { left: (Math.random() * 100) + "%", top: "-50px", color: G[i % G.length] });
+          const e = add("rbletter", { left: (fxRand() * 100) + "%", top: "-50px", color: G[i % G.length] });
           e.textContent = "★";
-          e.animate([{ transform: "translateY(0) rotate(0)" }, { transform: `translate(${(Math.random() - .5) * 60}px,${innerHeight + 80}px) rotate(${Math.random() * 540}deg)` }], { duration: 1300 + Math.random() * 900, delay: Math.random() * 500, easing: "linear", fill: "both" });
+          e.animate([{ transform: "translateY(0) rotate(0)" }, { transform: `translate(${(fxRand() - .5) * 60}px,${innerHeight + 80}px) rotate(${fxRand() * 540}deg)` }], { duration: 1300 + fxRand() * 900, delay: fxRand() * 500, easing: "linear", fill: "both" });
           kill(e, 2800);
         }
         await wait(450); return "SUPERNOVA!";
       },
       // 虹色の宝石（PREMIUMだけ）
-      gems(n) {
+      gems(n) { n = few(n);
         if (!on()) return;
         const G = ["#ff4d6d", "#ff9f1c", "#ffe45c", "#4ade80", "#38bdf8", "#a78bfa"];
         for (let i = 0; i < n; i++) {
-          const e = add("bit gem", { left: (Math.random() * 100) + "%", top: "-20px", background: G[i % G.length] });
-          e.animate([{ transform: "translateY(0) rotate(45deg)" }, { transform: `translate(${(Math.random() - .5) * 80}px,${innerHeight + 60}px) rotate(${405 + Math.random() * 360}deg)` }],
-            { duration: 1200 + Math.random() * 900, delay: Math.random() * 600, easing: "cubic-bezier(.4,0,.8,.6)", fill: "both" });
+          const e = add("bit gem", { left: (fxRand() * 100) + "%", top: "-20px", background: G[i % G.length] });
+          e.animate([{ transform: "translateY(0) rotate(45deg)" }, { transform: `translate(${(fxRand() - .5) * 80}px,${innerHeight + 60}px) rotate(${405 + fxRand() * 360}deg)` }],
+            { duration: 1200 + fxRand() * 900, delay: fxRand() * 600, easing: "cubic-bezier(.4,0,.8,.6)", fill: "both" });
           kill(e, 2800);
         }
       },
@@ -11304,9 +11337,9 @@ ${recent || "まだありません"}`;
       const L = Math.round(loopLen * SR), oc = new OAC(2, L + tail * SR, SR);
       const master = oc.createGain(); master.connect(oc.destination);
       const verb = oc.createConvolver(), irLen = SR * 3, ir = oc.createBuffer(2, irLen, SR);
-      for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < irLen; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / irLen) ** 2.6; }
+      for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < irLen; i++) d[i] = (fxRand() * 2 - 1) * (1 - i / irLen) ** 2.6; }
       verb.buffer = ir; const wet = oc.createGain(); wet.gain.value = .45; verb.connect(wet); wet.connect(master);
-      if (!noise) { noise = oc.createBuffer(1, SR, SR); const nd = noise.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1; }
+      if (!noise) { noise = oc.createBuffer(1, SR, SR); const nd = noise.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = fxRand() * 2 - 1; }
       const out = (w = true, dryAmt = .6) => { const o = oc.createGain(), dry = oc.createGain(); dry.gain.value = dryAmt; o.connect(dry); dry.connect(master); if (w) o.connect(verb); return o; };
       function voice(t, f, dur, kind, g) {
         const o = out(kind !== "bass", kind === "bass" ? 1 : .6), env = o.gain, osc = []; env.setValueAtTime(0, t);
@@ -11329,7 +11362,7 @@ ${recent || "まだありません"}`;
         if (kind === "kick") { const v = oc.createOscillator(), o = out(false, 1); v.frequency.setValueAtTime(140, t); v.frequency.exponentialRampToValueAtTime(42, t + .14); o.gain.setValueAtTime(g, t); o.gain.exponentialRampToValueAtTime(.001, t + .22); v.connect(o); v.start(t); v.stop(t + .25); return; }
         const n = oc.createBufferSource(); n.buffer = noise; const f = oc.createBiquadFilter(), o = out(kind === "clap", 1);
         if (kind === "hat") { f.type = "highpass"; f.frequency.value = 7000; } else { f.type = "bandpass"; f.frequency.value = 1500; f.Q.value = .8; }
-        const d = kind === "hat" ? .045 : .16; o.gain.setValueAtTime(g, t); o.gain.exponentialRampToValueAtTime(.001, t + d); n.connect(f); f.connect(o); n.start(t, Math.random() * .5); n.stop(t + d + .02);
+        const d = kind === "hat" ? .045 : .16; o.gain.setValueAtTime(g, t); o.gain.exponentialRampToValueAtTime(.001, t + d); n.connect(f); f.connect(o); n.start(t, fxRand() * .5); n.stop(t + d + .02);
       }
       const beat = 60 / T.bpm;
       for (let step = 0; step < steps; step++) {
@@ -11337,9 +11370,9 @@ ${recent || "まだありません"}`;
         if (T.mood === "calm") {
           const chord = T.chords[Math.floor(step / 16) % T.chords.length];
           if (step % 16 === 0) chord.forEach((n, i) => voice(t, N(n), beat * 8 + 2.4, "pad", i ? .045 : .06));
-          if (T.arp) { const ns = [...chord.slice(1), chord[1] + 12, chord[2] + 12]; if (Math.random() < .8) voice(t, N(ns[(step * 3) % ns.length] + 24), 2, T.lead, .07); }
-          if (step % 2 === 0 && Math.random() < T.density) voice(t + (Math.random() < .3 ? beat / 2 : 0), N(T.scale[Math.floor(Math.random() * T.scale.length)]), 3, T.lead, T.lead === "marimba" ? .12 : .09);
-          if (T.rain && Math.random() < .25) voice(t + Math.random() * beat, N(96 + Math.floor(Math.random() * 12)), .3, "marimba", .015);
+          if (T.arp) { const ns = [...chord.slice(1), chord[1] + 12, chord[2] + 12]; if (fxRand() < .8) voice(t, N(ns[(step * 3) % ns.length] + 24), 2, T.lead, .07); }
+          if (step % 2 === 0 && fxRand() < T.density) voice(t + (fxRand() < .3 ? beat / 2 : 0), N(T.scale[Math.floor(fxRand() * T.scale.length)]), 3, T.lead, T.lead === "marimba" ? .12 : .09);
+          if (T.rain && fxRand() < .25) voice(t + fxRand() * beat, N(96 + Math.floor(fxRand() * 12)), .3, "marimba", .015);
         } else {
           const s8 = step % 8, chord = T.chords[Math.floor(step / 8) % T.chords.length];
           if (step % 32 === 0) chord.forEach(n => voice(t, N(n + 12), beat * 16, "pad", .03));
@@ -11349,7 +11382,7 @@ ${recent || "まだありません"}`;
           voice(t, N(chord[0] - 12 + (s8 % 4 === 3 ? 12 : 0)), beat * .45, "bass", T.saw ? .16 : .1);
           if (T.strum) { if (s8 !== 3 && s8 !== 7) chord.slice(1).forEach((n, i) => voice(t + i * .012, N(n + 12), .3, "pluck", .045)); }
           else { const ns = [chord[1], chord[2], chord[3], chord[2]].map(n => n + 12); voice(t, N(ns[s8 % 4] + (s8 >= 4 ? 12 : 0)), .3, "pluck", .06); }
-          if (s8 % 2 === 0 && Math.random() < .35) voice(t, N(T.scale[Math.floor(Math.random() * T.scale.length)]), 1, T.lead, .06);
+          if (s8 % 2 === 0 && fxRand() < .35) voice(t, N(T.scale[Math.floor(fxRand() * T.scale.length)]), 1, T.lead, .06);
         }
       }
       if (T.rain) { const r = oc.createBufferSource(); r.buffer = noise; r.loop = true; const bp = oc.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1800; bp.Q.value = .6; const g = oc.createGain(); g.gain.value = .05; r.connect(bp); bp.connect(g); g.connect(master); r.start(0); }
@@ -11394,7 +11427,7 @@ ${recent || "まだありません"}`;
     // iPhone・ブラウザは最初のタップまで音を出せないので、オンのときだけ、タップで鳴らしなおす
     document.addEventListener("pointerdown", () => { if (want && inPlay && !held && (!ac || ac.state !== "running")) sync(); }, true);
     setTimeout(apply, 0);  // 起動の瞬間はまだタイトル画面が出ていないので、画面ができてから判定する
-    return { apply, hold };
+    return { apply, hold, state: () => !ac ? "なし" : ac.state === "running" && src ? "再生中" : ac.state === "running" ? "動作中" : "休み" };
   })();
   $("bgmSel").addEventListener("change", () => BGM.apply());
   document.addEventListener("visibilitychange", () => document.documentElement.classList.toggle("app-bg", document.hidden));
@@ -11409,7 +11442,7 @@ ${recent || "まだありません"}`;
       ["shatter", "glass"], ["shock", "mega"], ["fire", "blaze"], ["ice", "zero"], ["stars", "meteor"], ["confetti", "festival"], ["pixel", "digital"], ["ink", "sumi"]];
     // テスト用（ブラウザの試遊版だけ）：URL に ?fxset=fire（または blaze）を付けると、そのセットだけを出す
     const FORCE = (() => { try { if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return null; const v = new URLSearchParams(location.search).get("fxset"); return SETS.find(x => x[0] === v || x[1] === v) || null; } catch (e) { return null; } })();
-    let set = FORCE || SETS[Math.floor(Math.random() * SETS.length)];
+    let set = FORCE || SETS[Math.floor(fxRand() * SETS.length)];
     function fit() {
       if (!cv || !cv.isConnected) { cv = document.createElement("canvas"); cv.id = "fxCanvas"; tilesEl.appendChild(cv); cx = cv.getContext("2d"); }
       // 描く板は盤面ぴったり（＋4px）。座標は今までどおり、盤面の外に1マス（M）ある前提で計算する
@@ -11419,12 +11452,13 @@ ${recent || "まだありません"}`;
     }
     const lite = () => fxLv() < 2, amt = n => Math.max(1, Math.round(n * (lite() ? .35 : 1)));
     const pt = q => ({ x: M + (q.c + .5) * S, y: M + (q.r + .5) * S });
-    function jag(a, b, seg) { const p = [a], dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len; for (let i = 1; i < seg; i++) { const k = i / seg, o = (Math.random() - .5) * Math.min(S * .45, len * .22); p.push({ x: a.x + dx * k + nx * o, y: a.y + dy * k + ny * o }); } p.push(b); return p; }
+    function jag(a, b, seg) { const p = [a], dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len; for (let i = 1; i < seg; i++) { const k = i / seg, o = (fxRand() - .5) * Math.min(S * .45, len * .22); p.push({ x: a.x + dx * k + nx * o, y: a.y + dy * k + ny * o }); } p.push(b); return p; }
     function star(x, y, r) { cx.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, rr = i % 2 ? r * .35 : r; cx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } cx.closePath(); cx.fill(); }
-    function dots(x, y, n, c, sp, k = "dot", g = .1, life = 34, size = S * .05) { n = amt(n); for (let i = 0; i < n; i++) { const an = Math.random() * 6.283, v = sp * (.4 + Math.random()); parts.push({ x, y, vx: Math.cos(an) * v, vy: Math.sin(an) * v - (k === "ember" ? 1.4 : 0), g, drag: .965, t: 0, life: life * (.7 + Math.random() * .6), s: size * (.6 + Math.random() * .8), c: Array.isArray(c) ? c[i % c.length] : c, k, rot: Math.random() * 6, vr: (Math.random() - .5) * .4, ph: Math.random() * 6 }); } }
-    function chips(p, n, cols, o = {}) { n = amt(n); for (let i = 0; i < n; i++) parts.push(Object.assign({ x: p.x + (Math.random() - .5) * S * .6, y: p.y + (Math.random() - .5) * S * .6, vx: (Math.random() - .5) * 7, vy: -Math.random() * 6 - 1, g: .35, drag: .99, t: 0, life: 50, s: S * (.12 + Math.random() * .14), c: cols[i % cols.length], k: "shard", rot: Math.random() * 6, vr: (Math.random() - .5) * .5, ph: Math.random() * 6 }, o)); }
+    function dots(x, y, n, c, sp, k = "dot", g = .1, life = 34, size = S * .05) { n = amt(n); for (let i = 0; i < n; i++) { const an = fxRand() * 6.283, v = sp * (.4 + fxRand()); parts.push({ x, y, vx: Math.cos(an) * v, vy: Math.sin(an) * v - (k === "ember" ? 1.4 : 0), g, drag: .965, t: 0, life: life * (.7 + fxRand() * .6), s: size * (.6 + fxRand() * .8), c: Array.isArray(c) ? c[i % c.length] : c, k, rot: fxRand() * 6, vr: (fxRand() - .5) * .4, ph: fxRand() * 6 }); } }
+    function chips(p, n, cols, o = {}) { n = amt(n); for (let i = 0; i < n; i++) parts.push(Object.assign({ x: p.x + (fxRand() - .5) * S * .6, y: p.y + (fxRand() - .5) * S * .6, vx: (fxRand() - .5) * 7, vy: -fxRand() * 6 - 1, g: .35, drag: .99, t: 0, life: 50, s: S * (.12 + fxRand() * .14), c: cols[i % cols.length], k: "shard", rot: fxRand() * 6, vr: (fxRand() - .5) * .5, ph: fxRand() * 6 }, o)); }
     // 描く仕組み：1秒に60回まで（120回の画面でも同じ速さ・発熱も少なく）。少しあとから足す演出があるあいだ（holdUntil まで）は止めない
-    let lastF = 0, holdUntil = 0, lastRaw = 0, slow = 0, autoLite = false;
+    // hot：iPhone が熱いとき（thermalState が serious 以上）。「控えめ」相当にして、描くのを1秒30回までにする（冷えたら戻す）
+    let lastF = 0, holdUntil = 0, lastRaw = 0, slow = 0, autoLite = false, hot = false, draws = 0;
     const alive = () => parts.length || bolts.length || rings.length || blobs.length || lines.length || holes.length;
     const kick = (ms = 0) => { holdUntil = Math.max(holdUntil, performance.now() + ms); if (!raf) { lastRaw = 0; raf = requestAnimationFrame(loop); } };
     // 一度に出す数の上限（古いものから消す）
@@ -11434,8 +11468,8 @@ ${recent || "まだありません"}`;
       // 低電力モード（1秒30回までに落ちる）や、重くて間に合わないとき：書きかえの間隔が 30ms をこえる状態が続いたら、このあとは「控えめ」相当にする
       if (lastRaw) { const dt = now - lastRaw; slow = dt > 30 ? slow + 1 : Math.max(0, slow - 2); if (slow >= 24 && !autoLite) autoLite = true; }
       lastRaw = now;
-      if (now - lastF < 15) { raf = requestAnimationFrame(loop); return; }
-      lastF = now;
+      if (now - lastF < (hot ? 32 : 15)) { raf = requestAnimationFrame(loop); return; }
+      lastF = now; draws++;
       capAll();
       cx.save(); cx.setTransform(1, 0, 0, 1, 0, 0); cx.clearRect(0, 0, cv.width, cv.height); cx.restore();
       // 盤面の外（上の単語の列・下のボタンや広告）には描かない
@@ -11475,20 +11509,20 @@ ${recent || "まだありません"}`;
     }
     const mid = ps => ({ x: ps.reduce((s, p) => s + p.x, 0) / ps.length, y: ps.reduce((s, p) => s + p.y, 0) / ps.length });
     const FX = {
-      lightning(ps) { if (!lite()) bolts.push({ a: { x: ps[0].x + (Math.random() - .5) * S, y: 0 }, b: ps[0], seg: 9, t: 0, life: 18 }); for (let i = 1; i < ps.length; i++) bolts.push({ a: ps[i - 1], b: ps[i], seg: 6, t: 0, life: lite() ? 12 : 18 }); ps.forEach(p => dots(p.x, p.y, 10, ["rgba(190,220,255,A)", "rgba(255,255,255,A)"], 5, "dot", 0, 24)); },
+      lightning(ps) { if (!lite()) bolts.push({ a: { x: ps[0].x + (fxRand() - .5) * S, y: 0 }, b: ps[0], seg: 9, t: 0, life: 18 }); for (let i = 1; i < ps.length; i++) bolts.push({ a: ps[i - 1], b: ps[i], seg: 6, t: 0, life: lite() ? 12 : 18 }); ps.forEach(p => dots(p.x, p.y, 10, ["rgba(190,220,255,A)", "rgba(255,255,255,A)"], 5, "dot", 0, 24)); },
       shatter(ps, col) { ps.forEach(p => chips(p, 9, [col, "#fff7d1", "#ffffff"])); },
       shock(ps) { const m = mid(ps); rings.push({ x: m.x, y: m.y, r0: 6, r1: S * (lite() ? 1.8 : 3), t: 0, life: 32, c: "255,228,92" }); if (!lite()) rings.push({ x: m.x, y: m.y, r0: 4, r1: S * 1.8, t: -6, life: 32, c: "255,255,255" }); dots(m.x, m.y, 22, ["rgba(255,228,92,A)", "rgba(255,255,255,A)"], 6, "dot", 0, 28); },
       fire(ps) { ps.forEach(p => dots(p.x, p.y, 16, ["rgba(255,180,70,A)", "rgba(255,110,40,A)", "rgba(255,240,170,A)"], 2, "ember", -.09, 50, S * .07)); },
-      ice(ps) { ps.forEach(p => { chips(p, 8, ["#e8f8ff", "#a9dcf5", "#ffffff"], { g: .25, drag: .97, life: 42 }); for (const q of parts.slice(-amt(8))) { q.vx = (Math.random() - .5) * 8; q.vy = (Math.random() - .5) * 8; } }); },
-      sakura(ps) { ps.forEach((p, j) => { for (let i = 0; i < amt(7); i++) parts.push({ x: p.x + (Math.random() - .5) * S, y: p.y + (Math.random() - .5) * S, vx: (Math.random() - .3) * 2, vy: -Math.random() * 2.4, g: .045, drag: .985, t: -i * 2 - j * 3, life: 75, s: S * (.1 + Math.random() * .07), c: ["#ffc6dc", "#ff9fc4", "#fff0f6"][i % 3], k: "petal", rot: Math.random() * 6, vr: (Math.random() - .5) * .16, ph: Math.random() * 6 }); }); },
-      stars(ps) { ps.forEach(p => { for (let i = 0; i < amt(8); i++) parts.push({ x: p.x + (Math.random() - .5) * S * .8, y: p.y + (Math.random() - .5) * S * .8, vx: (Math.random() - .5) * 1.4, vy: -Math.random() * 1.8 - .4, g: -.01, drag: .98, t: 0, life: 55 + Math.random() * 20, s: S * (.08 + Math.random() * .08), c: ["rgba(255,240,170,A)", "rgba(255,255,255,A)", "rgba(170,220,255,A)"][i % 3], k: "star", rot: 0, vr: 0, ph: Math.random() * 6 }); }); },
-      confetti(ps) { const m = mid(ps), cols = ["#ff6b6b", "#ffd93d", "#6bcb77", "#4d96ff", "#c77dff", "#ffffff"]; for (let i = 0; i < amt(46); i++) { const an = -Math.PI / 2 + (Math.random() - .5) * 2.2, v = 4 + Math.random() * 6; parts.push({ x: m.x, y: m.y, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: .18, drag: .96, t: 0, life: 70, s: S * (.11 + Math.random() * .08), c: cols[i % cols.length], k: "conf", rot: Math.random() * 6, vr: (Math.random() - .5) * .4, ph: Math.random() * 6 }); } },
+      ice(ps) { ps.forEach(p => { chips(p, 8, ["#e8f8ff", "#a9dcf5", "#ffffff"], { g: .25, drag: .97, life: 42 }); for (const q of parts.slice(-amt(8))) { q.vx = (fxRand() - .5) * 8; q.vy = (fxRand() - .5) * 8; } }); },
+      sakura(ps) { ps.forEach((p, j) => { for (let i = 0; i < amt(7); i++) parts.push({ x: p.x + (fxRand() - .5) * S, y: p.y + (fxRand() - .5) * S, vx: (fxRand() - .3) * 2, vy: -fxRand() * 2.4, g: .045, drag: .985, t: -i * 2 - j * 3, life: 75, s: S * (.1 + fxRand() * .07), c: ["#ffc6dc", "#ff9fc4", "#fff0f6"][i % 3], k: "petal", rot: fxRand() * 6, vr: (fxRand() - .5) * .16, ph: fxRand() * 6 }); }); },
+      stars(ps) { ps.forEach(p => { for (let i = 0; i < amt(8); i++) parts.push({ x: p.x + (fxRand() - .5) * S * .8, y: p.y + (fxRand() - .5) * S * .8, vx: (fxRand() - .5) * 1.4, vy: -fxRand() * 1.8 - .4, g: -.01, drag: .98, t: 0, life: 55 + fxRand() * 20, s: S * (.08 + fxRand() * .08), c: ["rgba(255,240,170,A)", "rgba(255,255,255,A)", "rgba(170,220,255,A)"][i % 3], k: "star", rot: 0, vr: 0, ph: fxRand() * 6 }); }); },
+      confetti(ps) { const m = mid(ps), cols = ["#ff6b6b", "#ffd93d", "#6bcb77", "#4d96ff", "#c77dff", "#ffffff"]; for (let i = 0; i < amt(46); i++) { const an = -Math.PI / 2 + (fxRand() - .5) * 2.2, v = 4 + fxRand() * 6; parts.push({ x: m.x, y: m.y, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: .18, drag: .96, t: 0, life: 70, s: S * (.11 + fxRand() * .08), c: cols[i % cols.length], k: "conf", rot: fxRand() * 6, vr: (fxRand() - .5) * .4, ph: fxRand() * 6 }); } },
       splash(ps) { ps.forEach(p => { rings.push({ x: p.x, y: p.y + S * .3, r0: 4, r1: S * .9, t: 0, life: 28, c: "120,200,255", w: 3, oval: true }); dots(p.x, p.y, 8, ["rgba(140,210,255,A)", "rgba(220,245,255,A)"], 4.5, "dot", .32, 38); for (const q of parts.slice(-amt(8))) q.vy = -Math.abs(q.vy) - 2; }); },
-      pixel(ps, col) { const n = lite() ? 3 : 4, sz = S / n; ps.forEach(p => { for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) parts.push({ x: p.x - S / 2 + sz * (b + .5), y: p.y - S / 2 + sz * (a + .5), vx: (Math.random() - .5) * 2, vy: -Math.random() * 2, g: .3, drag: .99, t: -((a + b) * 2 + Math.random() * 4), life: 50, s: sz * .9, c: (a + b) % 2 ? col : "#fff7d1", k: "shard", rot: 0, vr: (Math.random() - .5) * .08, ph: 0 }); }); },
-      ink(ps) { ps.forEach((p, i) => blobs.push({ x: p.x + (Math.random() - .5) * 8, y: p.y + (Math.random() - .5) * 8, r: S * (lite() ? .55 : .8), t: -i * 3, life: 42, c: "18,16,40" })); if (!lite()) ps.forEach(p => dots(p.x, p.y, 5, "rgba(120,110,200,A)", 3, "dot", .1, 28)); },
+      pixel(ps, col) { const n = lite() ? 3 : 4, sz = S / n; ps.forEach(p => { for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) parts.push({ x: p.x - S / 2 + sz * (b + .5), y: p.y - S / 2 + sz * (a + .5), vx: (fxRand() - .5) * 2, vy: -fxRand() * 2, g: .3, drag: .99, t: -((a + b) * 2 + fxRand() * 4), life: 50, s: sz * .9, c: (a + b) % 2 ? col : "#fff7d1", k: "shard", rot: 0, vr: (fxRand() - .5) * .08, ph: 0 }); }); },
+      ink(ps) { ps.forEach((p, i) => blobs.push({ x: p.x + (fxRand() - .5) * 8, y: p.y + (fxRand() - .5) * 8, r: S * (lite() ? .55 : .8), t: -i * 3, life: 42, c: "18,16,40" })); if (!lite()) ps.forEach(p => dots(p.x, p.y, 5, "rgba(120,110,200,A)", 3, "dot", .1, 28)); },
       neon(ps) { const h = S * .55, a = ps[0], b = ps[ps.length - 1], x0 = Math.min(a.x, b.x) - h, x1 = Math.max(a.x, b.x) + h, y0 = Math.min(a.y, b.y) - h, y1 = Math.max(a.y, b.y) + h; lines.push({ pts: [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }, { x: x0, y: y0 }], grow: 14, life: 38, t: 0, w: 4, c: "255,95,210" }); ps.forEach(p => dots(p.x, p.y, 6, ["rgba(255,95,210,A)", "rgba(120,220,255,A)"], 3, "dot", 0, 24)); },
       // ブラックホール：単語のまん中にうずができて、光の粒が吸いこまれる
-      hole(ps) { const m = mid(ps); holes.push({ x: m.x, y: m.y, r: S * (lite() ? .4 : .6), t: 0, life: 50 }); for (let i = 0; i < amt(26); i++) { const an = Math.random() * 6.283, d = S * (1 + Math.random() * 1.2), sp = d / 22; parts.push({ x: m.x + Math.cos(an) * d, y: m.y + Math.sin(an) * d, vx: -Math.cos(an) * sp - Math.sin(an) * sp * .8, vy: -Math.sin(an) * sp + Math.cos(an) * sp * .8, g: 0, drag: .97, t: -Math.random() * 8, life: 26, s: S * .05, c: ["rgba(170,120,255,A)", "rgba(255,255,255,A)"][i % 2], k: "dot", rot: 0, vr: 0, ph: 0 }); } },
+      hole(ps) { const m = mid(ps); holes.push({ x: m.x, y: m.y, r: S * (lite() ? .4 : .6), t: 0, life: 50 }); for (let i = 0; i < amt(26); i++) { const an = fxRand() * 6.283, d = S * (1 + fxRand() * 1.2), sp = d / 22; parts.push({ x: m.x + Math.cos(an) * d, y: m.y + Math.sin(an) * d, vx: -Math.cos(an) * sp - Math.sin(an) * sp * .8, vy: -Math.sin(an) * sp + Math.cos(an) * sp * .8, g: 0, drag: .97, t: -fxRand() * 8, life: 26, s: S * .05, c: ["rgba(170,120,255,A)", "rgba(255,255,255,A)"][i % 2], k: "dot", rot: 0, vr: 0, ph: 0 }); } },
       slash(ps) { const a = ps[0], b = ps[ps.length - 1], d = Math.hypot(b.x - a.x, b.y - a.y), len = d || 1, ux = d ? (b.x - a.x) / len : 1, uy = (b.y - a.y) / len, e = S * .9; lines.push({ pts: [{ x: a.x - ux * e - 6, y: a.y - uy * e + 10 }, { x: b.x + ux * e + 6, y: b.y + uy * e - 10 }], grow: 7, life: 22, t: 0, w: 3, c: "200,230,255" }); ps.forEach(p => dots(p.x, p.y, 5, "rgba(220,240,255,A)", 4, "dot", .1, 22)); },
     };
     // PERFECT：盤面ぜんぶの文字（.face）を動かして消す。どれも1秒前後で終わる
@@ -11499,15 +11533,15 @@ ${recent || "まだありません"}`;
     const go = (el, to, ms, delay = 0, ease = "cubic-bezier(.5,0,.8,1)") => face(el).animate([{ transform: "none", opacity: 1 }, to], { duration: ms, delay, easing: ease, fill: "forwards" });
     const PF = {
       async wave(T) {
-        T.forEach(({ el, p, r, c }) => { go(el, { transform: `translate(${S * (1 + Math.random() * .6)}px, ${-S * (.3 + Math.random() * .4)}px) rotate(${20 + Math.random() * 30}deg) scale(.4)`, opacity: 0 }, 520, c * 60);
+        T.forEach(({ el, p, r, c }) => { go(el, { transform: `translate(${S * (1 + fxRand() * .6)}px, ${-S * (.3 + fxRand() * .4)}px) rotate(${20 + fxRand() * 30}deg) scale(.4)`, opacity: 0 }, 520, c * 60);
           setTimeout(() => { dots(p.x, p.y, 5, ["rgba(140,210,255,A)", "rgba(220,245,255,A)"], 5, "dot", .3, 42); rings.push({ x: p.x, y: p.y + S * .3, r0: 4, r1: S, t: 0, life: 28, c: "120,200,255", w: 3, oval: true }); }, c * 60); });
         const W = (COLS + 2) * S, H = (ROWS + 2) * S;
-        for (let i = 0; i < 60; i++) parts.push({ x: Math.random() * W, y: H - 4, vx: (Math.random() - .5) * 3, vy: -6 - Math.random() * 7, g: .3, drag: .99, t: -8 - Math.random() * 14, life: 55, s: S * .05, c: ["rgba(140,210,255,A)", "rgba(255,255,255,A)"][i % 2], k: "dot", rot: 0, vr: 0, ph: 0 });
+        for (let i = 0; i < 60; i++) parts.push({ x: fxRand() * W, y: H - 4, vx: (fxRand() - .5) * 3, vy: -6 - fxRand() * 7, g: .3, drag: .99, t: -8 - fxRand() * 14, life: 55, s: S * .05, c: ["rgba(140,210,255,A)", "rgba(255,255,255,A)"][i % 2], k: "dot", rot: 0, vr: 0, ph: 0 });
         gfx.flash("#bfe6ff", .18); setTimeout(() => gfx.shake(), 150); return 880;
       },
       async slash(T) {
         const W = (COLS + 2) * S;
-        for (let i = 0; i < 6; i++) setTimeout(() => { const y1 = M + Math.random() * ROWS * S, y2 = M + Math.random() * ROWS * S; lines.push({ pts: i % 2 ? [{ x: W, y: y1 }, { x: 0, y: y2 }] : [{ x: 0, y: y1 }, { x: W, y: y2 }], grow: 6, life: 20, t: 0, w: 3, c: "200,230,255" }); if (i % 2) gfx.flash("#ffffff", .2); }, i * 70);
+        for (let i = 0; i < 6; i++) setTimeout(() => { const y1 = M + fxRand() * ROWS * S, y2 = M + fxRand() * ROWS * S; lines.push({ pts: i % 2 ? [{ x: W, y: y1 }, { x: 0, y: y2 }] : [{ x: 0, y: y1 }, { x: W, y: y2 }], grow: 6, life: 20, t: 0, w: 3, c: "200,230,255" }); if (i % 2) gfx.flash("#ffffff", .2); }, i * 70);
         setTimeout(() => { gfx.shake(); T.forEach(({ el, p, r, c }) => { go(el, { transform: `translate(${(c % 2 ? 1 : -1) * S * .2}px, ${S * 1.1}px) rotate(${(c % 2 ? 1 : -1) * 28}deg)`, opacity: 0 }, 560, (r + c) * 20, "cubic-bezier(.4,0,1,1)"); dots(p.x, p.y, 3, "rgba(220,240,255,A)", 4, "dot", .1, 22); }); }, 430);
         return 1100;
       },
@@ -11521,14 +11555,14 @@ ${recent || "まだありません"}`;
       },
       async sakura(T) {
         const H = (ROWS + 2) * S;
-        for (let i = 0; i < 110; i++) parts.push({ x: -Math.random() * S, y: Math.random() * H, vx: 4 + Math.random() * 4, vy: -1 + Math.random() * 1.5, g: .02, drag: .995, t: -Math.random() * 30, life: 95, s: S * (.08 + Math.random() * .07), c: ["#ffc6dc", "#ff9fc4", "#fff0f6"][i % 3], k: "petal", rot: Math.random() * 6, vr: (Math.random() - .5) * .2, ph: Math.random() * 6 });
-        T.forEach(({ el, c }) => go(el, { transform: `translate(${S * (1.3 + Math.random())}px, ${S * (-.5 + Math.random() * .7)}px) rotate(${60 + Math.random() * 120}deg) scale(.3)`, opacity: 0 }, 640, 80 + c * 80, "cubic-bezier(.4,0,.8,1)"));
+        for (let i = 0; i < 110; i++) parts.push({ x: -fxRand() * S, y: fxRand() * H, vx: 4 + fxRand() * 4, vy: -1 + fxRand() * 1.5, g: .02, drag: .995, t: -fxRand() * 30, life: 95, s: S * (.08 + fxRand() * .07), c: ["#ffc6dc", "#ff9fc4", "#fff0f6"][i % 3], k: "petal", rot: fxRand() * 6, vr: (fxRand() - .5) * .2, ph: fxRand() * 6 });
+        T.forEach(({ el, c }) => go(el, { transform: `translate(${S * (1.3 + fxRand())}px, ${S * (-.5 + fxRand() * .7)}px) rotate(${60 + fxRand() * 120}deg) scale(.3)`, opacity: 0 }, 640, 80 + c * 80, "cubic-bezier(.4,0,.8,1)"));
         return 1150;
       },
       async thunder(T) {
-        for (let c = 0; c < COLS; c++) setTimeout(() => { const p = pt({ r: ROWS - 1, c }); bolts.push({ a: { x: p.x + (Math.random() - .5) * S * .5, y: 0 }, b: p, seg: 12, t: 0, life: 20 }); if (c % 2 === 0) gfx.flash("#cfe2ff", .2);
+        for (let c = 0; c < COLS; c++) setTimeout(() => { const p = pt({ r: ROWS - 1, c }); bolts.push({ a: { x: p.x + (fxRand() - .5) * S * .5, y: 0 }, b: p, seg: 12, t: 0, life: 20 }); if (c % 2 === 0) gfx.flash("#cfe2ff", .2);
           T.filter(x => x.c === c).forEach(({ el, p: q }) => { go(el, { transform: "scale(1.25)", opacity: .9 }, 120); dots(q.x, q.y, 4, ["rgba(190,220,255,A)", "rgba(255,255,255,A)"], 5, "dot", 0, 22); }); }, c * 70);
-        setTimeout(() => { gfx.shake(); const cs = T.map(x => x.p).sort(() => Math.random() - .5); for (let i = 1; i < 14; i++) bolts.push({ a: cs[i - 1], b: cs[i], seg: 6, t: 0, life: 20 }); T.forEach(({ el }) => go(el, { transform: "scale(0)", opacity: 0 }, 300)); }, COLS * 70 + 60);
+        setTimeout(() => { gfx.shake(); const cs = T.map(x => x.p).sort(() => fxRand() - .5); for (let i = 1; i < 14; i++) bolts.push({ a: cs[i - 1], b: cs[i], seg: 6, t: 0, life: 20 }); T.forEach(({ el }) => go(el, { transform: "scale(0)", opacity: 0 }, 300)); }, COLS * 70 + 60);
         return 880;
       },
       async hole(T) {
@@ -11554,38 +11588,38 @@ ${recent || "まだありません"}`;
       },
       async blaze(T) {  // 大炎上：下の段から順に燃え上がり、火の粉の嵐
         const W = (COLS + 2) * S, H = (ROWS + 2) * S; gfx.flash("#ff9a3c", .18);
-        for (let i = 0; i < 70; i++) parts.push({ x: Math.random() * W, y: H - 4, vx: (Math.random() - .5) * 1.5, vy: -3 - Math.random() * 4, g: -.03, drag: .985, t: -Math.random() * 30, life: 60, s: S * .07, c: ["rgba(255,180,70,A)", "rgba(255,110,40,A)", "rgba(255,240,170,A)"][i % 3], k: "ember", rot: 0, vr: 0, ph: 0 });
+        for (let i = 0; i < 70; i++) parts.push({ x: fxRand() * W, y: H - 4, vx: (fxRand() - .5) * 1.5, vy: -3 - fxRand() * 4, g: -.03, drag: .985, t: -fxRand() * 30, life: 60, s: S * .07, c: ["rgba(255,180,70,A)", "rgba(255,110,40,A)", "rgba(255,240,170,A)"][i % 3], k: "ember", rot: 0, vr: 0, ph: 0 });
         for (let r = ROWS - 1; r >= 0; r--) setTimeout(() => T.filter(x => x.r === r).forEach(({ el, p }) => { dots(p.x, p.y, 7, ["rgba(255,180,70,A)", "rgba(255,110,40,A)"], 2, "ember", -.09, 46, S * .07); go(el, { transform: `translateY(${-S * .8}px) scale(.6)`, opacity: 0 }, 460); }), (ROWS - 1 - r) * 90);
         setTimeout(() => gfx.shake(), 200); return 950;
       },
       async zero(T) {  // 絶対零度：まん中から冷気が広がって凍りつき、いっせいに割れる
         spots().forEach((h, i) => rings.push({ x: h.x, y: h.y, r0: 6, r1: S * 3, t: -i * 2, life: 40, c: "190,235,255", w: 8 }, { x: h.x, y: h.y, r0: 4, r1: S * 2.2, t: -i * 2 - 8, life: 40, c: "255,255,255", w: 5 }));
         T.forEach(({ el }) => face(el).animate([{ opacity: 1 }, { opacity: .55 }, { opacity: 1 }], { duration: 420 }));
-        setTimeout(() => { gfx.flash("#dff6ff", .25); gfx.shake(); T.forEach(({ el, p }) => { go(el, { transform: "scale(1.15)", opacity: 0 }, 140); chips(p, 6, ["#e8f8ff", "#a9dcf5", "#ffffff"], { g: .25, drag: .97, life: 42 }); for (const q of parts.slice(-6)) { q.vx = (Math.random() - .5) * 8; q.vy = (Math.random() - .5) * 8; } }); }, 450);
+        setTimeout(() => { gfx.flash("#dff6ff", .25); gfx.shake(); T.forEach(({ el, p }) => { go(el, { transform: "scale(1.15)", opacity: 0 }, 140); chips(p, 6, ["#e8f8ff", "#a9dcf5", "#ffffff"], { g: .25, drag: .97, life: 42 }); for (const q of parts.slice(-6)) { q.vx = (fxRand() - .5) * 8; q.vy = (fxRand() - .5) * 8; } }); }, 450);
         return 950;
       },
       async meteor(T) {  // 流星群：流れ星が次々に走り、文字が星になって消える
         const W = (COLS + 2) * S;
-        for (let i = 0; i < 9; i++) setTimeout(() => { const x = M + Math.random() * COLS * S + S * 2, y = Math.random() * S; lines.push({ pts: [{ x, y }, { x: x - S * 3, y: y + S * 3.2 }], grow: 8, life: 22, t: 0, w: 2.4, c: "255,240,170" }); }, i * 55);
-        T.forEach(({ el, p }) => { const d = Math.random() * 450; setTimeout(() => { go(el, { transform: "scale(0)", opacity: 0 }, 220); for (let i = 0; i < 5; i++) parts.push({ x: p.x, y: p.y, vx: (Math.random() - .5) * 1.4, vy: -Math.random() * 1.8 - .4, g: -.01, drag: .98, t: 0, life: 55, s: S * (.08 + Math.random() * .08), c: ["rgba(255,240,170,A)", "rgba(255,255,255,A)", "rgba(170,220,255,A)"][i % 3], k: "star", rot: 0, vr: 0, ph: Math.random() * 6 }); }, d); });
+        for (let i = 0; i < 9; i++) setTimeout(() => { const x = M + fxRand() * COLS * S + S * 2, y = fxRand() * S; lines.push({ pts: [{ x, y }, { x: x - S * 3, y: y + S * 3.2 }], grow: 8, life: 22, t: 0, w: 2.4, c: "255,240,170" }); }, i * 55);
+        T.forEach(({ el, p }) => { const d = fxRand() * 450; setTimeout(() => { go(el, { transform: "scale(0)", opacity: 0 }, 220); for (let i = 0; i < 5; i++) parts.push({ x: p.x, y: p.y, vx: (fxRand() - .5) * 1.4, vy: -fxRand() * 1.8 - .4, g: -.01, drag: .98, t: 0, life: 55, s: S * (.08 + fxRand() * .08), c: ["rgba(255,240,170,A)", "rgba(255,255,255,A)", "rgba(170,220,255,A)"][i % 3], k: "star", rot: 0, vr: 0, ph: fxRand() * 6 }); }, d); });
         void W; return 950;
       },
       async festival(T) {  // お祭り：両すみから紙吹雪の大砲、マスが順にポンとはじける
         const W = (COLS + 2) * S, H = (ROWS + 2) * S, cols = ["#ff6b6b", "#ffd93d", "#6bcb77", "#4d96ff", "#c77dff", "#ffffff"];
-        for (const [x0, dir] of [[0, 1], [W, -1]]) for (let i = 0; i < 60; i++) { const an = -Math.PI / 2 + dir * (.25 + Math.random() * .55), v = 7 + Math.random() * 6; parts.push({ x: x0, y: H, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: .2, drag: .965, t: -Math.random() * 6, life: 80, s: S * (.11 + Math.random() * .08), c: cols[i % cols.length], k: "conf", rot: Math.random() * 6, vr: (Math.random() - .5) * .4, ph: Math.random() * 6 }); }
+        for (const [x0, dir] of [[0, 1], [W, -1]]) for (let i = 0; i < 60; i++) { const an = -Math.PI / 2 + dir * (.25 + fxRand() * .55), v = 7 + fxRand() * 6; parts.push({ x: x0, y: H, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: .2, drag: .965, t: -fxRand() * 6, life: 80, s: S * (.11 + fxRand() * .08), c: cols[i % cols.length], k: "conf", rot: fxRand() * 6, vr: (fxRand() - .5) * .4, ph: fxRand() * 6 }); }
         gfx.flash("#fff5c0", .16);
         T.forEach(({ el, r, c }) => face(el).animate([{ transform: "scale(1)", opacity: 1 }, { transform: "scale(1.3)", opacity: 1, offset: .4 }, { transform: "scale(0)", opacity: 0 }], { duration: 380, delay: (r + c) * 30, fill: "forwards" }));
         return 950;
       },
       async digital(T) {  // デジタル崩壊：走査線が上から下へ走り、1段ずつ細かい四角にくずれる
         for (let r = 0; r < ROWS; r++) setTimeout(() => { const y = M + (r + .5) * S; lines.push({ pts: [{ x: 0, y }, { x: (COLS + 2) * S, y }], grow: 4, life: 16, t: 0, w: 2.4, c: "120,255,170" });
-          T.filter(x => x.r === r).forEach(({ el, p }) => { face(el).style.opacity = "0"; const n = 4, sz = S / n; for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) parts.push({ x: p.x - S / 2 + sz * (b + .5), y: p.y - S / 2 + sz * (a + .5), vx: (Math.random() - .5) * 2, vy: -Math.random() * 2, g: .3, drag: .99, t: -((a + b) * 2 + Math.random() * 4), life: 46, s: sz * .9, c: (a + b) % 2 ? "#7dffb0" : "#e0fff0", k: "shard", rot: 0, vr: 0, ph: 0 }); }); }, r * 110);
+          T.filter(x => x.r === r).forEach(({ el, p }) => { face(el).style.opacity = "0"; const n = 4, sz = S / n; for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) parts.push({ x: p.x - S / 2 + sz * (b + .5), y: p.y - S / 2 + sz * (a + .5), vx: (fxRand() - .5) * 2, vy: -fxRand() * 2, g: .3, drag: .99, t: -((a + b) * 2 + fxRand() * 4), life: 46, s: sz * .9, c: (a + b) % 2 ? "#7dffb0" : "#e0fff0", k: "shard", rot: 0, vr: 0, ph: 0 }); }); }, r * 110);
         gfx.flash("#b6ffcf", .12); return 1150;
       },
       async sumi(T) {  // 墨流し：まん中から大きな墨がにじんで盤面をのみこみ、すっと引いていく
         const H4 = spots();
         H4.forEach((h, i) => blobs.push({ x: h.x, y: h.y, r: S * 2.1, t: -i * 3, life: 70, c: "14,12,30" }));
-        for (let i = 0; i < 6; i++) blobs.push({ x: M + S * (.5 + Math.random() * (COLS - 1)), y: M + S * (i % 2 ? ROWS - .8 : .8), r: S * (.7 + Math.random() * .6), t: -6 - i * 3, life: 62, c: "22,18,44" });
+        for (let i = 0; i < 6; i++) blobs.push({ x: M + S * (.5 + fxRand() * (COLS - 1)), y: M + S * (i % 2 ? ROWS - .8 : .8), r: S * (.7 + fxRand() * .6), t: -6 - i * 3, life: 62, c: "22,18,44" });
         T.forEach(({ el, p }) => { const m = nearest(p, H4); go(el, { transform: "scale(.95)", opacity: 0 }, 300, 160 + Math.hypot(p.x - m.x, p.y - m.y) / S * 40); });
         return 1050;
       },
@@ -11610,16 +11644,16 @@ ${recent || "まだありません"}`;
     let lastPrem = "";
     const PREMIUM = {
       fireworks() { const W = (COLS + 2) * S, H = (ROWS + 2) * S, cs = [["255,107,107", "255,255,255"], ["255,217,61", "255,255,255"], ["107,203,119", "255,255,255"], ["77,150,255", "255,255,255"], ["199,125,255", "255,255,255"]];
-        for (let i = 0; i < 7; i++) setTimeout(() => { const x = W * (.15 + Math.random() * .7), y = H * (.12 + Math.random() * .5); dots(x, y, 36, cs[i % cs.length].map(c => `rgba(${c},A)`), 6, "dot", .05, 55, S * .06); rings.push({ x, y, r0: 4, r1: S * 1.4, t: 0, life: 22, c: cs[i % cs.length][0], w: 3 }); if (i % 2) gfx.flash("#fff", .14); kick(); }, 150 + i * 170); },
+        for (let i = 0; i < 7; i++) setTimeout(() => { const x = W * (.15 + fxRand() * .7), y = H * (.12 + fxRand() * .5); dots(x, y, 36, cs[i % cs.length].map(c => `rgba(${c},A)`), 6, "dot", .05, 55, S * .06); rings.push({ x, y, r0: 4, r1: S * 1.4, t: 0, life: 22, c: cs[i % cs.length][0], w: 3 }); if (i % 2) gfx.flash("#fff", .14); kick(); }, 150 + i * 170); },
       goldstorm() { const P2 = [{ x: M + S * 1.2, y: M + S * (ROWS - 1) }, { x: M + S * (COLS - 1.2), y: M + S }], R = S * 3;
-        for (let i = 0; i < 150; i++) { const m = P2[i % 2]; const an = Math.random() * 6.283, d = R * (.7 + Math.random() * .5), sp = d / 30; parts.push({ x: m.x + Math.cos(an) * d, y: m.y + Math.sin(an) * d, vx: -Math.cos(an) * sp - Math.sin(an) * sp * 1.2, vy: -Math.sin(an) * sp + Math.cos(an) * sp * 1.2, g: 0, drag: .97, t: -Math.random() * 14, life: 34, s: S * .06, c: ["rgba(255,216,77,A)", "rgba(255,245,200,A)", "rgba(226,184,74,A)"][i % 3], k: "dot", rot: 0, vr: 0, ph: 0 }); }
+        for (let i = 0; i < 150; i++) { const m = P2[i % 2]; const an = fxRand() * 6.283, d = R * (.7 + fxRand() * .5), sp = d / 30; parts.push({ x: m.x + Math.cos(an) * d, y: m.y + Math.sin(an) * d, vx: -Math.cos(an) * sp - Math.sin(an) * sp * 1.2, vy: -Math.sin(an) * sp + Math.cos(an) * sp * 1.2, g: 0, drag: .97, t: -fxRand() * 14, life: 34, s: S * .06, c: ["rgba(255,216,77,A)", "rgba(255,245,200,A)", "rgba(226,184,74,A)"][i % 3], k: "dot", rot: 0, vr: 0, ph: 0 }); }
         setTimeout(() => { gfx.flash("#ffe680", .28); P2.forEach(m => { dots(m.x, m.y, 45, ["rgba(255,216,77,A)", "rgba(255,255,255,A)"], 8, "dot", .06, 55, S * .07); rings.push({ x: m.x, y: m.y, r0: 10, r1: S * 3.6, t: 0, life: 34, c: "255,216,77", w: 8 }); }); kick(); }, 620); },
       aurora() { const W = (COLS + 2) * S, cs = ["120,255,200", "120,180,255", "220,130,255"];
         cs.forEach((c, j) => setTimeout(() => { const y0 = M + S * (.8 + j * 1.1), pts = []; for (let i = 0; i <= 24; i++) pts.push({ x: W * i / 24, y: y0 + Math.sin(i * .6 + j * 1.7) * S * .5 }); lines.push({ pts, grow: 16, life: 80, t: 0, w: 7, c }); kick(); }, j * 160));
-        setTimeout(() => { for (let i = 0; i < 40; i++) parts.push({ x: Math.random() * W, y: M + Math.random() * ROWS * S, vx: 0, vy: -.3, g: 0, drag: 1, t: -Math.random() * 20, life: 60, s: S * (.06 + Math.random() * .06), c: ["rgba(255,255,255,A)", "rgba(180,255,230,A)"][i % 2], k: "star", rot: 0, vr: 0, ph: Math.random() * 6 }); kick(); }, 300); },
+        setTimeout(() => { for (let i = 0; i < 40; i++) parts.push({ x: fxRand() * W, y: M + fxRand() * ROWS * S, vx: 0, vy: -.3, g: 0, drag: 1, t: -fxRand() * 20, life: 60, s: S * (.06 + fxRand() * .06), c: ["rgba(255,255,255,A)", "rgba(180,255,230,A)"][i % 2], k: "star", rot: 0, vr: 0, ph: fxRand() * 6 }); kick(); }, 300); },
       supernova() { const m = { x: M + COLS * S / 2, y: M + ROWS * S * .45 }; gfx.flash("#ffffff", .42);
         ["255,107,107", "255,217,61", "107,203,119", "77,150,255", "199,125,255"].forEach((c, i) => rings.push({ x: m.x, y: m.y, r0: 6, r1: S * (2.4 + i * .7), t: -i * 4, life: 38, c, w: 7 }));
-        for (let i = 0; i < 60; i++) { const an = Math.random() * 6.283, v = 4 + Math.random() * 7; parts.push({ x: m.x, y: m.y, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: 0, drag: .95, t: 0, life: 50, s: S * (.08 + Math.random() * .08), c: ["rgba(255,255,255,A)", "rgba(255,240,170,A)", "rgba(170,220,255,A)"][i % 3], k: "star", rot: 0, vr: 0, ph: Math.random() * 6 }); }
+        for (let i = 0; i < 60; i++) { const an = fxRand() * 6.283, v = 4 + fxRand() * 7; parts.push({ x: m.x, y: m.y, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: 0, drag: .95, t: 0, life: 50, s: S * (.08 + fxRand() * .08), c: ["rgba(255,255,255,A)", "rgba(255,240,170,A)", "rgba(170,220,255,A)"][i % 3], k: "star", rot: 0, vr: 0, ph: fxRand() * 6 }); }
         gfx.shake(); kick(); },
     };
     function perfectText(kind, sub) {
@@ -11627,17 +11661,17 @@ ${recent || "まだありません"}`;
       showText("PERFECT!", PF_NAME[kind], sub, "", tier);
       fit(); const m = { x: M + COLS * S / 2, y: M + ROWS * S * .42 }, W = (COLS + 2) * S, H = (ROWS + 2) * S;
       if (kind !== "normal") setTimeout(() => { rings.push({ x: m.x, y: m.y, r0: S * .6, r1: S * 4.4, t: 0, life: 34, c: "255,216,77", w: 6 }); kick(); }, 300);  // GREAT〜：金の輪
-      if (kind === "super" || kind === "hyper" || kind === "premium") setTimeout(() => { for (const [x0, dir] of [[0, 1], [W, -1]]) for (let i = 0; i < 40; i++) { const an = -Math.PI / 2 + dir * (.2 + Math.random() * .5), v = 6 + Math.random() * 6; parts.push({ x: x0, y: H, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: .16, drag: .97, t: -Math.random() * 8, life: 60, s: S * .06, c: ["rgba(255,216,77,A)", "rgba(255,255,255,A)"][i % 2], k: "dot", rot: 0, vr: 0, ph: 0 }); } kick(); }, 380);  // SUPER〜：左右から光の粒
-      if (kind === "premium") { let k; do { k = Object.keys(PREMIUM)[Math.floor(Math.random() * 4)]; } while (k === lastPrem); lastPrem = k; PREMIUM[k](); kick(1600); }
+      if (kind === "super" || kind === "hyper" || kind === "premium") setTimeout(() => { for (const [x0, dir] of [[0, 1], [W, -1]]) for (let i = 0; i < 40; i++) { const an = -Math.PI / 2 + dir * (.2 + fxRand() * .5), v = 6 + fxRand() * 6; parts.push({ x: x0, y: H, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: .16, drag: .97, t: -fxRand() * 8, life: 60, s: S * .06, c: ["rgba(255,216,77,A)", "rgba(255,255,255,A)"][i % 2], k: "dot", rot: 0, vr: 0, ph: 0 }); } kick(); }, 380);  // SUPER〜：左右から光の粒
+      if (kind === "premium") { let k; do { k = Object.keys(PREMIUM)[Math.floor(fxRand() * 4)]; } while (k === lastPrem); lastPrem = k; PREMIUM[k](); kick(1600); }
     }
     return {
       // 「派手」で、セットの PERFECT 演出を使うとき（今までのバナー・虹の演出は出さない）
-      themed: () => fxLv() === 2 && !autoLite && !matchMedia("(prefers-reduced-motion: reduce)").matches,
+      themed: () => fxLv() === 2 && !autoLite && !hot && !matchMedia("(prefers-reduced-motion: reduce)").matches,
       perfectText,
       resultText: (main, sub, miss) => showText(main, "", sub, miss ? "miss" : "res"),
       // PERFECT で盤面ぜんぶが消える部分（「派手」のときだけ）。動かしたら true（そのぶん待つ）。それ以外は false で今までの消え方
       async perfect(tiles) {
-        if (fxLv() < 2 || autoLite || matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+        if (fxLv() < 2 || autoLite || hot || matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
         fit();
         const k = set[1];
         const T = tiles.map((t, i) => { const r = Math.floor(i / COLS), c = i % COLS; return { el: elFor(t), r, c, p: pt({ r, c }) }; });
@@ -11647,7 +11681,7 @@ ${recent || "まだありません"}`;
       },
       // cells：消える単語のマス（{r, c}）、col：単語の色、combo：このなぞりで何語目か
       play(cells, col, combo) {
-        if (fxLv() < 2 || autoLite || matchMedia("(prefers-reduced-motion: reduce)").matches || !cells.length) return;
+        if (fxLv() < 2 || autoLite || hot || matchMedia("(prefers-reduced-motion: reduce)").matches || !cells.length) return;
         fit();
         const k = set[0], ps = cells.map(pt);
         FX[k](ps, col || "#ffe27a");
@@ -11655,10 +11689,75 @@ ${recent || "まだありません"}`;
         kick(combo >= 5 ? 300 : 0);
       },
       // 盤面が新しくなったら、前とちがうセットを選ぶ（同じ盤面のやりなおしでは呼ばない）
-      newBoard() { if (FORCE) return; const now = set; do { set = SETS[Math.floor(Math.random() * SETS.length)]; } while (set === now); },
+      // 計測表示用：描いた回数（増えていくだけ）・重いときの自動「控えめ」・熱いとき
+      stats: () => ({ draws, lite: autoLite, hot }),
+      setHot(v) { hot = !!v; },
+      newBoard() { if (FORCE) return; const now = set; do { set = SETS[Math.floor(fxRand() * SETS.length)]; } while (set === now); },
     };
   })();
 
+  // ---------- iPhone の熱の状態と、隠しの計測表示 ----------
+  // 熱の状態は、アプリの中のプラグイン（Thermal：ProcessInfo.thermalState）から受け取る。ブラウザ（試遊版）では「—」
+  // serious 以上になったら、演出を自動で「控えめ」相当・描くのを1秒30回までにする。nominal / fair に戻ったら元に戻す
+  const APP_VERSION = "1.0.3";  // ブラウザ（試遊版）で出す番号。アプリでは本体の番号（Thermal.getState）を出す
+  const Heat = (() => {
+    let state = "—", hot = false;
+    const T = () => { try { const C = window.Capacitor; return C && C.isNativePlatform && C.isNativePlatform() && (C.Plugins.Thermal || (C.registerPlugin && C.registerPlugin("Thermal"))) || null; } catch (e) { return null; } };
+    function set(st) {
+      state = st || "—";
+      const h = state === "serious" || state === "critical";
+      if (h === hot) return;
+      hot = h; clearFx.setHot(h); document.documentElement.classList.toggle("hot", h);
+    }
+    $("verLabel").textContent = $("gsVer").textContent = `バージョン ${APP_VERSION}`;
+    try {
+      const t = T();
+      if (t) {
+        t.getState().then(r => { set(r && r.state); if (r && r.version) $("verLabel").textContent = $("gsVer").textContent = `バージョン ${r.version}（${r.build}）`; }).catch(() => {});
+        t.addListener("change", r => set(r && r.state));
+      }
+    } catch (e) {}
+    return { state: () => state, hot: () => hot };
+  })();
+  // 計測表示：設定のバージョン表示を5秒長押しすると出る（もう一度5秒長押しで消える）。出ている間だけ数える
+  const Meter = (() => {
+    let el = null, iv = 0, rafId = 0, frames = 0, moving = false, d0 = 0, t0 = 0, opened = 0;
+    function count() { frames += moving ? 1 : 0; rafId = requestAnimationFrame(count); }
+    function tick() {
+      const now = performance.now(), sec = (now - t0) / 1000 || 1, st = clearFx.stats();
+      const running = document.getAnimations().filter(a => a.playState === "running").length;
+      const draws = Math.round((st.draws - d0) / sec);
+      moving = running > 0 || draws > 0;
+      const mins = Math.floor((now - opened) / 60000), secs = Math.floor((now - opened) / 1000) % 60;
+      el.innerHTML = [
+        `<b>計測</b> ${mins}分${String(secs).padStart(2, "0")}秒`,
+        `画面の書きかえ <b>${Math.round(frames / sec)}</b>回/秒`,
+        `演出の描画 <b>${draws}</b>回/秒`,
+        `動いているアニメ <b>${running}</b>個`,
+        `画面の要素 <b>${document.getElementsByTagName("*").length}</b>個`,
+        `効果音 ${SFX.state()}・BGM ${BGM.state()}`,
+        `熱 <b>${Heat.state()}</b>${Heat.hot() ? "（自動で軽く）" : ""}${st.lite ? "・重いので控えめ" : ""}`,
+        `演出 ${["なし", "控えめ", "派手"][fxLv()]}`,
+      ].join("<br>");
+      frames = 0; d0 = st.draws; t0 = now;
+    }
+    function toggle() {
+      if (el) { clearInterval(iv); cancelAnimationFrame(rafId); el.remove(); el = null; return false; }
+      el = document.createElement("div"); el.id = "perfMeter"; document.body.appendChild(el);
+      opened = t0 = performance.now(); d0 = clearFx.stats().draws; frames = 0;
+      rafId = requestAnimationFrame(count); iv = setInterval(tick, 1000); tick();
+      return true;
+    }
+    // 5秒の長押し（指を離す・ずらすと取り消し）
+    for (const id of ["verLabel", "gsVer"]) {
+      const v = $(id); let lp = 0;
+      const stop = () => { clearTimeout(lp); lp = 0; };
+      v.addEventListener("pointerdown", () => { stop(); lp = setTimeout(() => { lp = 0; buzz([20, 40, 20]); toggle(); }, 5000); });
+      for (const ev of ["pointerup", "pointercancel", "pointerleave"]) v.addEventListener(ev, stop);
+      v.addEventListener("contextmenu", e => e.preventDefault());
+    }
+    return { toggle };
+  })();
   // ---------- 実績（この端末に保存） ----------
   const ACH_KEY = "wordDrop.ach.v1";
   const ACH = [
