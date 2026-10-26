@@ -9991,6 +9991,16 @@ zoom|v2|ズームする・急上昇する`;
   function markCwords(exact) { document.querySelectorAll("#cwords .cw").forEach((el, i) => el.classList.add(exact.has(i) ? "cw-ok" : "cw-miss")); }
   // このゲームで消し残した単語（ひと筆パーフェクト）。ゲームオーバーの画面に出す
   let gameMissed = [];
+  // ---------- シートを閉じたタップが、下の要素に伝わらないようにする ----------
+  // シート（.cansheet：答え合わせ・単語の意味・設定・広告の確認など）の上で始まったタップは、その click がシートの外
+  // （閉じたあとに見えた下のボタン・単語）に届いても無視する。指を置いている間にシートが自動で閉じたときや、iPhone で click が遅れて届くときも同じ
+  let tapSheet = null;
+  window.addEventListener("pointerdown", e => { tapSheet = e.target && e.target.closest ? e.target.closest(".cansheet") : null; }, true);
+  window.addEventListener("click", e => {
+    if (!tapSheet || !e.isTrusted) return;  // プログラムからの click（.click()）は止めない
+    if (!tapSheet.hidden && tapSheet.contains(e.target)) return;  // シートの中のボタン・背景はふつうに押せる
+    e.stopPropagation(); e.preventDefault(); tapSheet = null;
+  }, true);
   // ---------- 答え合わせ ----------
   // 失敗したとき（ひと筆パーフェクトはゲームオーバーのときだけ）に、その盤面の最初の並びと、全部消せる道を順番に見せる。消える単語の一覧も出す
   // 判定のあと（指で操作できない間）だけ出す。なぞっている最中に盤面へ重ねない（特許の回避ルール1）。タップで閉じる
