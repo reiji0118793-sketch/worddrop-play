@@ -671,6 +671,18 @@ body.has-banner #gameSet { padding-bottom: calc(var(--safeB) + var(--bannerH) + 
 .cw.study b { letter-spacing: .12em; }
 .cw.study span { font-size: 15px; font-weight: 700; }
 .cw.study.missed { box-shadow: 0 0 0 2px #fff inset; }
+/* 失敗したとき：消せた単語は ✓ でうすく、消せなかった単語は赤い枠で少しゆれる（2回だけ） */
+.cw.cw-ok { opacity: .45; }
+.cw.cw-ok b::before { content: "✓ "; color: #7be08a; }
+.cw.cw-miss { border-color: #ff5a4f; box-shadow: 0 0 0 2px #ff5a4f; animation: cwMiss .45s ease-in-out 2; }
+@keyframes cwMiss { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+/* ゲームオーバー：消し残した単語（タップで意味・発音） */
+.end-missed { margin: -4px 0 14px; display: grid; gap: 6px; }
+.end-missed[hidden] { display: none; }
+.end-missed small { font-size: 12px; color: var(--muted); }
+.end-missed div { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.end-missed button { display: inline-flex; align-items: baseline; gap: 5px; padding: 4px 9px; border-radius: 999px; border: 1px dashed #ff8a7a; background: rgba(255,90,79,.12); color: var(--fg); font: inherit; font-size: 11px; cursor: pointer; }
+.end-missed button b { font-family: var(--font-display); font-size: 13px; letter-spacing: .05em; color: #ffb3a8; }
 .cwhint { display: block; width: 100%; font-size: 11px; color: var(--muted); margin-top: 2px; }
 .odai.color .cw b { font-size: 14px; letter-spacing: .04em; }
 .odai.color .cw span { font-size: 10px; max-width: 4.6em; }
@@ -943,6 +955,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
           <div class="newrec" id="newRec" hidden>NEW RECORD!</div>
           <p id="clearText"></p>
           <p id="endAch"></p>
+          <div class="end-missed" id="endMissed" hidden><small>消し残した単語（タップで意味・発音）</small><div id="endMissedList"></div></div>
           <div class="end-actions">
             <button id="contBtn" class="adbtn" type="button" hidden>▶ 広告を見てコンティニュー<small id="contNote"></small></button>
             <button id="againBtn" class="primary" type="button">もう一度遊ぶ</button>
@@ -9974,6 +9987,10 @@ zoom|v2|ズームする・急上昇する`;
 
   // ---------- ターン処理 ----------
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  // 失敗したとき：上の単語に、消せた（✓・うすく）・消せなかった（赤い枠・少しゆれる）の印を付ける（道は見せない）。盤面をやり直すと消える
+  function markCwords(exact) { document.querySelectorAll("#cwords .cw").forEach((el, i) => el.classList.add(exact.has(i) ? "cw-ok" : "cw-miss")); }
+  // このゲームで消し残した単語（ひと筆パーフェクト）。ゲームオーバーの画面に出す
+  let gameMissed = [];
   // ---------- 答え合わせ ----------
   // 失敗したとき（ひと筆パーフェクトはゲームオーバーのときだけ）に、その盤面の最初の並びと、全部消せる道を順番に見せる。消える単語の一覧も出す
   // 判定のあと（指で操作できない間）だけ出す。なぞっている最中に盤面へ重ねない（特許の回避ルール1）。タップで閉じる
@@ -10139,8 +10156,10 @@ zoom|v2|ズームする・急上昇する`;
           SFX.fail(); buzz([80, 60, 120]); gfx.shake();
           if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("SO CLOSE!", [`${exact.size}/${cwords.length} COLORS`, g ? `${g.combo} COMBO　+${g.gained.toLocaleString()}` : "", "LIFE −1"].filter(Boolean).join("　"), true); }
           setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1${lives > 0 ? "　同じ盤面でもう一度！" : ""}`);
+          markCwords(exact);
+          cwords.forEach((x, i) => { if (!exact.has(i) && !gameMissed.some(m => m.w === x.w)) gameMissed.push({ w: x.w, m: x.m }); });
           updateHud();
-          await sleep(900);
+          await sleep(1800);
           if (lives <= 0) { await answerReview(); showEnd(); busy = false; return; }  // 答え合わせはゲームオーバーのときだけ（同じ盤面でやり直すので、ナビの価値を守る）
           restoreStage();
         }
@@ -10223,6 +10242,7 @@ zoom|v2|ズームする・急上昇する`;
           noMiss = 0;
           if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("SO CLOSE!", [`${exact.size}/${cwords.length} COLORS`, g ? `${g.combo} COMBO　+${g.gained.toLocaleString()}` : ""].filter(Boolean).join("　"), true); }
           setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　同じ盤面でもう一度！`);
+          markCwords(exact);
           await answerReview();  // 答え合わせ（失敗したときだけ。設定でオフにできる）
           restoreStage();
         }
@@ -11040,6 +11060,9 @@ zoom|v2|ズームする・急上昇する`;
     else if (reviewDone) $("clearText").textContent = `まちがえた単語を全部覚えなおした！（${studyN}語中 ${studyOK}語正解）`;
     else if (isPuzzle()) $("clearText").textContent = isStage() ? `STAGE ${level} まで到達。最大 ${maxCombo}コンボ` : `${studyN}語中 ${studyOK}語正解（Lv.${level}）。まちがえた単語は${reviewMode ? "残っているので、また復習しよう" : "、次のトレーニングや「復習」でまた出ます"}`;
     else $("clearText").textContent = `${isEndless() ? `石が${STONE_CAP}個たまった。` : isEnergy() ? "エネルギーが切れた。" : ""}${MODE_NAME[$("modeSel").value]}・アシスト：${ASSIST_NAME[assistLv()]}　Lv.${level}・${turns}ターン。作った単語 ${totalWords}個（${learned.size}種類）。最大 ${maxCombo}コンボ`;
+    { const list = isStage() ? gameMissed.slice(-8) : [];
+      $("endMissed").hidden = !list.length;
+      $("endMissedList").innerHTML = list.map(x => `<button type="button" data-w="${x.w}"><b>${x.w}</b>${esc(x.m)}</button>`).join(""); }
     navClear();
     $("bonusBtn").hidden = false; $("bonusBtn").disabled = false; $("bonusBtn").textContent = "▶ 広告を見てナビ＋1";
     const canCont = isStudy() || ((isStage() || isEndless() || isEnergy() || isDaily()) && contUsed < CONT_MAX);  // パーフェクトは1ゲーム2回まで
@@ -11051,6 +11074,7 @@ zoom|v2|ズームする・急上昇する`;
     $("overlay").hidden = false;
     maybeAskReview("end", rec || reviewDone || (isDaily() && turns >= COLOR_TURNS));
   }
+  $("endMissedList").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if (b) openWordSheet(b.dataset.w); });
   // デイリーの連続記録（10問を遊びきった日 or ゲームオーバーになった日に1回だけ数える）
   function markDaily() {
     const d = dailyInfo(), today = dayKey(), y = new Date(); y.setDate(y.getDate() - 1);
@@ -11204,7 +11228,7 @@ ${recent || "まだありません"}`;
     nextId = 1; held = null; dragging = false; busy = false;
     if (typeof tutClear === "function" && tut) { tut = null; tutClear(); }
     $("tutCoach").hidden = true;
-    runLog = []; reviewDone = false; recShown = false; heat(0);
+    runLog = []; gameMissed = []; reviewDone = false; recShown = false; heat(0);
     gameAch = []; energy = ENERGY_MAX; contUsed = 0; rescueUsed = false; lastTier = 0; pfStreak = 0; pfRoute = null;
     score = 0; lives = LIVES; level = 1; streak = 0; turns = 0; loadBest(); maxCombo = 0; totalWords = 0; learned = new Map(); odai = null;
     $("overlay").hidden = true; $("burst").hidden = true;
@@ -11537,7 +11561,7 @@ ${recent || "まだありません"}`;
     function chips(p, n, cols, o = {}) { n = amt(n); for (let i = 0; i < n; i++) parts.push(Object.assign({ x: p.x + (fxRand() - .5) * S * .6, y: p.y + (fxRand() - .5) * S * .6, vx: (fxRand() - .5) * 7, vy: -fxRand() * 6 - 1, g: .35, drag: .99, t: 0, life: 50, s: S * (.12 + fxRand() * .14), c: cols[i % cols.length], k: "shard", rot: fxRand() * 6, vr: (fxRand() - .5) * .5, ph: fxRand() * 6 }, o)); }
     // 描く仕組み：1秒に60回まで（120回の画面でも同じ速さ・発熱も少なく）。少しあとから足す演出があるあいだ（holdUntil まで）は止めない
     // hot：iPhone が熱いとき（thermalState が serious 以上）。「控えめ」相当にして、描くのを1秒30回までにする（冷えたら戻す）
-    let lastF = 0, holdUntil = 0, lastRaw = 0, slow = 0, autoLite = false, hot = false, draws = 0;
+    let lastF = 0, holdUntil = 0, lastRaw = 0, slow = 0, autoLite = false, hot = false, draws = 0, probing = false, lastProbe = 0;
     const alive = () => parts.length || bolts.length || rings.length || blobs.length || lines.length || holes.length;
     const kick = (ms = 0) => { holdUntil = Math.max(holdUntil, performance.now() + ms); if (!raf) { lastRaw = 0; raf = requestAnimationFrame(loop); } };
     // 一度に出す数の上限（古いものから消す）
@@ -11770,6 +11794,16 @@ ${recent || "まだありません"}`;
       // 盤面が新しくなったら、前とちがうセットを選ぶ（同じ盤面のやりなおしでは呼ばない）
       // 計測表示用：描いた回数（増えていくだけ）・重いときの自動「控えめ」・熱いとき
       stats: () => ({ draws, lite: autoLite, hot }),
+      // 重くて「控えめ」になったあと、書きかえの速さが戻ったかを3秒だけ測る（何も動いていないときに、15秒に1回まで）。
+      // 9割以上が 1秒50回より速ければ、派手な演出に戻す（前は一度「控えめ」になるとアプリを閉じるまで戻らなかった）
+      recheck() {
+        const now = performance.now();
+        if (!autoLite || probing || now - lastProbe < 15000) return;
+        probing = true; lastProbe = now;
+        let n = 0, ok = 0, last = 0;
+        const step = t => { if (last) { n++; if (t - last < 20) ok++; } last = t; if (n < 180) requestAnimationFrame(step); else { probing = false; if (ok >= 162) { autoLite = false; slow = 0; } } };
+        requestAnimationFrame(step);
+      },
       setHot(v) { hot = !!v; },
       newBoard() { if (FORCE) return; const now = set; do { set = SETS[Math.floor(fxRand() * SETS.length)]; } while (set === now); },
     };
@@ -13157,6 +13191,7 @@ ${recent || "まだありません"}`;
   function poke() { lastAction = performance.now(); if (hintStage && !$("navRoute")) { hintStage = 0; applyHintStage(); } }
   setInterval(() => {
     if (!board || busy || dragging || !$("overlay").hidden || !hints || gsOpenAt) return;
+    clearFx.recheck();  // 考えている間に、重さが戻ったかを確かめる
     const idle = performance.now() - lastAction;
     const first = hintFirstMs();
     const st = idle < first ? 0 : 1 + Math.floor((idle - first) / HINT_NEXT_MS);
