@@ -1006,7 +1006,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
     <div class="cs-in">
       <div class="cs-head"><b>単語パックをえらぶ</b><button type="button" id="packClose">閉じる</button></div>
       <div class="packlist" id="packList"></div>
-      <p class="cs-note">パーフェクトとつづりトレーニングの単語がかわります（のんびり練習も同じ）</p>
+      <p class="cs-note">パーフェクトとつづりトレーニングの単語がかわります（フリー練習も同じ）</p>
     </div>
   </div>
   <div class="cansheet" id="wordSheet" role="dialog" aria-label="単語の意味" hidden>
@@ -1090,7 +1090,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
         <option value="study">つづりトレーニング</option>
         <option value="endless">エンドレス</option>
         <option value="color">カラー</option>
-        <option value="daily">のんびり練習</option>
+        <option value="daily">フリー練習</option>
       </select>
       <select id="timeSel"><option value="6">6秒</option><option value="8">8秒</option><option value="10" selected>10秒</option><option value="12">12秒</option><option value="15">15秒</option></select>
       <select id="packSel">
@@ -1192,10 +1192,10 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
         </span>
       </button>
       <button type="button" class="mode-card" data-mode="daily" style="--mc:#d9b45a">
-        <span class="mc-art" aria-hidden="true"><i class="mt k3">E</i><i class="mt k0">A</i><i class="mt k1">S</i><i class="mt k4">Y</i></span>
+        <span class="mc-art" aria-hidden="true"><i class="mt k3">F</i><i class="mt k0">R</i><i class="mt k1">E</i><i class="mt k4">E</i></span>
         <span class="mc-body">
-          <b class="mc-name">のんびり練習<small id="dailyDate" hidden></small></b>
-          <span class="mc-desc">ライフ無限。かんたんな盤面から</span>
+          <b class="mc-name">フリー練習<small id="dailyDate" hidden></small></b>
+          <span class="mc-desc">ライフ無限。失敗しても大丈夫</span>
           <span class="mc-meta"><span id="dailyStreak">連続 0日</span><span class="mc-best">BEST <b data-best="daily">0</b></span></span>
         </span>
       </button>
@@ -9382,7 +9382,7 @@ zoom|v2|ズームする・急上昇する`;
   // ベストスコアは「モード × アシスト」ごとに別々に記録する（ランキングも別々にする前提）
   const STONE_CAP = 15, STONE_EVERY = 15, STONE_MAX = 5;  // 石は文字入り（t.stone = true）。動かせないが単語に使える
   const isEndless = () => $("modeSel").value === "endless";
-  const isDaily = () => $("modeSel").value === "daily";  // のんびり練習（前のデイリー。保存のキーを変えないよう、中の名前は "daily" のまま）
+  const isDaily = () => $("modeSel").value === "daily";  // フリー練習（前のデイリー。保存のキーを変えないよう、中の名前は "daily" のまま）
   const isStage = () => $("modeSel").value === "stage";   // パーフェクト：1回なぞるだけで全色消せる盤面を、ステージごとに解く
   const isStudy = () => $("modeSel").value === "study";   // 単語トレーニング：意味を見て、その英単語を作る
   const isPuzzle = () => isStage() || isStudy();
@@ -9423,7 +9423,7 @@ zoom|v2|ズームする・急上昇する`;
     if (PACKS[$("packSel").value] && PACKS[$("packSel").value].season && $("packSel").value !== now) $("packSel").value = "all";
   }
   const inPack = w => !pack() || pack().words.has(w);
-  const MODE_NAME = { endless: "エンドレス", color: "カラー", daily: "のんびり練習", quota: "ノルマ", stage: "パーフェクト", study: "単語トレーニング" };
+  const MODE_NAME = { endless: "エンドレス", color: "カラー", daily: "フリー練習", quota: "ノルマ", stage: "パーフェクト", study: "単語トレーニング" };
   // カラー（デイリー以外）はエネルギー制：毎ターン減り、単語を消すと回復。0で終わり
   const isEnergy = () => $("modeSel").value === "color";
   const ENERGY_MAX = 100;
@@ -9975,7 +9975,7 @@ zoom|v2|ズームする・急上昇する`;
   // ---------- ターン処理 ----------
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   // ---------- 答え合わせ ----------
-  // 盤面が終わったあと（クリア・失敗）に、その盤面の最初の並びと、全部消せる道を順番に見せる。消える単語の一覧も出す
+  // 失敗したとき（ひと筆パーフェクトはゲームオーバーのときだけ）に、その盤面の最初の並びと、全部消せる道を順番に見せる。消える単語の一覧も出す
   // 判定のあと（指で操作できない間）だけ出す。なぞっている最中に盤面へ重ねない（特許の回避ルール1）。タップで閉じる
   function answerData() {
     const route = isDaily() ? dailyRoute : isPuzzle() ? puzzleRoute : null;
@@ -10125,7 +10125,6 @@ zoom|v2|ズームする・急上昇する`;
           const heal = noMiss >= 3 && lives < LIVES;
           if (noMiss >= 3) noMiss = 0;
           await perfectWipe();  // この中で次のステージへ
-          await answerReview();
           if (heal) { lives++; SFX.levelUp(); buzz([20, 40, 20]); }
           if (level >= 20) achTry("stage20"); if (level >= 40) achTry("stage40"); if (level >= 60) achTry("stage60");
           if (level >= 30 && !lifeLost && !contUsed) achTry("nomiss30"); if (level >= 30 && !navUsedGame) achTry("nonav30");
@@ -10142,8 +10141,7 @@ zoom|v2|ズームする・急上昇する`;
           setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1${lives > 0 ? "　同じ盤面でもう一度！" : ""}`);
           updateHud();
           await sleep(900);
-          await answerReview();
-          if (lives <= 0) { showEnd(); busy = false; return; }
+          if (lives <= 0) { await answerReview(); showEnd(); busy = false; return; }  // 答え合わせはゲームオーバーのときだけ（同じ盤面でやり直すので、ナビの価値を守る）
           restoreStage();
         }
       } else {
@@ -10161,7 +10159,6 @@ zoom|v2|ズームする・急上昇する`;
             setStatus(`<b>レベルアップ！ Lv.${level}</b>　${level === diagFrom() ? "ここから、ななめに動かす答えも出てくる（たまにだけ）" : studyCount() > cwords.length ? `次から${studyCount()}語いっしょに出るよ` : "少し長い単語も出てくる"}`);
           }
           await sleep(700);
-          await answerReview();
         } else {
           streak = 0; lives--;
           studyReveal = new Set(cwords.map((x, i) => i).filter(i => !exact.has(i))); renderCwords();
@@ -10206,7 +10203,7 @@ zoom|v2|ズームする・急上昇する`;
       } else { streak = 0; setStatus("どんな単語でもOK。同じ色の文字だけで作ると得点2倍"); }
       // ふつうの単語に色の文字が使われて消えた色も、新しい単語に入れかえる
       cwords.forEach((x, i) => { if (x && board.flat().filter(t => t.col === i).length < x.w.length) touched.add(i); });
-      // のんびり練習：ライフは減らない（ゲームオーバーなし）。全部消せたら次の盤面（PRACTICE_STEP 回で1段階上がる）、消し残したら同じ盤面でもう一度
+      // フリー練習：ライフは減らない（ゲームオーバーなし）。全部消せたら次の盤面（PRACTICE_STEP 回で1段階上がる）、消し残したら同じ盤面でもう一度
       if (isDaily()) {
         touched.clear();
         if (!tut) {
@@ -10216,7 +10213,6 @@ zoom|v2|ズームする・急上昇する`;
             const ok = runLog.filter(Boolean).length; if (ok >= 10) achTry("extra10"); if (ok >= 30) achTry("extra30"); if (ok >= 50) achTry("extra50");
           }
         }
-        await answerReview();  // 答え合わせ（設定でオフにできる）
         if (all) {
           if (++studyBoards >= PRACTICE_STEP) { studyBoards = 0; level++; setTimeout(() => setStatus(`<b>レベルアップ！ Lv.${level}</b>　少しだけむずかしくなるよ`), 900); }
           buildPracticePuzzle();
@@ -10227,6 +10223,7 @@ zoom|v2|ズームする・急上昇する`;
           noMiss = 0;
           if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("SO CLOSE!", [`${exact.size}/${cwords.length} COLORS`, g ? `${g.combo} COMBO　+${g.gained.toLocaleString()}` : ""].filter(Boolean).join("　"), true); }
           setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　同じ盤面でもう一度！`);
+          await answerReview();  // 答え合わせ（失敗したときだけ。設定でオフにできる）
           restoreStage();
         }
       }
@@ -10247,7 +10244,7 @@ zoom|v2|ズームする・急上昇する`;
         $("status").innerHTML += `<span class="enet ${net >= 0 ? "up" : "down"}">エネルギー ${net >= 0 ? "+" : ""}${net}</span>`;
         if (energy > 0 && energy <= 25 && net < 0) { buzz([40, 40, 40]); }
       }
-      if (turns % TURNS_PER_LEVEL === 0 && (isEnergy() || (!isDaily() && turns < COLOR_TURNS))) {  // のんびり練習は、クリアした回数で上がる
+      if (turns % TURNS_PER_LEVEL === 0 && (isEnergy() || (!isDaily() && turns < COLOR_TURNS))) {  // フリー練習は、クリアした回数で上がる
         level++; buzz([20, 50, 20]);
         if (isEnergy()) addColorsForLevel();
         setStatus(`<b>レベルアップ！ Lv.${level}</b>　長い単語も出てくる`);
@@ -11007,7 +11004,7 @@ zoom|v2|ズームする・急上昇する`;
       $("quota").innerHTML = `エネルギー <b>${energy}</b>　毎ターン−${energyDrain()}`;
     } else if (isColor()) {
       $("hearts").innerHTML = "";
-      if (isDaily()) $("quota").innerHTML = `<b>${cwords.length}色</b>を1回で全部消す　ライフ無限`;  // のんびり練習
+      if (isDaily()) $("quota").innerHTML = `<b>${cwords.length}色</b>を1回で全部消す　ライフ無限`;  // フリー練習
       else $("quota").innerHTML = `残り <b>${Math.max(0, COLOR_TURNS - turns)}</b>問`;
     } else {
       $("hearts").innerHTML = Array.from({ length: LIVES }, (_, i) => `<span class="${i < lives ? "on" : "off"}">♥</span>`).join("");
@@ -11111,7 +11108,7 @@ zoom|v2|ズームする・急上昇する`;
     statsSave(st); renderStats();
   }
   function statsAdd(key) { const st = statsLoad(); st[key] = (st[key] || 0) + 1; statsSave(st); }
-  const STAT_NAME = { stage: "パーフェクト", study: "単語トレーニング", review: "復習", daily: "のんびり練習", color: "カラー", endless: "エンドレス" };
+  const STAT_NAME = { stage: "パーフェクト", study: "単語トレーニング", review: "復習", daily: "フリー練習", color: "カラー", endless: "エンドレス" };
   function statsLines() {
     const st = statsLoad(), out = [];
     out.push(["遊んだ日数", `${st.days.length}日（初日 ${st.first}）`]);
@@ -11859,13 +11856,13 @@ ${recent || "まだありません"}`;
     ["score50k", "5万点プレイヤー", "1ゲームで50,000点", "5万"],
     ["score100k", "10万点プレイヤー", "1ゲームで100,000点", "10万"],
     ["score300k", "30万点の壁", "1ゲームで300,000点", "30万"],
-    ["colorDone", "練習デビュー", "のんびり練習で初めてPERFECT", "✓"],
+    ["colorDone", "練習デビュー", "フリー練習で初めてPERFECT", "✓"],
     ["extra10", "練習の成果 10", "1回の練習で10問PERFECT", "練"],
     ["extra30", "練習の成果 30", "1回の練習で30問PERFECT", "練"],
-    ["daily3", "三日坊主じゃない", "のんびり練習を3日連続", "3日"],
-    ["daily7", "1週間皆勤", "のんびり練習を7日連続", "7日"],
-    ["daily30", "練習の達人", "のんびり練習を30日連続", "30日"],
-    ["daily100", "100日の皆勤賞", "のんびり練習を100日連続", "100"],
+    ["daily3", "三日坊主じゃない", "フリー練習を3日連続", "3日"],
+    ["daily7", "1週間皆勤", "フリー練習を7日連続", "7日"],
+    ["daily30", "練習の達人", "フリー練習を30日連続", "30日"],
+    ["daily100", "100日の皆勤賞", "フリー練習を100日連続", "100"],
     ["study100", "つづり100", "つづりトレーニングで合計100語正解", "100"],
     ["study500", "つづりの達人", "つづりトレーニングで合計500語正解", "500"],
     ["review", "復習コンプリート", "まちがえた単語を全部覚えなおす", "復"],
@@ -11884,7 +11881,7 @@ ${recent || "まだありません"}`;
     ["book3000", "歩く辞書", "単語帳に3,000語", "3千"],
     ["study1000", "つづり1000", "つづりトレーニングで合計1,000語正解", "千"],
     ["score1m", "百万点", "1ゲームで1,000,000点", "百万"],
-    ["daily365", "1年皆勤", "のんびり練習を365日連続", "365"],
+    ["daily365", "1年皆勤", "フリー練習を365日連続", "365"],
     ["combo12", "神のコンボ", "1回で12コンボ", "12"],
     ["boss1", "はじめてのBOSS撃破", "ひと筆パーフェクトで、STAGE 50 のBOSSステージをクリア", "B"],
     ["boss100", "BOSSハンター", "ひと筆パーフェクトで、STAGE 100 のBOSSステージをクリア", "B"],
@@ -11895,7 +11892,7 @@ ${recent || "まだありません"}`;
     ["コンボ・単語づくり", ["combo3", "combo5", "combo8", "combo10", "combo12", "long6", "long6x50"]],
     ["ひと筆パーフェクト", ["rainbow", "rainbow10", "rainbow20", "stage20", "stage40", "stage60", "nomiss30", "nonav30", "boss1", "boss100"]],
     ["スコア", ["score10k", "score50k", "score100k", "score300k", "score1m"]],
-    ["のんびり練習", ["colorDone", "extra10", "extra30", "extra50", "daily3", "daily7", "daily30", "daily100", "daily365"]],
+    ["フリー練習", ["colorDone", "extra10", "extra30", "extra50", "daily3", "daily7", "daily30", "daily100", "daily365"]],
     ["単語・学習", ["study100", "study500", "study1000", "review", "book100", "book500", "book1000", "book3000", "say50", "packs5"]],
   ];
   const ACH_PACKS = ["all", "eiken3", "eikenp2", "eiken2", "code"];
@@ -12154,7 +12151,7 @@ ${recent || "まだありません"}`;
     const d = dailyInfo();
     if (d.streak >= 2 && d.last === dayKey(y2) && guardAsked !== today) {
       try { localStorage.setItem(GUARD_KEY, today); } catch (e) {}
-      const ok = await askAd("連続記録がとぎれそう！", `のんびり練習の連続記録 <b>${d.streak}日</b> が、昨日遊ばなかったのでとぎれそうです。<br>広告を見ると記録を守れます（今日のんびり練習で1回PERFECTをとると ${d.streak + 1}日目）。`, "▶ 広告を見て記録を守る", "あきらめる");
+      const ok = await askAd("連続記録がとぎれそう！", `フリー練習の連続記録 <b>${d.streak}日</b> が、昨日遊ばなかったのでとぎれそうです。<br>広告を見ると記録を守れます（今日フリー練習で1回PERFECTをとると ${d.streak + 1}日目）。`, "▶ 広告を見て記録を守る", "あきらめる");
       if (ok) { d.last = dayKey(y); try { localStorage.setItem(DAILY_KEY, JSON.stringify(d)); } catch (e) {} showModeScreen(); }
     }
     let got = null; try { got = localStorage.getItem(LOGIN_KEY); } catch (e) {}
@@ -12516,7 +12513,7 @@ ${recent || "まだありません"}`;
     const [w, v] = pool[Math.floor(Math.random() * pool.length)];
     return { w, ...v };
   }
-  // のんびり練習：ひと筆パーフェクトと同じ作り方の盤面を、いちばんやさしいところ（短い単語・2色）から。
+  // フリー練習：ひと筆パーフェクトと同じ作り方の盤面を、いちばんやさしいところ（短い単語・2色）から。
   // PRACTICE_STEP 回クリアで1段階上がる（ひと筆は1回で1段階なので、2倍ゆっくり）。石・おとり文字・BOSS・スピードなどの特別な盤面は出さない
   const PRACTICE_STEP = 2;
   function buildPracticePuzzle() {
@@ -12532,7 +12529,7 @@ ${recent || "まだありません"}`;
     forceBasic = false;
     renderCwords();
   }
-  // （前のデイリーの盤面。のんびり練習に変えたので、今は使っていない）
+  // （前のデイリーの盤面。フリー練習に変えたので、今は使っていない）
   function buildDailyPuzzle(turnNo) {
     clearFx.newBoard();
     const unseed = seedRandom(`worddrop-${dayKey()}-t${turnNo}`);
@@ -12659,7 +12656,7 @@ ${recent || "まだありません"}`;
         : isStudy()
         ? `単語トレーニングは、<b>日本語の意味</b>を見て、その英単語を色の文字を並べて作るモード。<br>まちがえるとライフ−1で、正解が出るよ。まちがえた単語はあとでまた出るから、自然に覚えられる！`
         : isDaily()
-        ? `のんびり練習は、上の色の単語を<b>1回なぞるだけで全部</b>そろえる練習。<br><b>ライフは無限</b>で時間もゆったり。かんたんな盤面から、少しずつむずかしくなるよ。`
+        ? `フリー練習は、上の色の単語を<b>1回なぞるだけで全部</b>そろえる練習。<br><b>ライフは無限</b>で時間もゆったり。かんたんな盤面から、少しずつむずかしくなるよ。`
         : isColor()
         ? `カラーモードも、<b>どんな単語でも</b>消えてコンボになるよ。<br>エネルギーは毎ターン減るけど、単語を消すと回復。<b>同じ色の文字だけ</b>で作ると大きく回復して得点も2倍。0になったら終わり！<br>上の5つのうち<b>1つは必ず、1回なぞるだけで作れる</b>よ。さがしてみて！`
         : `エンドレスは、毎ターン<b>石</b>が落ちてくる。石は動かせないけど、<b>文字は単語に使える</b>よ。<br>石が<b>15個</b>たまったら終わり。どこまで続けられるか挑戦！`, "はじめる！");
