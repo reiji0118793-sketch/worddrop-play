@@ -10802,6 +10802,7 @@ zoom|v2|ズームする・急上昇する`;
   async function perfectWipe() {
     const tiles = board.flat();
     SFX.perfect();  // 「ため」の音が先に鳴る
+    speakHold(900);  // 読み上げは、PERFECT の演出のいちばん重いところが過ぎてから続ける
     if (clearFx.themed()) await sleep(80);  // 「派手」は、暗くなる「ため」を入れずにすぐ
     else if (fxOn()) {
       // 一瞬、時間が止まったように暗く・ゆっくりにしてから、ドーン！
@@ -10953,15 +10954,28 @@ zoom|v2|ズームする・急上昇する`;
   // 単語が消えるときの読み上げ（発音の勉強）。効果音のすぐあとに続けて読む。コンボが続くほど声を高く（1.0 → 最大1.5）・少し速く
   // 効果音か読み上げがオフなら読まない。つづりトレーニングは、正解が決まったあとに正解した単語だけ読む
   const speakOn = () => $("soundToggle").checked && $("speakToggle").checked;
+  // アプリでは iPhone 本体の読み上げ（Speech プラグイン）を使う。ゲーム画面の読み上げは演出の描画とぶつかって重くなるため。
+  // ブラウザ（試遊版）や、プラグインがない古いビルドでは、今までの読み上げ（sayEn）
+  const nativeSpeech = (() => { try { const C = window.Capacitor; return C && C.isNativePlatform && C.isNativePlatform() && C.PluginHeaders && C.PluginHeaders.some(h => h.name === "Speech") ? C.Plugins.Speech : null; } catch (e) { return null; } })();
+  const nativeCall = (fn, arg) => { try { const r = nativeSpeech[fn](arg); if (r && r.catch) r.catch(() => {}); } catch (e) {} };
   function speakClear(w, combo) {
     if (!speakOn() || tut) return;
-    const k = Math.min(1, Math.max(0, combo - 1) / 8);
-    sayEn(w.toLowerCase(), { queue: true, pitch: 1 + .5 * k, rate: .95 + .25 * k });
+    const k = Math.min(1, Math.max(0, combo - 1) / 8), pitch = 1 + .5 * k, rate = .95 + .25 * k;
+    if (nativeSpeech) nativeCall("speak", { text: w.toLowerCase(), pitch, rate });
+    else sayEn(w.toLowerCase(), { queue: true, pitch, rate });
+  }
+  // PERFECT の演出がいちばん重い間（ms ミリ秒）は、今の単語を読み終えたところで待つ（そのあと続きを読む）
+  let speakHoldT = 0;
+  function speakHold(ms) {
+    if (!speakOn()) return;
+    if (nativeSpeech) { nativeCall("hold", { ms }); return; }
+    try { const sp = window.speechSynthesis; if (!sp || !(sp.speaking || sp.pending)) return; sp.pause(); clearTimeout(speakHoldT); speakHoldT = setTimeout(() => { try { sp.resume(); } catch (e) {} }, ms); } catch (e) {}
   }
   // 次のなぞりが始まったら、まだ読んでいない古い単語は読まない（声が溜まらないように）
   // iPhone は最初の読み上げを指でさわった瞬間に始めないと声が出ないことがあるので、最初の1回だけ無音で読んでおく
   let speakReady = false;
   function speakTouch() {
+    if (nativeSpeech) { nativeCall("stop"); return; }
     try {
       const sp = window.speechSynthesis; if (!sp || !window.SpeechSynthesisUtterance) return;
       if (sp.speaking || sp.pending) sp.cancel();
