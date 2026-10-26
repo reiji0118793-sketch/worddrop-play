@@ -451,10 +451,6 @@ body { margin: 0; }
 .canwords .canbtn:not([hidden]) ~ .setbtn { margin-left: 6px; }
 .gs-in .controls { display: grid; gap: 8px; }
 .gs-in .controls label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--panel-2); font-size: 14px; }
-.gs-in .theme-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 0; }
-.gs-in .theme-sw { padding: 8px 4px; font-size: 12px; }
-.gs-in .theme-sw i { height: 26px; }
-.gs-in h4 { margin: 2px 0 0; font-size: 12px; color: var(--muted); font-weight: 700; }
 .gs-row { display: grid; grid-template-columns: 3.4em 1fr; align-items: center; gap: 8px; font-size: 14px; }
 .gs-row > span { color: var(--muted); font-weight: 700; font-size: 13px; }
 .gs-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel-2); }
@@ -574,6 +570,12 @@ body.has-banner #gameSet { padding-bottom: calc(var(--safeB) + var(--bannerH) + 
 .cw[data-w], .odai-line[data-w] { cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .08s; }
 .cw[data-w]:active, .odai-line[data-w]:active { transform: scale(.94); }
 .ws-in { gap: 12px; }
+/* 答え合わせ：盤面の最初の並び（小さく）＋全部消せる道 */
+.ans-board { position: relative; width: min(100%, 300px); margin: 0 auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; padding: 4px; border-radius: 10px; background: #12162b; border: 1px solid var(--line); }
+.ans-board i { aspect-ratio: 1; display: grid; place-items: center; border-radius: 6px; font: 800 17px var(--font-display); font-style: normal; color: #2b2540; background: #ece6d6; }
+.ans-board i.cc { background: color-mix(in srgb, var(--c) 55%, #fff); box-shadow: inset 0 0 0 2px var(--c); }
+.ans-board i.st { background: #8d93a3; color: #333; }
+.ans-board svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .ws-pos { font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: var(--panel-2); color: var(--muted); }
 .ws-word { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .ws-word b { font-family: var(--font-display); font-weight: 800; font-size: 32px; letter-spacing: .06em; color: var(--gold); word-break: break-all; }
@@ -980,20 +982,31 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
     <div class="cs-in gs-in">
       <div class="cs-head"><b>設定</b><button type="button" class="gs-x" id="gsClose" aria-label="閉じる">×</button></div>
       <div class="controls">
-        <label><input type="checkbox" id="gsSound"> 効果音</label>
+        <label><input type="checkbox" id="gsSound" data-sync="soundToggle"> 効果音</label>
       </div>
-      <div class="gs-row"><span>演出</span><div class="gs-seg" id="gsFx" role="group" aria-label="演出"><button type="button" data-v="2">派手</button><button type="button" data-v="1">控えめ</button><button type="button" data-v="0">なし</button></div></div>
       <div class="gs-row"><span>BGM</span><div class="gs-seg" id="gsBgm" role="group" aria-label="BGM"><button type="button" data-v="off">オフ</button><button type="button" data-v="calm">しっとり</button><button type="button" data-v="pop">元気</button></div></div>
-      <h4>盤面のテーマ</h4>
-      <div class="theme-grid" id="gsThemes"></div>
+      <div class="gs-row"><span>演出</span><div class="gs-seg" id="gsFx" role="group" aria-label="演出"><button type="button" data-v="2">派手</button><button type="button" data-v="1">控えめ</button><button type="button" data-v="0">なし</button></div></div>
+      <div class="controls">
+        <label><input type="checkbox" data-sync="vibeToggle"> 振動</label>
+        <label><input type="checkbox" data-sync="speakToggle"> 読み上げ（消えた単語を英語で）</label>
+        <label><input type="checkbox" data-sync="answerToggle"> 答え合わせを表示</label>
+      </div>
       <p class="credit ver" id="gsVer">バージョン 1.0.3</p>
+    </div>
+  </div>
+  <div class="cansheet" id="ansSheet" role="dialog" aria-label="答え合わせ" hidden>
+    <div class="cs-in ans-in">
+      <div class="cs-head"><b>答え合わせ　こうすれば全部消せた！</b><button type="button" id="ansClose">閉じる</button></div>
+      <div class="ans-board" id="ansBoard"></div>
+      <ul id="ansList"></ul>
+      <p class="cs-note">STARTから線のとおりになぞると、上の単語がぜんぶそろいます。どこかをタップすると閉じます</p>
     </div>
   </div>
   <div class="cansheet" id="packSheet" role="dialog" aria-label="単語パックをえらぶ" hidden>
     <div class="cs-in">
       <div class="cs-head"><b>単語パックをえらぶ</b><button type="button" id="packClose">閉じる</button></div>
       <div class="packlist" id="packList"></div>
-      <p class="cs-note">パーフェクトとつづりトレーニングの単語がかわります（デイリーはみんな同じ単語）</p>
+      <p class="cs-note">パーフェクトとつづりトレーニングの単語がかわります（のんびり練習も同じ）</p>
     </div>
   </div>
   <div class="cansheet" id="wordSheet" role="dialog" aria-label="単語の意味" hidden>
@@ -1077,7 +1090,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
         <option value="study">つづりトレーニング</option>
         <option value="endless">エンドレス</option>
         <option value="color">カラー</option>
-        <option value="daily">デイリー</option>
+        <option value="daily">のんびり練習</option>
       </select>
       <select id="timeSel"><option value="6">6秒</option><option value="8">8秒</option><option value="10" selected>10秒</option><option value="12">12秒</option><option value="15">15秒</option></select>
       <select id="packSel">
@@ -1107,7 +1120,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       </label>
       <label>アシスト
         <select id="assistSel">
-          <option value="2" selected>しっかり（デイリーで道を線で教える）</option>
+          <option value="2" selected>しっかり（道を線で教える）</option>
           <option value="1">ちょっと（作れる単語の一覧）</option>
           <option value="0">なし</option>
         </select>
@@ -1126,6 +1139,8 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       <div class="controls">
       <label><input type="checkbox" id="soundToggle" checked> 効果音</label>
       <label><input type="checkbox" id="vibeToggle" checked> 振動</label>
+      <label><input type="checkbox" id="speakToggle" checked> 読み上げ（消えた単語を英語で）</label>
+      <label><input type="checkbox" id="answerToggle" checked> 答え合わせを表示</label>
       <label>演出
         <select id="fxLevel"><option value="2" selected>派手</option><option value="1">控えめ</option><option value="0">なし</option></select>
       </label>
@@ -1177,11 +1192,11 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
         </span>
       </button>
       <button type="button" class="mode-card" data-mode="daily" style="--mc:#d9b45a">
-        <span class="mc-art" aria-hidden="true"><i class="mt k3">D</i><i class="mt k0">A</i><i class="mt k1">Y</i><i class="mt k4">!</i></span>
+        <span class="mc-art" aria-hidden="true"><i class="mt k3">E</i><i class="mt k0">A</i><i class="mt k1">S</i><i class="mt k4">Y</i></span>
         <span class="mc-body">
-          <b class="mc-name">デイリーエクストラ<small id="dailyDate" hidden></small></b>
-          <span class="mc-desc">毎日かわる盤面、どこまで続く？</span>
-          <span class="mc-meta"><span id="dailyStreak">連続 0日</span><span class="mc-best">今日のBEST <b data-best="daily">0</b></span></span>
+          <b class="mc-name">のんびり練習<small id="dailyDate" hidden></small></b>
+          <span class="mc-desc">ライフ無限。かんたんな盤面から</span>
+          <span class="mc-meta"><span id="dailyStreak">連続 0日</span><span class="mc-best">BEST <b data-best="daily">0</b></span></span>
         </span>
       </button>
       <button type="button" class="mode-card" data-mode="review" id="reviewCard" style="--mc:#2bb3a6" hidden>
@@ -9363,11 +9378,11 @@ zoom|v2|ズームする・急上昇する`;
   // ---------- スコアアタックの設定 ----------
   const LIVES = 3, TURNS_PER_LEVEL = 5;
   const quotaOf = lv => [30, 60, 100, 150, 200][lv - 1] || 200 + (lv - 5) * 60;
-  const timeOf = lv => tut ? 40 : $("modeSel").value === "daily" ? Math.max(15, 4 + (dailyRoute ? dailyRoute.length : 0)) : isPuzzle() ? Math.min(30, Math.max(10, Math.round(6 + (puzzleRoute ? puzzleRoute.length : 6) * (isStage() ? (isSpeedStage(lv) ? 0.62 : Math.max(0.7, 1 - Math.max(0, lv - 12) * 0.012)) : 1)))) : Math.max(6, Number($("timeSel").value) - Math.max(0, lv - 3));
+  const timeOf = lv => tut ? 40 : $("modeSel").value === "daily" ? 60 : isPuzzle() ? Math.min(30, Math.max(10, Math.round(6 + (puzzleRoute ? puzzleRoute.length : 6) * (isStage() ? (isSpeedStage(lv) ? 0.62 : Math.max(0.7, 1 - Math.max(0, lv - 12) * 0.012)) : 1)))) : Math.max(6, Number($("timeSel").value) - Math.max(0, lv - 3));
   // ベストスコアは「モード × アシスト」ごとに別々に記録する（ランキングも別々にする前提）
   const STONE_CAP = 15, STONE_EVERY = 15, STONE_MAX = 5;  // 石は文字入り（t.stone = true）。動かせないが単語に使える
   const isEndless = () => $("modeSel").value === "endless";
-  const isDaily = () => $("modeSel").value === "daily";
+  const isDaily = () => $("modeSel").value === "daily";  // のんびり練習（前のデイリー。保存のキーを変えないよう、中の名前は "daily" のまま）
   const isStage = () => $("modeSel").value === "stage";   // パーフェクト：1回なぞるだけで全色消せる盤面を、ステージごとに解く
   const isStudy = () => $("modeSel").value === "study";   // 単語トレーニング：意味を見て、その英単語を作る
   const isPuzzle = () => isStage() || isStudy();
@@ -9408,7 +9423,7 @@ zoom|v2|ズームする・急上昇する`;
     if (PACKS[$("packSel").value] && PACKS[$("packSel").value].season && $("packSel").value !== now) $("packSel").value = "all";
   }
   const inPack = w => !pack() || pack().words.has(w);
-  const MODE_NAME = { endless: "エンドレス", color: "カラー", daily: "デイリー", quota: "ノルマ", stage: "パーフェクト", study: "単語トレーニング" };
+  const MODE_NAME = { endless: "エンドレス", color: "カラー", daily: "のんびり練習", quota: "ノルマ", stage: "パーフェクト", study: "単語トレーニング" };
   // カラー（デイリー以外）はエネルギー制：毎ターン減り、単語を消すと回復。0で終わり
   const isEnergy = () => $("modeSel").value === "color";
   const ENERGY_MAX = 100;
@@ -9417,7 +9432,7 @@ zoom|v2|ズームする・急上昇する`;
   const COLOR_TURNS = 10, CCOL = ["#e07a66", "#5b8fdc", "#5fae5a", "#d9ae2c", "#9a6bd6", "#f08a3c", "#2bb3a6", "#e06aa8", "#8fbf3a", "#a8774c"];  // カラーは前の5色、デイリーは8色
   const DAILY_LENS = [5, 4, 3, 3, 3, 3, 3, 3];  // デイリーの8つの単語の長さ
   let cwords = [], cshort = [true, true, true, false, false];
-  const bestKey = () => isDaily() ? `wordDrop.daily.${dayKey()}` : `wordDrop.best.v2.${$("modeSel").value}.${assistLv()}`;
+  const bestKey = () => `wordDrop.best.v2.${$("modeSel").value}.${assistLv()}`;
   let bestScore = 0;
   function loadBest() { try { bestScore = Number(localStorage.getItem(bestKey())) || 0; } catch (e) { bestScore = 0; } }
 
@@ -9873,7 +9888,7 @@ zoom|v2|ズームする・急上昇する`;
     e.preventDefault();
     if (tut || stageIntroOn) { $("tutCoach").hidden = true; stageIntroOn = false; }
     poke();
-    SFX.ensure(); SFX.grab(); buzz(12); stepCount = 0; lastTickSec = 99;
+    SFX.ensure(); SFX.grab(); buzz(12); speakTouch(); stepCount = 0; lastTickSec = 99;
     boardEl.setPointerCapture(e.pointerId);
     heldPos = cellAt(e.clientX, e.clientY);
     if (board[heldPos.r][heldPos.c].stone) {
@@ -9959,8 +9974,41 @@ zoom|v2|ズームする・急上昇する`;
 
   // ---------- ターン処理 ----------
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  // ---------- 答え合わせ ----------
+  // 盤面が終わったあと（クリア・失敗）に、その盤面の最初の並びと、全部消せる道を順番に見せる。消える単語の一覧も出す
+  // 判定のあと（指で操作できない間）だけ出す。なぞっている最中に盤面へ重ねない（特許の回避ルール1）。タップで閉じる
+  function answerData() {
+    const route = isDaily() ? dailyRoute : isPuzzle() ? puzzleRoute : null;
+    if (tut || !route || route.length < 2 || !stageSnap || !stageWords) return null;
+    return { route: route.slice(), snap: stageSnap, words: stageWords.slice() };
+  }
+  let ansData = null;
+  function answerReview(a = ansData) {
+    if (!a || !$("answerToggle").checked) return Promise.resolve();
+    const g = $("ansBoard");
+    g.innerHTML = a.snap.map(row => row.map(x => x.stone ? `<i class="st">${x.ch}</i>` : x.col !== undefined ? `<i class="cc" style="--c:${CCOL[x.col]}">${x.ch}</i>` : `<i>${x.ch}</i>`).join("")).join("");
+    $("ansList").innerHTML = a.words.map((x, i) => `<li style="--c:${CCOL[i]}"><b>${x.w}</b><span>${esc(x.m)}</span></li>`).join("");
+    $("ansSheet").hidden = false;
+    // 道：マスのまん中を順番に結ぶ線を、STARTから少しずつ描く（指の丸も道をたどる）。1回だけ動いて止まる
+    const W = g.clientWidth - 8, H = g.clientHeight - 8, cw = (W - 3 * (COLS - 1)) / COLS, ch = (H - 3 * (ROWS - 1)) / ROWS;
+    const P = a.route.map(q => [4 + q.c * (cw + 3) + cw / 2, 4 + q.r * (ch + 3) + ch / 2]);
+    let len = 0; for (let i = 1; i < P.length; i++) len += Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]);
+    const ms = Math.min(5000, 600 + a.route.length * 260);
+    g.insertAdjacentHTML("beforeend", `<svg viewBox="0 0 ${g.clientWidth} ${g.clientHeight}"><polyline points="${P.map(p => p.join(",")).join(" ")}" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${len}" stroke-dashoffset="${len}" class="ans-sh"/><polyline points="${P.map(p => p.join(",")).join(" ")}" fill="none" stroke="#ffe45c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${len}" stroke-dashoffset="${len}" class="ans-ln"/><circle cx="${P[0][0]}" cy="${P[0][1]}" r="${cw * .42}" fill="none" stroke="#fff" stroke-width="3"/><text x="${P[0][0]}" y="${a.route[0].r === 0 ? P[0][1] + cw * .75 : P[0][1] - cw * .55}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" stroke="#000" stroke-width="3" paint-order="stroke">START</text><circle class="ans-dot" r="${cw * .2}" fill="#fff" cx="${P[0][0]}" cy="${P[0][1]}"/></svg>`);
+    const anims = [...g.querySelectorAll(".ans-sh, .ans-ln")].map(e => e.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: ms, easing: "linear", fill: "forwards" }));
+    const dot = g.querySelector(".ans-dot");
+    const kf = []; let acc = 0; P.forEach((p, i) => { if (i) acc += Math.hypot(p[0] - P[i - 1][0], p[1] - P[i - 1][1]); kf.push({ transform: `translate(${p[0] - P[0][0]}px, ${p[1] - P[0][1]}px)`, offset: len ? acc / len : 0 }); });
+    anims.push(dot.animate(kf, { duration: ms, easing: "linear", fill: "forwards" }));
+    return new Promise(res => {
+      let done = false, t = 0;
+      const close = () => { if (done) return; done = true; clearTimeout(t); anims.forEach(x => x.cancel()); $("ansSheet").hidden = true; g.innerHTML = ""; $("ansSheet").removeEventListener("click", close); res(); };
+      $("ansSheet").addEventListener("click", close);
+      t = setTimeout(close, ms + 2500);  // 道を描き終わってから2.5秒で自動で閉じる
+    });
+  }
   async function resolveTurn() {
     busy = true; turns++;
+    ansData = answerData();  // 今の盤面（なぞる前）の答え。盤面が入れかわる前に取っておく
     if (turns === 1 && !tut) {
       statsTouchDay();
       const pk = $("packSel").value, ps = achData.s.packs || (achData.s.packs = []);
@@ -10077,6 +10125,7 @@ zoom|v2|ズームする・急上昇する`;
           const heal = noMiss >= 3 && lives < LIVES;
           if (noMiss >= 3) noMiss = 0;
           await perfectWipe();  // この中で次のステージへ
+          await answerReview();
           if (heal) { lives++; SFX.levelUp(); buzz([20, 40, 20]); }
           if (level >= 20) achTry("stage20"); if (level >= 40) achTry("stage40"); if (level >= 60) achTry("stage60");
           if (level >= 30 && !lifeLost && !contUsed) achTry("nomiss30"); if (level >= 30 && !navUsedGame) achTry("nonav30");
@@ -10093,6 +10142,7 @@ zoom|v2|ズームする・急上昇する`;
           setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1${lives > 0 ? "　同じ盤面でもう一度！" : ""}`);
           updateHud();
           await sleep(900);
+          await answerReview();
           if (lives <= 0) { showEnd(); busy = false; return; }
           restoreStage();
         }
@@ -10100,6 +10150,7 @@ zoom|v2|ズームする・急上昇する`;
         studyN += cwords.length; studyOK += exact.size; runLog.push(all ? 1 : 0);
         achData.s.studyOK += exact.size; achSave(); if (achData.s.studyOK >= 100) achTry("study100"); if (achData.s.studyOK >= 500) achTry("study500"); if (achData.s.studyOK >= 1000) achTry("study1000");
         cwords.forEach((x, i) => { if (exact.has(i)) missDel(x.w); else missAdd(x.w); });
+        cwords.forEach((x, i) => { if (exact.has(i)) speakClear(x.w, 1); });
         if (all) {
           streak++; studyBoards++;
           const bonus = 50 * level * cwords.length; score += bonus; bumpScore(); SFX.levelUp(); buzz([20, 40, 20]);
@@ -10110,6 +10161,7 @@ zoom|v2|ズームする・急上昇する`;
             setStatus(`<b>レベルアップ！ Lv.${level}</b>　${level === diagFrom() ? "ここから、ななめに動かす答えも出てくる（たまにだけ）" : studyCount() > cwords.length ? `次から${studyCount()}語いっしょに出るよ` : "少し長い単語も出てくる"}`);
           }
           await sleep(700);
+          await answerReview();
         } else {
           streak = 0; lives--;
           studyReveal = new Set(cwords.map((x, i) => i).filter(i => !exact.has(i))); renderCwords();
@@ -10120,6 +10172,7 @@ zoom|v2|ズームする・急上昇する`;
           updateHud();
           await sleep(2000);
           studyReveal = false;
+          await answerReview();
           if (lives <= 0) { showEnd(); busy = false; return; }
         }
         if (reviewMode && !missList().some(w => DICT.has(w) && w.length <= COLS)) { reviewDone = true; achTry("review"); await sleep(300); showEnd(); busy = false; return; }
@@ -10153,21 +10206,28 @@ zoom|v2|ズームする・急上昇する`;
       } else { streak = 0; setStatus("どんな単語でもOK。同じ色の文字だけで作ると得点2倍"); }
       // ふつうの単語に色の文字が使われて消えた色も、新しい単語に入れかえる
       cwords.forEach((x, i) => { if (x && board.flat().filter(t => t.col === i).length < x.w.length) touched.add(i); });
-      // デイリーは、毎ターン次のパズル（その日・そのターンで決まった盤面）に入れかえる
+      // のんびり練習：ライフは減らない（ゲームオーバーなし）。全部消せたら次の盤面（PRACTICE_STEP 回で1段階上がる）、消し残したら同じ盤面でもう一度
       if (isDaily()) {
         touched.clear();
-        if (!tut) { runLog.push(all ? 1 : 0); { const ex = runLog.slice(COLOR_TURNS).filter(Boolean).length; if (ex >= 10) achTry("extra10"); if (ex >= 30) achTry("extra30"); if (ex >= 50) achTry("extra50"); } }
-        // 10問のあとは「エクストラ」：ずっと続く。全消しできないとライフ−1（ライフ3）
-        if (turns > COLOR_TURNS && !all) { lives--; noMiss = 0; SFX.fail(); buzz([80, 60, 120]); gfx.shake();
-          if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("SO CLOSE!", [`${exact.size}/${cwords.length} COLORS`, g ? `${g.combo} COMBO　+${g.gained.toLocaleString()}` : "", "LIFE −1"].filter(Boolean).join("　"), true); }
-          setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　ライフ −1`); }
-        if (turns === COLOR_TURNS && !tut) markDaily();
-        if (turns === COLOR_TURNS) { lives = LIVES; setTimeout(() => setStatus("<b>ここからエクストラ！</b>　ずっと続くよ。全部消せないとライフ−1（ライフ3）"), 900); }
-        if (lives > 0) {
-          buildDailyPuzzle(turns);
+        if (!tut) {
+          runLog.push(all ? 1 : 0);
+          if (all) {
+            markDaily(); achTry("colorDone");
+            const ok = runLog.filter(Boolean).length; if (ok >= 10) achTry("extra10"); if (ok >= 30) achTry("extra30"); if (ok >= 50) achTry("extra50");
+          }
+        }
+        await answerReview();  // 答え合わせ（設定でオフにできる）
+        if (all) {
+          if (++studyBoards >= PRACTICE_STEP) { studyBoards = 0; level++; setTimeout(() => setStatus(`<b>レベルアップ！ Lv.${level}</b>　少しだけむずかしくなるよ`), 900); }
+          buildPracticePuzzle();
           render();
           for (const t of board.flat()) if (t.col !== undefined) { const el = elFor(t); el.classList.remove("cin"); void el.offsetWidth; el.classList.add("cin"); }
-          if (turns >= COLOR_TURNS) SFX.extra(turns - COLOR_TURNS + 1); else SFX.levelUp();
+          SFX.levelUp();
+        } else {
+          noMiss = 0;
+          if (clearFx.themed()) { const g = pfGain; pfGain = null; clearFx.resultText("SO CLOSE!", [`${exact.size}/${cwords.length} COLORS`, g ? `${g.combo} COMBO　+${g.gained.toLocaleString()}` : ""].filter(Boolean).join("　"), true); }
+          setStatus(`おしい！ <b>${exact.size}/${cwords.length}色</b>　同じ盤面でもう一度！`);
+          restoreStage();
         }
       }
       // 消えた色は、新しい単語になって出てくる
@@ -10187,7 +10247,7 @@ zoom|v2|ズームする・急上昇する`;
         $("status").innerHTML += `<span class="enet ${net >= 0 ? "up" : "down"}">エネルギー ${net >= 0 ? "+" : ""}${net}</span>`;
         if (energy > 0 && energy <= 25 && net < 0) { buzz([40, 40, 40]); }
       }
-      if (turns % TURNS_PER_LEVEL === 0 && (isEnergy() || turns < COLOR_TURNS)) {
+      if (turns % TURNS_PER_LEVEL === 0 && (isEnergy() || (!isDaily() && turns < COLOR_TURNS))) {  // のんびり練習は、クリアした回数で上がる
         level++; buzz([20, 50, 20]);
         if (isEnergy()) addColorsForLevel();
         setStatus(`<b>レベルアップ！ Lv.${level}</b>　長い単語も出てくる`);
@@ -10329,10 +10389,11 @@ zoom|v2|ズームする・急上昇する`;
       $("soundToggle").checked = v.sound !== false; $("vibeToggle").checked = v.vibe !== false;
       $("fxLevel").value = String(v.fxLv !== undefined ? v.fxLv : v.fx === false ? 0 : 2);  // 前の版は「派手な演出」のオン／オフだけ
       if (v.bgm === "calm" || v.bgm === "pop") $("bgmSel").value = v.bgm;
+      $("speakToggle").checked = v.speak !== false; $("answerToggle").checked = v.answer !== false;  // 1.0.3 から（最初はどちらもオン）
     }
   } catch (e) {}
-  const saveSoundFx = () => { try { localStorage.setItem(SOUNDFX_KEY, JSON.stringify({ sound: $("soundToggle").checked, vibe: $("vibeToggle").checked, fxLv: fxLv(), bgm: $("bgmSel").value })); } catch (e) {} };
-  for (const id of ["soundToggle", "vibeToggle", "fxLevel", "bgmSel"]) $(id).addEventListener("change", saveSoundFx);
+  const saveSoundFx = () => { try { localStorage.setItem(SOUNDFX_KEY, JSON.stringify({ sound: $("soundToggle").checked, vibe: $("vibeToggle").checked, fxLv: fxLv(), bgm: $("bgmSel").value, speak: $("speakToggle").checked, answer: $("answerToggle").checked })); } catch (e) {} };
+  for (const id of ["soundToggle", "vibeToggle", "fxLevel", "bgmSel", "speakToggle", "answerToggle"]) $(id).addEventListener("change", saveSoundFx);
   let heatT = 0;
   // 1. コンボが増えるほど、画面のふちが熱くなる（3:黄 → 5:オレンジ → 8:赤 → 10〜:虹）
   function heat(combo) {
@@ -10416,6 +10477,7 @@ zoom|v2|ズームする・急上昇する`;
     fitLabel(lab);
     lab.animate([{ transform: lab.style.transform || "", opacity: 0, scale: .5 }, { opacity: 1, scale: 1.08, offset: .6 }, { opacity: 1, scale: 1 }], { duration: 220, easing: "ease-out" });
     SFX.word(combo); buzz(Math.min(14 + combo * 8, 70));
+    if (!isStudy()) speakClear(f.w, combo);
     const themed = clearFx.themed();  // 「派手」は、今までの色とりどりの粒とフラッシュのかわりに、セットの消える演出だけ
     if (!themed) gfx.burst(Math.min(8 + combo * 3, 30));
     heat(combo);
@@ -10846,14 +10908,37 @@ zoom|v2|ズームする・急上昇する`;
     }
   }
   // ---------- 上の単語をタップすると、意味・発音・例文が見られる ----------
-  function sayEn(text) {
+  // 英語の声は一度だけ探して使い回す（読み上げのたびに探さない）
+  let enVoice = null;
+  function pickVoice() { try { const vs = window.speechSynthesis.getVoices(); enVoice = vs.find(v => /^en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null; } catch (e) {} }
+  try { if (window.speechSynthesis) { pickVoice(); window.speechSynthesis.addEventListener("voiceschanged", pickVoice); } } catch (e) {}
+  // opt.queue：前の読み上げを止めずに、うしろに続ける（消えた単語を順番に読む）。opt.pitch・opt.rate：声の高さ・速さ
+  function sayEn(text, opt = {}) {
     try {
       const sp = window.speechSynthesis; if (!sp || !window.SpeechSynthesisUtterance) return;
-      sp.cancel();
-      const u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; u.rate = .85;
-      const v = sp.getVoices().find(v => /^en[-_]US/i.test(v.lang)) || sp.getVoices().find(v => /^en/i.test(v.lang));
-      if (v) u.voice = v;
+      if (!opt.queue) sp.cancel();
+      const u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; u.rate = opt.rate || .85; u.pitch = opt.pitch || 1;
+      if (!enVoice) pickVoice();
+      if (enVoice) u.voice = enVoice;
       sp.speak(u);
+    } catch (e) {}
+  }
+  // 単語が消えるときの読み上げ（発音の勉強）。効果音のすぐあとに続けて読む。コンボが続くほど声を高く（1.0 → 最大1.5）・少し速く
+  // 効果音か読み上げがオフなら読まない。つづりトレーニングは、正解が決まったあとに正解した単語だけ読む
+  const speakOn = () => $("soundToggle").checked && $("speakToggle").checked;
+  function speakClear(w, combo) {
+    if (!speakOn() || tut) return;
+    const k = Math.min(1, Math.max(0, combo - 1) / 8);
+    sayEn(w.toLowerCase(), { queue: true, pitch: 1 + .5 * k, rate: .95 + .25 * k });
+  }
+  // 次のなぞりが始まったら、まだ読んでいない古い単語は読まない（声が溜まらないように）
+  // iPhone は最初の読み上げを指でさわった瞬間に始めないと声が出ないことがあるので、最初の1回だけ無音で読んでおく
+  let speakReady = false;
+  function speakTouch() {
+    try {
+      const sp = window.speechSynthesis; if (!sp || !window.SpeechSynthesisUtterance) return;
+      if (sp.speaking || sp.pending) sp.cancel();
+      if (!speakReady && speakOn()) { speakReady = true; const u = new SpeechSynthesisUtterance(" "); u.volume = 0; sp.speak(u); }
     } catch (e) {}
   }
   let wsStudyIdx = -1;
@@ -10922,10 +11007,8 @@ zoom|v2|ズームする・急上昇する`;
       $("quota").innerHTML = `エネルギー <b>${energy}</b>　毎ターン−${energyDrain()}`;
     } else if (isColor()) {
       $("hearts").innerHTML = "";
-      if (isDaily() && turns >= COLOR_TURNS) {
-        $("hearts").innerHTML = Array.from({ length: LIVES }, (_, i) => `<span class="${i < lives ? "on" : "off"}">♥</span>`).join("");
-        $("quota").innerHTML = `エクストラ <b>${turns - COLOR_TURNS + 1}</b>問目`;
-      } else $("quota").innerHTML = `残り <b>${Math.max(0, COLOR_TURNS - turns)}</b>問`;
+      if (isDaily()) $("quota").innerHTML = `<b>${cwords.length}色</b>を1回で全部消す　ライフ無限`;  // のんびり練習
+      else $("quota").innerHTML = `残り <b>${Math.max(0, COLOR_TURNS - turns)}</b>問`;
     } else {
       $("hearts").innerHTML = Array.from({ length: LIVES }, (_, i) => `<span class="${i < lives ? "on" : "off"}">♥</span>`).join("");
       $("quota").innerHTML = `ノルマ <b>${quotaOf(level)}</b>点／ターン`;
@@ -10933,6 +11016,7 @@ zoom|v2|ズームする・急上昇する`;
     $("streak").textContent = streak >= 2 ? `連続 ${streak}回 ×${(1 + 0.1 * Math.min(streak, 10)).toFixed(1)}` : "";
     if (isPuzzle()) $("lvFill").style.width = (isStudy() ? studyBoards / studyNeed() * 100 : 100) + "%";
     else if (isEnergy()) $("lvFill").style.width = ((turns % TURNS_PER_LEVEL) / TURNS_PER_LEVEL * 100) + "%";
+    else if (isDaily()) $("lvFill").style.width = (studyBoards / PRACTICE_STEP * 100) + "%";  // 次の段階まで
     else if (isColor()) $("lvFill").style.width = (turns / COLOR_TURNS * 100) + "%";
     else if (!isEndless()) $("lvFill").style.width = ((turns % TURNS_PER_LEVEL) / TURNS_PER_LEVEL * 100) + "%";
     $("bestLabel").textContent = "BEST"; $("bestLabel").parentElement.title = `${MODE_NAME[$("modeSel").value]}・アシスト${ASSIST_NAME[assistLv()]}の最高点`;
@@ -10988,7 +11072,7 @@ zoom|v2|ズームする・急上昇する`;
   const RESUME_KEY = "wordDrop.resume.v1";
   let resumeData = null;
   function resumeAll() { try { return JSON.parse(localStorage.getItem(RESUME_KEY) || "{}") || {}; } catch (e) { return {}; } }
-  function resumeGet(k) { const r = resumeAll()[k]; if (!r) return null; if (k === "daily" && r.day !== dayKey()) return null; return r; }
+  function resumeGet(k) { const r = resumeAll()[k]; if (!r) return null; return r; }
   function resumeClear(k) { const a = resumeAll(); delete a[k]; try { localStorage.setItem(RESUME_KEY, JSON.stringify(a)); } catch (e) {} }
   let lastResumeJson = "";
   function resumeSave() {
@@ -11027,7 +11111,7 @@ zoom|v2|ズームする・急上昇する`;
     statsSave(st); renderStats();
   }
   function statsAdd(key) { const st = statsLoad(); st[key] = (st[key] || 0) + 1; statsSave(st); }
-  const STAT_NAME = { stage: "パーフェクト", study: "単語トレーニング", review: "復習", daily: "デイリー", color: "カラー", endless: "エンドレス" };
+  const STAT_NAME = { stage: "パーフェクト", study: "単語トレーニング", review: "復習", daily: "のんびり練習", color: "カラー", endless: "エンドレス" };
   function statsLines() {
     const st = statsLoad(), out = [];
     out.push(["遊んだ日数", `${st.days.length}日（初日 ${st.first}）`]);
@@ -11129,7 +11213,6 @@ ${recent || "まだありません"}`;
     $("overlay").hidden = true; $("burst").hidden = true;
     recent = []; renderRecent();
     lastAction = performance.now();
-    const unseed = isDaily() ? seedRandom("worddrop-" + dayKey()) : null;
     board = freshBoard();
     const color = isColor();
     document.querySelector(".odai").classList.toggle("color", color);
@@ -11141,8 +11224,7 @@ ${recent || "まだありません"}`;
     const rs = resumeData; resumeData = null; lastResumeJson = "";
     if (rs) { ({ level, score, lives, turns, streak, noMiss, contUsed, maxCombo, totalWords, studyN, studyOK, studyBoards } = rs); runLog = rs.runLog || []; lifeLost = !!rs.lifeLost; navUsedGame = !!rs.navUsed; }
     document.body.classList.toggle("puzzle", isPuzzle());
-    if (color) { odai = { w: "", m: "" }; if (isDaily()) buildDailyPuzzle(rs ? turns : 0); else if (isStage()) { buildStagePuzzle(); stageIntro(); } else if (isStudy()) buildStudyPuzzle(); else setupColor(); } else newOdai();
-    if (unseed) unseed();
+    if (color) { odai = { w: "", m: "" }; if (isDaily()) buildPracticePuzzle(); else if (isStage()) { buildStagePuzzle(); stageIntro(); } else if (isStudy()) buildStudyPuzzle(); else setupColor(); } else newOdai();
     updateAssistChip();
     measure(); updateHud(); resetTimerBar(); refreshHints();
     setStatus(rs ? `<b>つづきから！</b>　${resumeText(statMode(), rs)}・${score.toLocaleString()}点` : "文字をつかんでなぞると、通ったマスの文字と入れ替わります");
@@ -11777,13 +11859,13 @@ ${recent || "まだありません"}`;
     ["score50k", "5万点プレイヤー", "1ゲームで50,000点", "5万"],
     ["score100k", "10万点プレイヤー", "1ゲームで100,000点", "10万"],
     ["score300k", "30万点の壁", "1ゲームで300,000点", "30万"],
-    ["colorDone", "デイリー完走", "デイリーの10問を遊びきる", "✓"],
-    ["extra10", "天才の一手 10連発", "1日のエクストラで10問PERFECT", "天"],
-    ["extra30", "天才の一手 30連発", "1日のエクストラで30問PERFECT", "天"],
-    ["daily3", "三日坊主じゃない", "デイリーを3日連続", "3日"],
-    ["daily7", "1週間皆勤", "デイリーを7日連続", "7日"],
-    ["daily30", "デイリーの達人", "デイリーを30日連続", "30日"],
-    ["daily100", "100日の皆勤賞", "デイリーを100日連続", "100"],
+    ["colorDone", "練習デビュー", "のんびり練習で初めてPERFECT", "✓"],
+    ["extra10", "練習の成果 10", "1回の練習で10問PERFECT", "練"],
+    ["extra30", "練習の成果 30", "1回の練習で30問PERFECT", "練"],
+    ["daily3", "三日坊主じゃない", "のんびり練習を3日連続", "3日"],
+    ["daily7", "1週間皆勤", "のんびり練習を7日連続", "7日"],
+    ["daily30", "練習の達人", "のんびり練習を30日連続", "30日"],
+    ["daily100", "100日の皆勤賞", "のんびり練習を100日連続", "100"],
     ["study100", "つづり100", "つづりトレーニングで合計100語正解", "100"],
     ["study500", "つづりの達人", "つづりトレーニングで合計500語正解", "500"],
     ["review", "復習コンプリート", "まちがえた単語を全部覚えなおす", "復"],
@@ -11798,11 +11880,11 @@ ${recent || "まだありません"}`;
     ["nomiss30", "ノーミス30", "ひと筆パーフェクトで、ライフを1つも減らさずにSTAGE 30に到達", "無"],
     ["nonav30", "自力で30", "ひと筆パーフェクトで、ナビボタンを使わずにSTAGE 30に到達", "自"],
     ["rainbow20", "虹の支配者", "PERFECTを20回連続", "虹"],
-    ["extra50", "天才の一手 50連発", "1日のエクストラで50問PERFECT", "天"],
+    ["extra50", "練習の成果 50", "1回の練習で50問PERFECT", "練"],
     ["book3000", "歩く辞書", "単語帳に3,000語", "3千"],
     ["study1000", "つづり1000", "つづりトレーニングで合計1,000語正解", "千"],
     ["score1m", "百万点", "1ゲームで1,000,000点", "百万"],
-    ["daily365", "1年皆勤", "デイリーを365日連続", "365"],
+    ["daily365", "1年皆勤", "のんびり練習を365日連続", "365"],
     ["combo12", "神のコンボ", "1回で12コンボ", "12"],
     ["boss1", "はじめてのBOSS撃破", "ひと筆パーフェクトで、STAGE 50 のBOSSステージをクリア", "B"],
     ["boss100", "BOSSハンター", "ひと筆パーフェクトで、STAGE 100 のBOSSステージをクリア", "B"],
@@ -11813,7 +11895,7 @@ ${recent || "まだありません"}`;
     ["コンボ・単語づくり", ["combo3", "combo5", "combo8", "combo10", "combo12", "long6", "long6x50"]],
     ["ひと筆パーフェクト", ["rainbow", "rainbow10", "rainbow20", "stage20", "stage40", "stage60", "nomiss30", "nonav30", "boss1", "boss100"]],
     ["スコア", ["score10k", "score50k", "score100k", "score300k", "score1m"]],
-    ["デイリー", ["colorDone", "extra10", "extra30", "extra50", "daily3", "daily7", "daily30", "daily100", "daily365"]],
+    ["のんびり練習", ["colorDone", "extra10", "extra30", "extra50", "daily3", "daily7", "daily30", "daily100", "daily365"]],
     ["単語・学習", ["study100", "study500", "study1000", "review", "book100", "book500", "book1000", "book3000", "say50", "packs5"]],
   ];
   const ACH_PACKS = ["all", "eiken3", "eikenp2", "eiken2", "code"];
@@ -12072,7 +12154,7 @@ ${recent || "まだありません"}`;
     const d = dailyInfo();
     if (d.streak >= 2 && d.last === dayKey(y2) && guardAsked !== today) {
       try { localStorage.setItem(GUARD_KEY, today); } catch (e) {}
-      const ok = await askAd("連続記録がとぎれそう！", `デイリーの連続記録 <b>${d.streak}日</b> が、昨日遊ばなかったのでとぎれそうです。<br>広告を見ると記録を守れます（今日デイリーを遊ぶと ${d.streak + 1}日目）。`, "▶ 広告を見て記録を守る", "あきらめる");
+      const ok = await askAd("連続記録がとぎれそう！", `のんびり練習の連続記録 <b>${d.streak}日</b> が、昨日遊ばなかったのでとぎれそうです。<br>広告を見ると記録を守れます（今日のんびり練習で1回PERFECTをとると ${d.streak + 1}日目）。`, "▶ 広告を見て記録を守る", "あきらめる");
       if (ok) { d.last = dayKey(y); try { localStorage.setItem(DAILY_KEY, JSON.stringify(d)); } catch (e) {} showModeScreen(); }
     }
     let got = null; try { got = localStorage.getItem(LOGIN_KEY); } catch (e) {}
@@ -12264,7 +12346,7 @@ ${recent || "まだありません"}`;
         const L = Math.min(18, 4 + level + k * 2);
         const lay = ["h", "mix", "ring", "center"][Math.floor(Math.random() * 4)];
         const route = buildDailyBoard(list.map(x => x.w), L, L + 3, 0, lay);
-        if (route) { puzzleRoute = route; renderCwords(); return true; }
+        if (route) { puzzleRoute = route; stageSnap = board.map(row => row.map(t => ({ ch: t.ch, col: t.col, stone: !!t.stone }))); stageWords = cwords.slice(); renderCwords(); return true; }
       }
       reviewMode = false;
     }
@@ -12286,7 +12368,7 @@ ${recent || "まだありません"}`;
       const L = Math.min(18, 3 + level + k * 2);
       const lay = level <= 3 ? "h" : ["h", "mix", "v", "ring", "center"][Math.floor(Math.random() * 5)];
       const route = buildDailyBoard(list.map(x => x.w), L, L + 3, diagMax(), list.every(x => x.w.length <= ROWS) ? lay : (lay === "v" ? "h" : lay));
-      if (route) { puzzleRoute = route; list.forEach(x => studyRecent.push(x.w)); renderCwords(); return true; }
+      if (route) { puzzleRoute = route; stageSnap = board.map(row => row.map(t => ({ ch: t.ch, col: t.col, stone: !!t.stone }))); stageWords = cwords.slice(); list.forEach(x => studyRecent.push(x.w)); renderCwords(); return true; }
     }
     return false;
   }
@@ -12423,9 +12505,9 @@ ${recent || "まだありません"}`;
   let entriesCache = null, forceBasic = false;  // forceBasic：何度も作れなかったときは、基本の単語で作りなおす
   function pickDailyWord(len, used) {
     const all = entriesCache || (entriesCache = [...DICT.entries()]);
-    const codeOK = !isDaily() && $("packSel").value === "code";  // エンジニア英単語なら、QやXなど珍しい文字の単語（QUERY・INDEX）も出す
+    const codeOK = $("packSel").value === "code";  // エンジニア英単語なら、QやXなど珍しい文字の単語（QUERY・INDEX）も出す
     const ok = ([w]) => !NOSHOW.has(w) && w.length === len && !used.has(w) && (codeOK && PACKS.code.words.has(w) || [...w].every(ch => WEIGHTS[ch] >= 1));
-    const pk = isDaily() ? null : pack(), inPk = w => !pk || pk.words.has(w);  // デイリーはみんな同じ盤面なので、単語パックは使わない
+    const pk = pack(), inPk = w => !pk || pk.words.has(w);
     let pool = all.filter(e => ok(e) && (pk && !forceBasic ? inPk(e[0]) : e[1].tier === 1));
     // パックの単語が少ない長さは、基本の単語で補う（季節パックなどは、7割はパックの単語から出す）
     if (pool.length < 8 && !(pool.length && pk && (pk.season || pk.code) && !forceBasic && Math.random() < 0.7)) pool = pool.concat(all.filter(e => ok(e) && e[1].tier === 1 && !(pk && inPk(e[0]))));
@@ -12434,6 +12516,23 @@ ${recent || "まだありません"}`;
     const [w, v] = pool[Math.floor(Math.random() * pool.length)];
     return { w, ...v };
   }
+  // のんびり練習：ひと筆パーフェクトと同じ作り方の盤面を、いちばんやさしいところ（短い単語・2色）から。
+  // PRACTICE_STEP 回クリアで1段階上がる（ひと筆は1回で1段階なので、2倍ゆっくり）。石・おとり文字・BOSS・スピードなどの特別な盤面は出さない
+  const PRACTICE_STEP = 2;
+  function buildPracticePuzzle() {
+    clearFx.newBoard();
+    const sp = stageSpec(Math.min(level, 40));
+    for (let tries = 0; tries < 25; tries++) {
+      forceBasic = tries >= 6;
+      const used = new Set(stageRecent.slice(-40));
+      try { cwords = sp.lens.slice().sort(() => Math.random() - 0.5).map(len => { const x = pickDailyWord(len, used); used.add(x.w); return x; }); } catch (e) { continue; }
+      const route = buildDailyBoard(cwords.map(x => x.w), sp.Lmin, sp.Lmax, sp.diag, stageLayout(level, sp.lens));
+      if (route) { cwords.forEach(x => stageRecent.push(x.w)); dailyRoute = route; stageSnap = board.map(row => row.map(t => ({ ch: t.ch, col: t.col, stone: !!t.stone }))); stageWords = cwords.slice(); break; }
+    }
+    forceBasic = false;
+    renderCwords();
+  }
+  // （前のデイリーの盤面。のんびり練習に変えたので、今は使っていない）
   function buildDailyPuzzle(turnNo) {
     clearFx.newBoard();
     const unseed = seedRandom(`worddrop-${dayKey()}-t${turnNo}`);
@@ -12560,7 +12659,7 @@ ${recent || "まだありません"}`;
         : isStudy()
         ? `単語トレーニングは、<b>日本語の意味</b>を見て、その英単語を色の文字を並べて作るモード。<br>まちがえるとライフ−1で、正解が出るよ。まちがえた単語はあとでまた出るから、自然に覚えられる！`
         : isDaily()
-        ? `デイリーは、上の色の単語を<b>1回なぞるだけで全部</b>そろえる毎日の10問。<br>10問のあとは<b>エクストラ</b>がずっと続くよ（全部消せないとライフ−1、ライフは3つ）。後半は盤面ぜんぶが消える<b>天才の一手</b>に挑戦！`
+        ? `のんびり練習は、上の色の単語を<b>1回なぞるだけで全部</b>そろえる練習。<br><b>ライフは無限</b>で時間もゆったり。かんたんな盤面から、少しずつむずかしくなるよ。`
         : isColor()
         ? `カラーモードも、<b>どんな単語でも</b>消えてコンボになるよ。<br>エネルギーは毎ターン減るけど、単語を消すと回復。<b>同じ色の文字だけ</b>で作ると大きく回復して得点も2倍。0になったら終わり！<br>上の5つのうち<b>1つは必ず、1回なぞるだけで作れる</b>よ。さがしてみて！`
         : `エンドレスは、毎ターン<b>石</b>が落ちてくる。石は動かせないけど、<b>文字は単語に使える</b>よ。<br>石が<b>15個</b>たまったら終わり。どこまで続けられるか挑戦！`, "はじめる！");
@@ -12586,7 +12685,7 @@ ${recent || "まだありません"}`;
   function showModeScreen() {
     document.querySelectorAll("[data-best]").forEach(el => {
       const lv = Math.min(Number($("assistSel").value), assistMax(el.dataset.best));
-      let v = 0; try { v = Number(localStorage.getItem(el.dataset.best === "daily" ? `wordDrop.daily.${dayKey()}` : `wordDrop.best.v2.${el.dataset.best}.${lv}`)) || 0; } catch (e) {}
+      let v = 0; try { v = Number(localStorage.getItem(`wordDrop.best.v2.${el.dataset.best}.${lv}`)) || 0; } catch (e) {}
       el.textContent = v.toLocaleString();
     });
     document.querySelectorAll(".mode-card").forEach(c => c.classList.toggle("current", c.dataset.mode === $("modeSel").value));
@@ -12600,7 +12699,7 @@ ${recent || "まだありません"}`;
     { const di = dailyInfo(), y = new Date(); y.setDate(y.getDate() - 1);
       const st = di.last === dayKey() || di.last === dayKey(y) ? di.streak : 0;
       const got = ACH.filter(a => achData.u[a[0]]).length;
-      $("msBadges").innerHTML = `${st ? `<span>デイリー連続 ${st}日</span>` : ""}<span>実績 ${got}/${ACH.length}</span>`; }
+      $("msBadges").innerHTML = `${st ? `<span>練習 連続 ${st}日</span>` : ""}<span>実績 ${got}/${ACH.length}</span>`; }
     $("msNote").textContent = [`困ったときは、ゲーム画面の「ナビ」ボタンで、消える道を線で見られます`, `設定の「盤面のテーマ」で、盤面の色を変えられます`, `ゲームが終わったら「結果をシェア」で友だちに自慢しよう`][Math.floor(Math.random() * 3)];
     $("overlay").hidden = true;
     $("modeScreen").hidden = false;
@@ -12726,7 +12825,7 @@ ${recent || "まだありません"}`;
   }
   function renderThemes() {
     const own = themeOwned(), cur = document.body.dataset.theme || "night";
-    $("themeGrid").innerHTML = $("gsThemes").innerHTML = THEMES.map(([id, name, sw]) => `<button type="button" class="theme-sw${id === cur ? " on" : ""}" data-theme-id="${id}" style="--sw:${sw}"><i></i>${name}<small>${id === cur ? "使用中" : own.has(id) ? "つかう" : "▶ 広告で解放"}</small></button>`).join("");
+    $("themeGrid").innerHTML = THEMES.map(([id, name, sw]) => `<button type="button" class="theme-sw${id === cur ? " on" : ""}" data-theme-id="${id}" style="--sw:${sw}"><i></i>${name}<small>${id === cur ? "使用中" : own.has(id) ? "つかう" : "▶ 広告で解放"}</small></button>`).join("");
   }
   async function onThemeClick(e) {
     const b = e.target.closest("[data-theme-id]"); if (!b) return;
@@ -12740,7 +12839,6 @@ ${recent || "まだありません"}`;
     applyTheme(id);
   }
   $("themeGrid").addEventListener("click", onThemeClick);
-  $("gsThemes").addEventListener("click", onThemeClick);
   try { const t = localStorage.getItem(THEME_KEY); if (t && themeOwned().has(t) && THEMES.some(x => x[0] === t)) applyTheme(t); else renderThemes(); } catch (e) { renderThemes(); }
   $("modeChip").addEventListener("click", async () => {
     if (busy || dragging) return;
@@ -12807,14 +12905,14 @@ ${recent || "まだありません"}`;
   });
   $("canSheet").addEventListener("click", () => { $("canSheet").hidden = true; });
   $("navBtn").addEventListener("click", useNav);
-  // プレイ中の設定シート：タイトルの設定と同じチェックボックス・同じテーマの関数を使う（盤面・スコアには触らない）
+  // プレイ中の設定シート：タイトルの設定と同じチェックボックスを使う（盤面・スコアには触らない）。テーマはタイトルの設定でだけ変える
   // 時間はなぞっている間だけ減るので、なぞり中・判定中は開かない。開いている間は盤面をぼかし、自動ナビの待ち時間も止める
   let gsOpenAt = 0;
   $("setBtn").addEventListener("click", () => {
     if (dragging || busy || !$("overlay").hidden || gsOpenAt) return;
     SFX.ensure(); buzz(8);
-    $("gsSound").checked = $("soundToggle").checked; renderGsSeg();
-    renderThemes();
+    for (const c of $("gameSet").querySelectorAll("[data-sync]")) c.checked = $(c.dataset.sync).checked;
+    renderGsSeg();
     gsOpenAt = performance.now(); document.body.classList.add("gs-open");
     $("gameSet").hidden = false;
   });
@@ -12825,7 +12923,8 @@ ${recent || "まだありません"}`;
   }
   $("gsClose").addEventListener("click", closeGameSet);
   $("gameSet").addEventListener("click", e => { if (e.target === $("gameSet")) closeGameSet(); });
-  $("gsSound").addEventListener("change", () => { $("soundToggle").checked = $("gsSound").checked; $("soundToggle").dispatchEvent(new Event("change")); });
+  // チェックの項目（効果音・振動・読み上げ・答え合わせ）：タイトルの設定のチェックボックスを同じように切りかえる（保存先も同じ）
+  for (const c of $("gameSet").querySelectorAll("[data-sync]")) c.addEventListener("change", () => { const m = $(c.dataset.sync); m.checked = c.checked; m.dispatchEvent(new Event("change")); });
   // 演出・BGM はボタンで切りかえ（中身はタイトルの設定のプルダウンと同じ）
   function renderGsSeg() {
     for (const [seg, sel] of [["gsFx", "fxLevel"], ["gsBgm", "bgmSel"]]) $(seg).querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === $(sel).value)));
@@ -13034,7 +13133,7 @@ ${recent || "まだありません"}`;
     navBusy = true;
     try {
       if (navTickets() <= 0) {
-        const ok = await askAd("ナビがありません", "広告を1回見ると、ナビを1回使えます。<br>カラーとデイリーは<b>色の単語がぜんぶ消えてPERFECT!になる道</b>を、エンドレスはたくさん消える道を線で見せます。");
+        const ok = await askAd("ナビがありません", "広告を1回見ると、ナビを1回使えます。<br>色の単語がある盤面は<b>色の単語がぜんぶ消えてPERFECT!になる道</b>を、エンドレスはたくさん消える道を線で見せます。");
         if (!ok) return;
         addNav(1);
       }
