@@ -9462,9 +9462,9 @@ zoom|v2|ズームする・急上昇する`;
   const SFX = (() => {
     let ctx = null, master = null;
     const on = () => $("soundToggle").checked;
-    let verb = null, lastCT = -1, lastWall = 0, intrTries = 0, lastSound = 0, napping = false;
+    let verb = null, lastCT = -1, lastWall = 0, intrTries = 0, lastSound = 0, napping = false, voices = [], voiceEnd = 0;
     // 音の部品をすべて捨てる（次にさわったときに作りなおす）。広告のあとや、アプリに戻ったときにiPhoneで音が出なくなるのを防ぐ
-    function reset() { try { if (ctx) ctx.close(); } catch (e) {} ctx = null; master = null; verb = null; lastCT = -1; lastWall = 0; intrTries = 0; napping = false; }
+    function reset() { try { if (ctx) ctx.close(); } catch (e) {} ctx = null; master = null; verb = null; voices = []; voiceEnd = 0; lastCT = -1; lastWall = 0; intrTries = 0; napping = false; }
     // 6秒以上なにも鳴らしていなければ休ませる（iPhoneは音の部品が動いているだけで電池を使い、熱くなる）
     function wake() { lastSound = performance.now(); if (ctx && napping) { napping = false; try { const pr = ctx.resume(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {} } }
     setInterval(() => {
@@ -9543,6 +9543,20 @@ zoom|v2|ズームする・急上昇する`;
     let lastStep = 0;
     return {
       ensure, reset,
+      // 先に作っておいた単語の声（Voice）を、前の声に続けて鳴らす。rate：速さと高さ（1.0〜1.25。コンボで上げる）
+      voice(buf, rate = 1) {
+        if (!ctx || !on()) return;
+        wake();
+        const t = Math.max(ctx.currentTime + .1, voiceEnd);  // 消える効果音のすぐあと
+        const src = ctx.createBufferSource(), g = ctx.createGain();
+        src.buffer = buf; src.playbackRate.value = rate; g.gain.value = 1.6;
+        src.connect(g); g.connect(master); src.start(t);
+        voiceEnd = t + buf.duration / rate + .06;
+        voices.push(src); src.onended = () => { const i = voices.indexOf(src); if (i >= 0) voices.splice(i, 1); };
+        lastSound = performance.now() + (voiceEnd - ctx.currentTime) * 1000;  // 鳴り終わるまで休ませない
+      },
+      // まだ鳴っていない声を捨てる（次のなぞりが始まったとき）
+      voiceStop() { for (const v of voices) { try { v.stop(); } catch (e) {} } voices = []; voiceEnd = 0; },
       state: () => !ctx ? "なし" : napping ? "休み" : ctx.state === "running" ? "動作中" : ctx.state,
       grab() { tone(700, 0.06, { type: "triangle", vol: 0.25 }); noise(0.03, { freq: 3000, vol: 0.12 }); },
       step(n) {
@@ -10678,10 +10692,12 @@ zoom|v2|ズームする・急上昇する`;
   const hiddenWord = x => x.hint ? x.w[0] + x.w.slice(1).replace(/./g, "＿") : x.w.replace(/./g, "＿");
   function renderCwords() {
     if (isStudy() && !tut) {
+      Voice.prepare(cwords.filter(Boolean).map(x => x.w));  // 正解したあとに読むぶん
       $("cwords").innerHTML = cwords.map((x, i) => `<span class="cw study${studyReveal && studyReveal.has(i) ? " missed" : ""}" data-w="${x.w}" data-i="${i}" style="--cc:${CCOL[i]}"><b>${studyReveal && studyReveal.has(i) ? x.w : hiddenWord(x)}</b><span>${esc(x.m)}</span></span>`).join("")
         + `<span class="cwhint">意味の英単語を、同じ色の文字を並べて作ろう${cwords.length > 1 ? `（${cwords.length}語ぜんぶ1回で）` : ""}　<b>単語をタップでヒント</b></span>`;
       return;
     }
+    Voice.prepare(cwords.filter(Boolean).map(x => x.w));  // この盤面の単語の声を、先に作っておく（アプリだけ）
     $("cwords").innerHTML = cwords.map((x, i) => `<span class="cw" data-w="${x.w}" style="--cc:${CCOL[i]}"><b>${x.w}</b><span>${x.m}</span><svg class="cw-snd" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h3l4-3v10L5 10H2z" fill="currentColor"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>`).join("");
     wordSheetHint();
   }
@@ -10856,6 +10872,7 @@ zoom|v2|ズームする・急上昇する`;
     setStatus(`<b>${pf.kind === "premium" ? "PREMIUM PERFECT!" : pf.kind === "hyper" ? "HYPER PERFECT!" : pf.kind === "super" ? "SUPER PERFECT!" : pf.kind === "great" ? "GREAT PERFECT!" : "PERFECT!"}</b>　全消しボーナス +${bonus.toLocaleString()}点${pf.mult > 1 ? `（×${pf.mult}）` : ""}${isEnergy() ? "　エネルギー満タン！" : ""}`);
     await sleep(600);
     if (puzzled) setStatus(`<b>PERFECTチャンス！</b>（${pfStreak}連続）　この並びは、1回なぞるだけで全部消せる道がかくれているよ`);
+    speakPf = false;
     return puzzled;
   }
   // PERFECTの連続数で難しさを決める：道の長さと色の数
@@ -10961,14 +10978,51 @@ zoom|v2|ズームする・急上昇する`;
   // ブラウザ（試遊版）や、プラグインがない古いビルドでは、今までの読み上げ（sayEn）
   const nativeSpeech = (() => { try { const C = window.Capacitor; return C && C.isNativePlatform && C.isNativePlatform() && C.PluginHeaders && C.PluginHeaders.some(h => h.name === "Speech") ? C.Plugins.Speech : null; } catch (e) { return null; } })();
   const nativeCall = (fn, arg) => { try { const r = nativeSpeech[fn](arg); if (r && r.catch) r.catch(() => {}); } catch (e) {} };
+  // 単語の声を「先に作っておく」（アプリだけ）。盤面が出たら、その盤面の単語の声を iPhone が裏で作り（Speech.render）、
+  // 消える瞬間は、作っておいた声を効果音と同じ部品で鳴らすだけにする（声を作る重い作業が、派手な演出と同じ瞬間に重ならない）
+  const Voice = (() => {
+    const cache = new Map(), busy = new Set(); let broken = false;
+    // 16bit の音のデータ（base64）→ AudioBuffer
+    function toBuffer(b64, sr) {
+      const bin = atob(b64), n = bin.length >> 1, buf = new AudioBuffer({ length: Math.max(1, n), sampleRate: sr, numberOfChannels: 1 }), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) { let v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8); if (v >= 32768) v -= 65536; d[i] = v / 32768; }
+      return buf;
+    }
+    // then：作り終わったら呼ぶ（偶然できた単語を、作れたら鳴らすため）
+    function prepare(words, then) {
+      if (!nativeSpeech || broken || !speakOn() || typeof nativeSpeech.render !== "function") return;
+      const need = [...new Set(words.map(w => String(w).toLowerCase()))].filter(w => w && !cache.has(w) && !busy.has(w)).slice(0, 12);
+      if (!need.length) return;
+      need.forEach(w => busy.add(w));
+      let r = null; try { r = nativeSpeech.render({ words: need, rate: .8 }); } catch (e) {}  // .8：聞き取りやすいよう少しゆっくり作る
+      Promise.resolve(r).then(res => {
+        if (!res) broken = true;
+        const a = (res && res.audio) || {}, sr = (res && res.rates) || {};
+        for (const w of need) { busy.delete(w); if (a[w]) { try { cache.set(w, toBuffer(a[w], sr[w] || 22050)); } catch (e) {} } }
+        while (cache.size > 300) cache.delete(cache.keys().next().value);
+        if (then) then();
+      }, () => { need.forEach(w => busy.delete(w)); broken = true; });
+    }
+    return { prepare, ready: () => !!nativeSpeech && !broken && typeof nativeSpeech.render === "function", get: w => cache.get(w.toLowerCase()) };
+  })();
+  let speakTurn = 0, speakPf = false;  // speakTurn：なぞりの回数（古い単語を鳴らさないため）、speakPf：PERFECT の演出中
   function speakClear(w, combo) {
     if (!speakOn() || tut) return;
     const k = Math.min(1, Math.max(0, combo - 1) / 8), pitch = 1 + .5 * k, rate = .8 + .2 * k;  // 聞き取りやすいよう、少しゆっくり（コンボで少しだけ速く）
-    if (nativeSpeech) nativeCall("speak", { text: w.toLowerCase(), pitch, rate });
-    else sayEn(w.toLowerCase(), { queue: true, pitch, rate });
+    const word = w.toLowerCase();
+    if (Voice.ready()) {
+      const play = () => { const b = Voice.get(word); if (b) SFX.voice(b, 1 + .25 * k); };  // コンボで声を高く・少し速く
+      if (Voice.get(word)) { play(); return; }
+      // 用意していない単語（偶然できた単語）：その場で作って、できたら鳴らす。次のなぞりが始まった・PERFECT の演出中なら鳴らさない
+      const turn = speakTurn; Voice.prepare([word], () => { if (turn === speakTurn && !speakPf) play(); });
+      return;
+    }
+    if (nativeSpeech) nativeCall("speak", { text: word, pitch, rate });
+    else sayEn(word, { queue: true, pitch, rate });
   }
-  // PERFECT の演出が始まったら、まだ読んでいない単語は読まずに止める（いちばん重いところで声の処理を動かさない）
+  // PERFECT の演出が始まったら、その場で作る読み上げは止める（作っておいた声は軽いので、そのまま鳴らす）
   function speakCut() {
+    speakPf = true;
     if (nativeSpeech) { nativeCall("stop"); return; }
     try { const sp = window.speechSynthesis; if (sp && (sp.speaking || sp.pending)) sp.cancel(); } catch (e) {}
   }
@@ -10976,6 +11030,7 @@ zoom|v2|ズームする・急上昇する`;
   // iPhone は最初の読み上げを指でさわった瞬間に始めないと声が出ないことがあるので、最初の1回だけ無音で読んでおく
   let speakReady = false;
   function speakTouch() {
+    speakTurn++; speakPf = false; SFX.voiceStop();
     if (nativeSpeech) { nativeCall("stop"); return; }
     try {
       const sp = window.speechSynthesis; if (!sp || !window.SpeechSynthesisUtterance) return;
