@@ -1000,7 +1000,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       <div class="controls">
         <label><input type="checkbox" id="gsSound" data-sync="soundToggle"> 効果音</label>
       </div>
-      <div class="gs-row"><span>BGM</span><div class="gs-seg" id="gsBgm" role="group" aria-label="BGM"><button type="button" data-v="off">オフ</button><button type="button" data-v="calm">しっとり</button><button type="button" data-v="pop">元気</button></div></div>
+      <div class="gs-row"><span>BGM</span><div class="gs-seg" id="gsBgm" role="group" aria-label="BGM"><button type="button" data-v="off">オフ</button><button type="button" data-v="calm">しっとり</button><button type="button" data-v="pop">元気</button><button type="button" data-v="chip">8bit</button><button type="button" data-v="edm">EDM</button></div></div>
       <div class="gs-row"><span>演出</span><div class="gs-seg" id="gsFx" role="group" aria-label="演出"><button type="button" data-v="2">派手</button><button type="button" data-v="1">控えめ</button><button type="button" data-v="0">なし</button></div></div>
       <div class="controls">
         <label><input type="checkbox" data-sync="vibeToggle"> 振動</label>
@@ -1164,7 +1164,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
         <select id="fxLevel"><option value="2" selected>派手</option><option value="1">控えめ</option><option value="0">なし</option></select>
       </label>
       <label>BGM
-        <select id="bgmSel"><option value="off" selected>オフ</option><option value="calm">しっとり（集中）</option><option value="pop">元気</option></select>
+        <select id="bgmSel"><option value="off" selected>オフ</option><option value="calm">しっとり（集中）</option><option value="pop">元気</option><option value="chip">8bit</option><option value="edm">EDM</option></select>
       </label>
       </div>
     </div>
@@ -10441,7 +10441,7 @@ zoom|v2|ズームする・急上昇する`;
     if (v) {
       $("soundToggle").checked = v.sound !== false; $("vibeToggle").checked = v.vibe !== false;
       $("fxLevel").value = String(v.fxLv !== undefined ? v.fxLv : v.fx === false ? 0 : 2);  // 前の版は「派手な演出」のオン／オフだけ
-      if (v.bgm === "calm" || v.bgm === "pop") $("bgmSel").value = v.bgm;
+      if (["calm", "pop", "chip", "edm"].includes(v.bgm)) $("bgmSel").value = v.bgm;
       $("speakToggle").checked = v.speak !== false; $("answerToggle").checked = v.answer !== false;  // 1.0.3 から（最初はどちらもオン）
     }
   } catch (e) {}
@@ -11510,9 +11510,10 @@ ${recent || "まだありません"}`;
       },
     };
   })();
-  // ---------- BGM（オリジナル。しっとり3曲・元気3曲） ----------
-  // 発熱対策：曲は鳴らす前に OfflineAudioContext でまとめて作り（響きも入れて）、あとは録音をくり返し流すだけ（30秒前後のループ）
-  // 鳴らすのはプレイ中の画面だけ。タイトル・単語帳・設定・アプリが裏に回ったとき・広告の間は止めて、音の部品も休ませる（suspend）
+  // ---------- BGM（オリジナル。しっとり3曲・元気3曲・8bit・EDM） ----------
+  // 発熱対策：しっとり・元気は鳴らす前に OfflineAudioContext でまとめて作り（響きも入れて）、あとは録音をくり返し流すだけ（30秒前後のループ）
+  // 8bit・EDM は曲のファイル（bgm/*.m4a）を一度だけ読み込み（decodeAudioData）、ループで流すだけ
+  // 鳴らすのはプレイ中の画面（選んだ曲）とホーム画面（いつも 8bit）。単語帳・設定・アプリが裏に回ったとき・広告の間は止めて、音の部品も休ませる（suspend）
   // BGM がオフのときは、音の部品も監視も作らない。3分ごとに同じ系統の別の曲へ（そのときだけ次の曲を作る）
   const BGM = (() => {
     const N = n => 440 * 2 ** ((n - 69) / 12);
@@ -11524,8 +11525,13 @@ ${recent || "まだありません"}`;
       { mood: "pop", bpm: 120, chords: [[45, 48, 52, 57], [41, 45, 48, 53], [48, 52, 55, 60], [43, 47, 50, 55]], scale: [69, 72, 74, 76, 79, 81], lead: "piano", kick: 1, saw: true },
       { mood: "pop", bpm: 100, chords: [[41, 45, 48, 53], [48, 52, 55, 60], [50, 53, 57, 62], [46, 50, 53, 58]], scale: [72, 74, 77, 79, 81, 84], lead: "bell", kick: 0, strum: true },
     ];
+    // 曲のファイル。len は1周の長さ（秒）。圧縮した音声は頭と終わりにわずかな無音が入ることがあるので、頭の無音を飛ばしてそこから len 秒でループする
+    // vol は、しっとり・元気と同じくらいの大きさになる音量（ファイルは -16 LUFS 前後で作ってある）
+    const FILES = { chip: { url: "bgm/bgm_8bit.m4a", len: 16 * 4 * 60 / 140, vol: .09 }, edm: { url: "bgm/bgm_edm.m4a", len: 12 * 4 * 60 / 128, vol: .07 } };
+    const fileBuf = {}, failed = new Set();  // 読み込んだ曲（作り直さない）・読み込めなかった曲（何度も試さない）
+    let procCache = null;  // 最後に作ったしっとり・元気の曲（ホームと行き来しても作り直さない）
     const SR = 32000;
-    let ac = null, gain = null, src = null, cur = null, want = false, held = false, inPlay = false, rotT = 0, busyRender = false, obs = null, noise = null;
+    let ac = null, gain = null, src = null, curKey = null, curT = null, want = false, held = false, inPlay = false, onHome = false, rotT = 0, busyRender = false, obs = null, noise = null;
     const idx = { calm: 0, pop: 0 };
     // 1曲ぶん（和音が一回りする長さ）を作る。最後の響きは、ループの頭に重ねて、つなぎ目が切れないようにする
     async function render(T) {
@@ -11588,41 +11594,57 @@ ${recent || "まだありません"}`;
       for (let ch = 0; ch < 2; ch++) { const d = buf.getChannelData(ch), r = rendered.getChannelData(ch); d.set(r.subarray(0, L)); for (let i = 0; i < tl; i++) d[i] += r[L + i]; }
       return buf;
     }
-    function startBuf(buf) {
+    // 曲のファイルを読み込む（1曲1回だけ）。ループの始まりと終わり（無音を切った位置）もここで決める
+    async function loadFile(key) {
+      if (fileBuf[key]) return fileBuf[key];
+      const F = FILES[key], ab = await (await fetch(F.url)).arrayBuffer();
+      const buf = await new Promise((res, rej) => { const pr = ac.decodeAudioData(ab, res, rej); if (pr && pr.then) pr.then(res, rej); });
+      let lead = 0; const max = Math.min(buf.length, Math.round(buf.sampleRate * .2)), chs = [...Array(buf.numberOfChannels)].map((_, c) => buf.getChannelData(c));
+      while (lead < max && chs.every(d => Math.abs(d[lead]) < 1e-4)) lead++;
+      const ls = lead / buf.sampleRate, le = Math.min(buf.duration, ls + F.len);
+      return (fileBuf[key] = { buf, ls, le });
+    }
+    function startBuf(buf, f = null) {
       if (src) { const old = src, og = gain; og.gain.setTargetAtTime(0, ac.currentTime, .4); setTimeout(() => { try { old.stop(); old.disconnect(); og.disconnect(); } catch (e) {} }, 1500); }
       gain = ac.createGain(); gain.gain.value = 0; gain.connect(ac.destination);
-      src = ac.createBufferSource(); src.buffer = buf; src.loop = true; src.connect(gain); src.start();
-      gain.gain.setTargetAtTime(.16, ac.currentTime, .8);
+      src = ac.createBufferSource(); src.buffer = buf; src.loop = true; src.connect(gain);
+      if (f) { src.loopStart = f.ls; src.loopEnd = f.le; src.start(0, f.ls); } else src.start();
+      gain.gain.setTargetAtTime(f ? f.vol : .16, ac.currentTime, .8);
     }
-    async function load(mood) {
+    // 今鳴らす曲：プレイ中は選んだ曲、ホーム画面は 8bit
+    const target = () => inPlay ? $("bgmSel").value : onHome ? "chip" : null;
+    async function load(key) {
       if (busyRender) return; busyRender = true;
-      try { const list = TRACKS.filter(T => T.mood === mood), T = list[idx[mood] % list.length]; const buf = await render(T); if (buf && want && $("bgmSel").value === mood) { cur = T; startBuf(buf); } }
-      catch (e) {} finally { busyRender = false; }
+      try {
+        let buf = null, f = null, T = null;
+        if (FILES[key]) { const r = await loadFile(key); buf = r.buf; f = { ...r, vol: FILES[key].vol }; }
+        else { const list = TRACKS.filter(x => x.mood === key); T = list[idx[key] % list.length]; buf = procCache && procCache.T === T ? procCache.buf : await render(T); if (buf) procCache = { T, buf }; }
+        if (!buf) failed.add(key);
+        else if (want && target() === key) { curKey = key; curT = T; startBuf(buf, f); }
+      } catch (e) { failed.add(key); } finally { busyRender = false; }
       sync();
     }
-    function armRotate() { clearTimeout(rotT); rotT = setTimeout(() => { if (!cur) return; idx[cur.mood]++; cur = null; load($("bgmSel").value); }, 180000); }
-    // 鳴らす条件：オン・プレイ中の画面・アプリが表・広告中でない
+    function armRotate() { clearTimeout(rotT); rotT = setTimeout(() => { if (!curT) return; idx[curT.mood]++; curKey = curT = null; load($("bgmSel").value); }, 180000); }
+    // 鳴らす条件：オン・プレイ中かホーム画面・アプリが表・広告中でない
     function sync() {
-      const active = want && inPlay && !document.hidden && !held;
+      const key = target(), active = want && key && !failed.has(key) && !document.hidden && !held;
       if (!active) { clearTimeout(rotT); if (ac && ac.state === "running") ac.suspend().catch(() => {}); return; }
       if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; } }
       if (ac.state !== "running") ac.resume().catch(() => {});
-      const mood = $("bgmSel").value;
-      if (!cur || cur.mood !== mood) { if (!busyRender) load(mood); return; }
-      armRotate();
+      if (curKey !== key) { if (!busyRender) load(key); return; }
+      if (curT) armRotate(); else clearTimeout(rotT);
     }
-    const checkPlay = () => { inPlay = !$("view-game").hidden && $("modeScreen").hidden; sync(); };
+    const checkPlay = () => { inPlay = !$("view-game").hidden && $("modeScreen").hidden; onHome = !$("modeScreen").hidden; sync(); };
     function apply() {
       want = $("bgmSel").value !== "off";
-      if (!want) { obs && obs.disconnect(); obs = null; clearTimeout(rotT); if (src) { try { src.stop(); src.disconnect(); } catch (e) {} src = null; } cur = null; if (ac) ac.suspend().catch(() => {}); return; }
+      if (!want) { obs && obs.disconnect(); obs = null; clearTimeout(rotT); if (src) { try { src.stop(); src.disconnect(); } catch (e) {} src = null; } curKey = curT = null; if (ac) ac.suspend().catch(() => {}); return; }
       if (!obs) { obs = new MutationObserver(checkPlay); for (const id of ["view-game", "modeScreen"]) obs.observe($(id), { attributes: true, attributeFilter: ["hidden"] }); }
-      if (cur && cur.mood !== $("bgmSel").value) cur = null;
       checkPlay();
     }
     function hold(on) { held = on; if (want) sync(); }
     document.addEventListener("visibilitychange", () => { if (want) sync(); });
     // iPhone・ブラウザは最初のタップまで音を出せないので、オンのときだけ、タップで鳴らしなおす
-    document.addEventListener("pointerdown", () => { if (want && inPlay && !held && (!ac || ac.state !== "running")) sync(); }, true);
+    for (const ev of ["pointerdown", "touchend", "click"]) document.addEventListener(ev, () => { if (want && (inPlay || onHome) && !held && (!ac || ac.state !== "running")) sync(); }, true);
     setTimeout(apply, 0);  // 起動の瞬間はまだタイトル画面が出ていないので、画面ができてから判定する
     return { apply, hold, state: () => !ac ? "なし" : ac.state === "running" && src ? "再生中" : ac.state === "running" ? "動作中" : "休み" };
   })();
