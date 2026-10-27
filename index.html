@@ -416,6 +416,7 @@ html.hot .view.game .board.aura1::after, html.hot .view.game .board.aura2::after
 .end-sub button:disabled { opacity: .6; }
 .end-actions .end-link { width: auto; justify-self: center; padding: 6px 10px; border: 0; background: none; color: #6fd08a; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .end-link[hidden] { display: none; }
+.end-actions #ansAgainBtn { color: var(--gold); }
 .overlay > div { width: 100%; max-width: 340px; padding: 22px 18px 16px; border-radius: 20px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 20px 50px rgba(0,0,0,.5); }
 .overlay #clearText { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0 0 14px; }
 .overlay #endAch { margin: -6px 0 14px; font-size: 12px; }
@@ -964,6 +965,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
               <button id="toBookBtn" type="button"><i>▤</i>単語帳</button>
               <button id="shareBtn" type="button"><i>↗</i><span id="shareLabel">シェア</span></button>
             </div>
+            <button id="ansAgainBtn" class="end-link" type="button" hidden>答え合わせをもう一度見る</button>
             <button id="bonusBtn" class="end-link" type="button" hidden>▶ 広告を見てナビ＋1</button>
           </div>
         </div>
@@ -10010,8 +10012,8 @@ zoom|v2|ズームする・急上昇する`;
     return { route: route.slice(), snap: stageSnap, words: stageWords.slice() };
   }
   let ansData = null;
-  function answerReview(a = ansData) {
-    if (!a || !$("answerToggle").checked) return Promise.resolve();
+  function answerReview(a = ansData, force = false) {
+    if (!a || (!force && !$("answerToggle").checked)) return Promise.resolve();
     const g = $("ansBoard");
     g.innerHTML = a.snap.map(row => row.map(x => x.stone ? `<i class="st">${x.ch}</i>` : x.col !== undefined ? `<i class="cc" style="--c:${CCOL[x.col]}">${x.ch}</i>` : `<i>${x.ch}</i>`).join("")).join("");
     $("ansList").innerHTML = a.words.map((x, i) => `<li style="--c:${CCOL[i]}"><b>${x.w}</b><span>${esc(x.m)}</span></li>`).join("");
@@ -10511,15 +10513,16 @@ zoom|v2|ズームする・急上昇する`;
     if (f.w.length >= 6 && !tut) bigWord(f.w, info.m, color); if (combo >= 3 && !themed) { gfx.flash(combo >= 5 ? "#ff7a3a" : "#ffd84d", .12); }
     if (combo === 5 || combo === 8 || combo === 12) { SFX.bigCombo(combo); buzz([40, 30, 70]); shakeBoard(combo); gfx.shake(); }
     clearFx.play(f.cells, color, combo);
-    await sleep(180);
+    const slow = speakOn() && !isStudy() && !tut;  // 読み上げがオンのときは、声に合わせて少しゆっくり消す
+    await sleep(slow ? 260 : 180);
     // つづりの順に、1文字ずつはじけて消える
     for (const t of tiles) {
       if (popped.has(t)) continue;
       popped.add(t);
       const el = elFor(t); el.classList.add("popout"); sparks(el); SFX.pop(tiles.indexOf(t), combo); flyLetter(el, t.ch, color);
-      await sleep(55);
+      await sleep(slow ? 75 : 55);
     }
-    await sleep(170);
+    await sleep(slow ? 300 : 170);
     lab.animate([{ opacity: 1 }, { opacity: 0, translate: "0 -10px" }], { duration: 200, fill: "forwards" });
     setTimeout(() => lab.remove(), 220);
   }
@@ -10802,7 +10805,7 @@ zoom|v2|ズームする・急上昇する`;
   async function perfectWipe() {
     const tiles = board.flat();
     SFX.perfect();  // 「ため」の音が先に鳴る
-    speakHold(900);  // 読み上げは、PERFECT の演出のいちばん重いところが過ぎてから続ける
+    speakCut();  // 読み上げは止める（PERFECT の演出を軽くするため）
     if (clearFx.themed()) await sleep(80);  // 「派手」は、暗くなる「ため」を入れずにすぐ
     else if (fxOn()) {
       // 一瞬、時間が止まったように暗く・ゆっくりにしてから、ドーン！
@@ -10960,16 +10963,14 @@ zoom|v2|ズームする・急上昇する`;
   const nativeCall = (fn, arg) => { try { const r = nativeSpeech[fn](arg); if (r && r.catch) r.catch(() => {}); } catch (e) {} };
   function speakClear(w, combo) {
     if (!speakOn() || tut) return;
-    const k = Math.min(1, Math.max(0, combo - 1) / 8), pitch = 1 + .5 * k, rate = .95 + .25 * k;
+    const k = Math.min(1, Math.max(0, combo - 1) / 8), pitch = 1 + .5 * k, rate = .8 + .2 * k;  // 聞き取りやすいよう、少しゆっくり（コンボで少しだけ速く）
     if (nativeSpeech) nativeCall("speak", { text: w.toLowerCase(), pitch, rate });
     else sayEn(w.toLowerCase(), { queue: true, pitch, rate });
   }
-  // PERFECT の演出がいちばん重い間（ms ミリ秒）は、今の単語を読み終えたところで待つ（そのあと続きを読む）
-  let speakHoldT = 0;
-  function speakHold(ms) {
-    if (!speakOn()) return;
-    if (nativeSpeech) { nativeCall("hold", { ms }); return; }
-    try { const sp = window.speechSynthesis; if (!sp || !(sp.speaking || sp.pending)) return; sp.pause(); clearTimeout(speakHoldT); speakHoldT = setTimeout(() => { try { sp.resume(); } catch (e) {} }, ms); } catch (e) {}
+  // PERFECT の演出が始まったら、まだ読んでいない単語は読まずに止める（いちばん重いところで声の処理を動かさない）
+  function speakCut() {
+    if (nativeSpeech) { nativeCall("stop"); return; }
+    try { const sp = window.speechSynthesis; if (sp && (sp.speaking || sp.pending)) sp.cancel(); } catch (e) {}
   }
   // 次のなぞりが始まったら、まだ読んでいない古い単語は読まない（声が溜まらないように）
   // iPhone は最初の読み上げを指でさわった瞬間に始めないと声が出ないことがあるので、最初の1回だけ無音で読んでおく
@@ -11087,6 +11088,8 @@ zoom|v2|ズームする・急上昇する`;
     { const list = isStage() ? gameMissed.slice(-8) : [];
       $("endMissed").hidden = !list.length;
       $("endMissedList").innerHTML = list.map(x => `<button type="button" data-w="${x.w}"><b>${x.w}</b>${esc(x.m)}</button>`).join(""); }
+    endAns = isPuzzle() && !reviewDone ? ansData : null;  // 最後の盤面の答え（もう一度見られる）
+    $("ansAgainBtn").hidden = !endAns;
     navClear();
     $("bonusBtn").hidden = false; $("bonusBtn").disabled = false; $("bonusBtn").textContent = "▶ 広告を見てナビ＋1";
     const canCont = isStudy() || ((isStage() || isEndless() || isEnergy() || isDaily()) && contUsed < CONT_MAX);  // パーフェクトは1ゲーム2回まで
@@ -11098,6 +11101,8 @@ zoom|v2|ズームする・急上昇する`;
     $("overlay").hidden = false;
     maybeAskReview("end", rec || reviewDone || (isDaily() && turns >= COLOR_TURNS));
   }
+  let endAns = null;
+  $("ansAgainBtn").addEventListener("click", () => { if (endAns) answerReview(endAns, true); });
   $("endMissedList").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if (b) openWordSheet(b.dataset.w); });
   // デイリーの連続記録（10問を遊びきった日 or ゲームオーバーになった日に1回だけ数える）
   function markDaily() {
