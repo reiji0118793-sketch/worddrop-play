@@ -1027,7 +1027,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
         <label><input type="checkbox" data-sync="speakToggle"> 読み上げ（消えた単語を英語で）</label>
         <label><input type="checkbox" data-sync="answerToggle"> 答え合わせを表示</label>
       </div>
-      <p class="credit ver" id="gsVer">バージョン 1.0.3</p>
+      <p class="credit ver" id="gsVer">バージョン 1.0.4</p>
     </div>
   </div>
   <div class="cansheet" id="ansSheet" role="dialog" aria-label="答え合わせ" hidden>
@@ -1205,7 +1205,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
         <button type="button" id="clearBookBtn">単語帳の記録を消す</button>
       </div>
       <p class="credit">単語の意味：EJDict-hand（パブリックドメイン）／品詞：WordNet 3.1／よく使う度：wordfreq</p>
-      <p class="credit ver" id="verLabel">バージョン 1.0.3</p>
+      <p class="credit ver" id="verLabel">バージョン 1.0.4</p>
     </div>
   </section>
 
@@ -11971,7 +11971,7 @@ ${recent || "まだありません"}`;
   // ---------- iPhone の熱の状態と、隠しの計測表示 ----------
   // 熱の状態は、アプリの中のプラグイン（Thermal：ProcessInfo.thermalState）から受け取る。ブラウザ（試遊版）では「—」
   // serious 以上になったら、演出を自動で「控えめ」相当・描くのを1秒30回までにする。nominal / fair に戻ったら元に戻す
-  const APP_VERSION = "1.0.3";  // ブラウザ（試遊版）で出す番号。アプリでは本体の番号（Thermal.getState）を出す
+  const APP_VERSION = "1.0.4";  // ブラウザ（試遊版）で出す番号。アプリでは本体の番号（Thermal.getState）を出す
   const Heat = (() => {
     let state = "—", hot = false;
     const T = () => { try { const C = window.Capacitor; return C && C.isNativePlatform && C.isNativePlatform() && (C.Plugins.Thermal || (C.registerPlugin && C.registerPlugin("Thermal"))) || null; } catch (e) { return null; } };
