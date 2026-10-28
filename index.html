@@ -453,6 +453,16 @@ body { margin: 0; }
 .gs-in .controls { display: grid; gap: 8px; }
 .gs-in .controls label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--panel-2); font-size: 14px; }
 .gs-row { display: grid; grid-template-columns: 3.4em 1fr; align-items: center; gap: 8px; font-size: 14px; }
+/* 演出が控えめ・軽くなっている理由（設定の「演出」の下に1行）と、最初に単語が消えたときのお知らせ（盤面の下・数秒で消える） */
+.fxstate { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.gs-in .fxstate { margin: -4px 0 0 calc(3.4em + 8px); }
+.fxnote { position: fixed; z-index: 66; left: 50%; width: min(380px, calc(100vw - 32px)); box-sizing: border-box; padding: 8px 34px 8px 12px; border-radius: 12px; background: rgba(14,18,36,.96); border: 1px solid #d9b45a; color: #fff; font-size: 12px; line-height: 1.5; box-shadow: 0 6px 18px rgba(0,0,0,.45); opacity: 0; transform: translate(-50%, 8px); transition: opacity .25s, transform .25s; }
+.fxnote.show { opacity: 1; transform: translate(-50%, 0); }
+.fxnote p { margin: 0; }
+.fxnote .fn-btns { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+.fxnote .fn-btns button { font: inherit; font-size: 11.5px; font-weight: 700; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); }
+.fxnote #fxNoteSet { border-color: var(--gold); background: var(--gold); color: #1a1426; }
+.fxnote .fn-x { position: absolute; right: 4px; top: 4px; width: 30px; height: 30px; border: 0; background: none; color: var(--muted); font-size: 16px; }
 .gs-row > span { color: var(--muted); font-weight: 700; font-size: 13px; }
 .gs-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel-2); }
 .gs-seg button { padding: 9px 2px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; min-width: 0; }
@@ -742,7 +752,16 @@ body.has-banner #gameSet { padding-bottom: calc(var(--safeB) + var(--bannerH) + 
   .hintarrow .slot,
   .tile.stonein .face,
   .tile.match .face, .tile.pulse .face, .burst-in.bump, .bnum.pop, .bword.in, .sigil.hit { animation: none; }
+  /* 動きの少ない演出：PERFECT などの文字は、その場でふわっと出て消えるだけ（拡大・回転・揺れなし）。盤面の消え方もフェードだけ */
+  .pftext b i, .pftext > * { animation: ptCalm 2.2s ease-out both !important; }
+  .pftext.res b i, .pftext.res > * { animation-duration: 1.5s !important; }
+  .pftext::after { animation: ptCalmBand 2.2s ease-out both !important; transform: translateY(-50%) !important; }
+  .pftext .ptx-rays { display: none; }
+  .tile.wipe .face { animation: wipeCalm .45s ease-in forwards; }
 }
+@keyframes ptCalm { 0% { opacity: 0; } 12%, 82% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes ptCalmBand { 0% { opacity: 0; } 14% { opacity: .4; } 80% { opacity: .3; } 100% { opacity: 0; } }
+@keyframes wipeCalm { 30% { filter: brightness(1.6); } 100% { opacity: 0; } }
 
 /* ---------- 派手な演出（紙吹雪・帯・画面ゆれ） ---------- */
 /* ---------- 実績 ---------- */
@@ -1002,6 +1021,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       </div>
       <div class="gs-row"><span>BGM</span><div class="gs-seg" id="gsBgm" role="group" aria-label="BGM"><button type="button" data-v="off">オフ</button><button type="button" data-v="calm">しっとり</button><button type="button" data-v="pop">元気</button><button type="button" data-v="chip">8bit</button><button type="button" data-v="edm">EDM</button></div></div>
       <div class="gs-row"><span>演出</span><div class="gs-seg" id="gsFx" role="group" aria-label="演出"><button type="button" data-v="2">派手</button><button type="button" data-v="1">控えめ</button><button type="button" data-v="0">なし</button></div></div>
+      <p class="fxstate" id="gsFxState" hidden></p>
       <div class="controls">
         <label><input type="checkbox" data-sync="vibeToggle"> 振動</label>
         <label><input type="checkbox" data-sync="speakToggle"> 読み上げ（消えた単語を英語で）</label>
@@ -1163,6 +1183,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
       <label>演出
         <select id="fxLevel"><option value="2" selected>派手</option><option value="1">控えめ</option><option value="0">なし</option></select>
       </label>
+      <p class="fxstate" id="fxState" hidden></p>
       <label>BGM
         <select id="bgmSel"><option value="off" selected>オフ</option><option value="calm">しっとり（集中）</option><option value="pop">元気</option><option value="chip">8bit</option><option value="edm">EDM</option></select>
       </label>
@@ -1238,6 +1259,7 @@ body:not(.playing) .modescreen { padding-bottom: 24px; bottom: var(--msBottom, 0
   <div class="adbanner" id="adBanner" aria-label="広告"><span id="adBannerTxt">広告スペース（試遊版）</span></div>
 </div>
 <div id="gfx"></div>
+<div class="fxnote" id="fxNote" role="status" hidden><p id="fxNoteText"></p><div class="fn-btns"><button type="button" id="fxNoteSet">設定を開く</button><button type="button" id="fxNoteNever">今後表示しない</button></div><button type="button" class="fn-x" id="fxNoteX" aria-label="閉じる">×</button></div>
 <div id="heat"></div>
 <div id="slowmoVeil"></div>
 <div id="achToast" aria-live="polite"><div class="medal">★</div><div><small>実績解除</small><b id="achName"></b><span class="d" id="achDesc"></span></div></div>
@@ -10537,6 +10559,7 @@ zoom|v2|ズームする・急上昇する`;
     if (f.w.length >= 6 && !tut) bigWord(f.w, info.m, color); if (combo >= 3 && !themed) { gfx.flash(combo >= 5 ? "#ff7a3a" : "#ffd84d", .12); }
     if (combo === 5 || combo === 8 || combo === 12) { SFX.bigCombo(combo); buzz([40, 30, 70]); shakeBoard(combo); gfx.shake(); }
     clearFx.play(f.cells, color, combo);
+    setTimeout(() => FxNote.maybeShow(), 900);  // 演出が控えめ・軽いときは、その理由を1回だけ小さく知らせる
     const slow = speakOn() && !isStudy() && !tut;  // 読み上げがオンのときは、声に合わせて少しゆっくり消す
     await sleep(slow ? 260 : 180);
     // つづりの順に、1文字ずつはじけて消える
@@ -11656,7 +11679,7 @@ ${recent || "まだありません"}`;
   // 炎→大炎上・氷→絶対零度・星くず→流星群・紙吹雪→お祭り・ピクセル分解→デジタル崩壊・墨→墨流し。5コンボ以上は同じ演出を2回重ねる
   // PERFECT のときは、今までのバナー・虹の演出のかわりに、そのセットらしい「PERFECT!」の文字を出す
   const clearFx = (() => {
-    let cv = null, cx = null, parts = [], bolts = [], rings = [], blobs = [], lines = [], holes = [], raf = 0, M = 0;
+    let cv = null, cx = null, parts = [], bolts = [], rings = [], blobs = [], lines = [], holes = [], glows = [], raf = 0, M = 0;
     const SETS = [["splash", "wave"], ["slash", "slash"], ["neon", "neon"], ["sakura", "sakura"], ["lightning", "thunder"], ["hole", "hole"],
       ["shatter", "glass"], ["shock", "mega"], ["fire", "blaze"], ["ice", "zero"], ["stars", "meteor"], ["confetti", "festival"], ["pixel", "digital"], ["ink", "sumi"]];
     // テスト用（ブラウザの試遊版だけ）：URL に ?fxset=fire（または blaze）を付けると、そのセットだけを出す
@@ -11669,7 +11692,11 @@ ${recent || "まだありません"}`;
       if (cv.width !== Math.round(w * d) || cv.height !== Math.round(h * d)) { cv.width = Math.round(w * d); cv.height = Math.round(h * d); }
       Object.assign(cv.style, { left: -P + "px", top: -P + "px", width: w + "px", height: h + "px" }); cx.setTransform(d, 0, 0, d, -(M - P) * d, -(M - P) * d);
     }
-    const lite = () => fxLv() < 2, amt = n => Math.max(1, Math.round(n * (lite() ? .35 : 1)));
+    // 演出のやり方：full＝派手／lite＝本当に重い・本体が熱い（数を減らした軽い演出）／calm＝「視差効果を減らす」（動きの少ない演出）／mild＝設定「控えめ」／off＝設定「なし」
+    const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const mode = () => fxLv() === 0 ? "off" : reduced() ? "calm" : fxLv() === 1 ? "mild" : (autoLite || hot) ? "lite" : "full";
+    const fxMode = mode;  // showText の引数 mode と名前がかぶるので、別名でも呼べるように
+    const lite = () => mode() === "lite", amt = n => Math.max(1, Math.round(n * (lite() ? .35 : 1)));
     const pt = q => ({ x: M + (q.c + .5) * S, y: M + (q.r + .5) * S });
     function jag(a, b, seg) { const p = [a], dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len; for (let i = 1; i < seg; i++) { const k = i / seg, o = (fxRand() - .5) * Math.min(S * .45, len * .22); p.push({ x: a.x + dx * k + nx * o, y: a.y + dy * k + ny * o }); } p.push(b); return p; }
     function star(x, y, r) { cx.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, rr = i % 2 ? r * .35 : r; cx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } cx.closePath(); cx.fill(); }
@@ -11678,41 +11705,49 @@ ${recent || "まだありません"}`;
     // 描く仕組み：1秒に60回まで（120回の画面でも同じ速さ・発熱も少なく）。少しあとから足す演出があるあいだ（holdUntil まで）は止めない
     // hot：iPhone が熱いとき（thermalState が serious 以上）。「控えめ」相当にして、描くのを1秒30回までにする（冷えたら戻す）
     let lastF = 0, holdUntil = 0, lastRaw = 0, slow = 0, autoLite = false, hot = false, draws = 0, probing = false, lastProbe = 0;
-    const alive = () => parts.length || bolts.length || rings.length || blobs.length || lines.length || holes.length;
+    const alive = () => parts.length || bolts.length || rings.length || blobs.length || lines.length || holes.length || glows.length;
     const kick = (ms = 0) => { holdUntil = Math.max(holdUntil, performance.now() + ms); if (!raf) { lastRaw = 0; raf = requestAnimationFrame(loop); } };
     // 一度に出す数の上限（古いものから消す）
-    const CAP = { parts: 420, bolts: 30, rings: 24, blobs: 16, lines: 30, holes: 4 };
-    function capAll() { for (const [k, a] of [["parts", parts], ["bolts", bolts], ["rings", rings], ["blobs", blobs], ["lines", lines], ["holes", holes]]) if (a.length > CAP[k]) a.splice(0, a.length - CAP[k]); }
+    const CAP = { parts: 420, bolts: 30, rings: 24, blobs: 16, lines: 30, holes: 4, glows: 40 };
+    function capAll() { for (const [k, a] of [["parts", parts], ["bolts", bolts], ["rings", rings], ["blobs", blobs], ["lines", lines], ["holes", holes], ["glows", glows]]) if (a.length > CAP[k]) a.splice(0, a.length - CAP[k]); }
     function loop(now) {
-      // 低電力モード（1秒30回までに落ちる）や、重くて間に合わないとき：書きかえの間隔が 30ms をこえる状態が続いたら、このあとは「控えめ」相当にする
-      if (lastRaw) { const dt = now - lastRaw; slow = dt > 30 ? slow + 1 : Math.max(0, slow - 2); if (slow >= 24 && !autoLite) autoLite = true; }
+      // 本当に重くて間に合わないとき：書きかえの間隔が 50ms（1秒20回）をこえる状態が続いたら、軽い演出にする（recheck で戻る）
+      // iPhone の低電力モードは1秒30回（約33ms）に落ちるだけなので、これは普通として扱う
+      if (lastRaw) { const dt = now - lastRaw; slow = dt > 50 ? slow + 1 : Math.max(0, slow - 2); if (slow >= 24 && !autoLite) autoLite = true; }
       lastRaw = now;
       if (now - lastF < (hot ? 32 : 15)) { raf = requestAnimationFrame(loop); return; }
+      // 粒などは「1/60 秒に1歩」で動く。1秒30回の端末（低電力モード・熱いとき）は1回の書きかえで2歩進めて、同じ速さに見せる（描くのは1回）
+      const st = lastF ? Math.min(3, Math.max(1, Math.round((now - lastF) / 16.7))) : 1;
       lastF = now; draws++;
       capAll();
       cx.save(); cx.setTransform(1, 0, 0, 1, 0, 0); cx.clearRect(0, 0, cv.width, cv.height); cx.restore();
       // 盤面の外（上の単語の列・下のボタンや広告）には描かない
       cx.save(); cx.beginPath(); cx.rect(M - 4, M - 4, COLS * S + 8, ROWS * S + 8); cx.clip();
-      for (const o of blobs) { o.t++; if (o.t <= 0) continue; const k = o.t / o.life, a = k < .5 ? .8 : .8 * (1 - (k - .5) * 2); cx.fillStyle = `rgba(${o.c},${Math.max(0, a)})`; cx.beginPath(); cx.arc(o.x, o.y, o.r * Math.min(1, k * 2.4), 0, 7); cx.fill(); }
+      for (const g of glows) { g.t += st; if (g.t <= 0) continue; const a = Math.sin(Math.PI * Math.min(1, g.t / g.life)) * g.a; cx.fillStyle = `rgba(${g.c},${a.toFixed(3)})`; cx.fillRect(g.x - S * .46, g.y - S * .46, S * .92, S * .92); }
+      glows = glows.filter(g => g.t < g.life);
+      for (const o of blobs) { o.t += st; if (o.t <= 0) continue; const k = o.t / o.life, a = k < .5 ? .8 : .8 * (1 - (k - .5) * 2); cx.fillStyle = `rgba(${o.c},${Math.max(0, a)})`; cx.beginPath(); cx.arc(o.x, o.y, o.r * Math.min(1, k * 2.4), 0, 7); cx.fill(); }
       blobs = blobs.filter(o => o.t < o.life);
-      for (const h of holes) { h.t++; const rr = h.r * Math.sin(Math.PI * Math.min(1, h.t / h.life)); cx.globalCompositeOperation = "lighter"; const g = cx.createRadialGradient(h.x, h.y, 0, h.x, h.y, rr * 1.8 + 1); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(.55, "rgba(140,90,255,.55)"); g.addColorStop(1, "rgba(140,90,255,0)"); cx.fillStyle = g; cx.beginPath(); cx.arc(h.x, h.y, rr * 1.8 + 1, 0, 7); cx.fill(); cx.globalCompositeOperation = "source-over"; cx.fillStyle = "#05030c"; cx.beginPath(); cx.arc(h.x, h.y, rr, 0, 7); cx.fill(); }
+      for (const h of holes) { h.t += st; const rr = h.r * Math.sin(Math.PI * Math.min(1, h.t / h.life)); cx.globalCompositeOperation = "lighter"; const g = cx.createRadialGradient(h.x, h.y, 0, h.x, h.y, rr * 1.8 + 1); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(.55, "rgba(140,90,255,.55)"); g.addColorStop(1, "rgba(140,90,255,0)"); cx.fillStyle = g; cx.beginPath(); cx.arc(h.x, h.y, rr * 1.8 + 1, 0, 7); cx.fill(); cx.globalCompositeOperation = "source-over"; cx.fillStyle = "#05030c"; cx.beginPath(); cx.arc(h.x, h.y, rr, 0, 7); cx.fill(); }
       holes = holes.filter(h => h.t < h.life);
       cx.globalCompositeOperation = "lighter";
-      for (const g of rings) { g.t++; if (g.t <= 0) continue; const k = g.t / g.life, r = g.r0 + (g.r1 - g.r0) * (1 - (1 - k) ** 3); cx.strokeStyle = `rgba(${g.c},${(1 - k) * .9})`; cx.lineWidth = (g.w || 6) * (1 - k) + 1; cx.beginPath(); if (g.oval) cx.ellipse(g.x, g.y, r, r * .35, 0, 0, 7); else cx.arc(g.x, g.y, r, 0, 7); cx.stroke(); }
+      for (const g of rings) { g.t += st; if (g.t <= 0) continue; const k = g.t / g.life, r = g.r0 + (g.r1 - g.r0) * (1 - (1 - k) ** 3); cx.strokeStyle = `rgba(${g.c},${(1 - k) * .9})`; cx.lineWidth = (g.w || 6) * (1 - k) + 1; cx.beginPath(); if (g.oval) cx.ellipse(g.x, g.y, r, r * .35, 0, 0, 7); else cx.arc(g.x, g.y, r, 0, 7); cx.stroke(); }
       rings = rings.filter(g => g.t < g.life);
       for (const l of lines) {
-        l.t++; const k = Math.min(1, l.t / l.grow), a = l.t < l.grow ? 1 : Math.max(0, 1 - (l.t - l.grow) / (l.life - l.grow)), n = l.pts.length - 1, upto = k * n;
+        l.t += st; const k = Math.min(1, l.t / l.grow), a = l.t < l.grow ? 1 : Math.max(0, 1 - (l.t - l.grow) / (l.life - l.grow)), n = l.pts.length - 1, upto = k * n;
         cx.lineJoin = "round"; cx.lineCap = "round";
         for (const [w, al] of [[l.w * 3, .25], [l.w * 1.6, .6], [l.w * .6, 1]]) { cx.strokeStyle = `rgba(${al === 1 ? "255,255,255" : l.c},${a * al})`; cx.lineWidth = w; cx.beginPath(); cx.moveTo(l.pts[0].x, l.pts[0].y); for (let i = 1; i <= Math.ceil(upto); i++) { const f = Math.min(1, upto - (i - 1)), p0 = l.pts[i - 1], p1 = l.pts[i]; cx.lineTo(p0.x + (p1.x - p0.x) * f, p0.y + (p1.y - p0.y) * f); } cx.stroke(); }
       }
       lines = lines.filter(l => l.t < l.life);
-      for (const b of bolts) { b.t++; if (b.t % 3 === 1) b.pts = jag(b.a, b.b, b.seg); const a = Math.max(0, 1 - b.t / b.life);
+      for (const b of bolts) { b.t += st; if (!b.pts || (b.t - 1) % 3 < st) b.pts = jag(b.a, b.b, b.seg); const a = Math.max(0, 1 - b.t / b.life);
         for (const [w, col] of [[9, `rgba(120,160,255,${a * .35})`], [4, `rgba(170,210,255,${a * .8})`], [1.6, `rgba(255,255,255,${a})`]]) { cx.strokeStyle = col; cx.lineWidth = w; cx.lineJoin = "round"; cx.beginPath(); b.pts.forEach((p, i) => i ? cx.lineTo(p.x, p.y) : cx.moveTo(p.x, p.y)); cx.stroke(); } }
       bolts = bolts.filter(b => b.t < b.life);
       for (const p of parts) {
-        p.t++; if (p.t < 0) continue;
-        if (p.k === "petal") p.vx += Math.sin(p.t * .12 + p.ph) * .08;
-        p.vx *= p.drag; p.vy = p.vy * p.drag + p.g; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        for (let q = 0; q < st; q++) {
+          p.t++; if (p.t < 0) continue;
+          if (p.k === "petal") p.vx += Math.sin(p.t * .12 + p.ph) * .08;
+          p.vx *= p.drag; p.vy = p.vy * p.drag + p.g; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        }
+        if (p.t < 0) continue;
         const a = Math.max(0, 1 - p.t / p.life);
         if (p.k === "shard" || p.k === "petal" || p.k === "conf") {
           cx.globalCompositeOperation = "source-over"; cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot); cx.globalAlpha = a; cx.fillStyle = p.c;
@@ -11856,6 +11891,7 @@ ${recent || "まだありません"}`;
       d.innerHTML = `${tier === "hyper" || tier === "premium" ? '<em class="ptx-rays"></em>' : ""}${small ? `<small>${small}</small>` : ""}<b>${letters}</b>${sub ? `<span>${sub}</span>` : ""}`;
       $("gfx").appendChild(d); setTimeout(() => d.remove(), 2400);
       fit(); const cols = TXT_COL[set[1]] || TXT_COL.glass, c = cols.map(x => `rgba(${x},A)`), m = { x: M + COLS * S / 2, y: M + ROWS * S * .42 };
+      if (fxMode() === "calm") return;  // 動きの少ない演出：文字がふわっと出るだけ（CSS の prefers-reduced-motion で、文字の動きもフェードだけにしてある）
       if (mode === "miss") setTimeout(() => { for (let i = 0; i < 3; i++) dots(m.x + (i - 1) * S * 1.2, m.y + S * .3, 6, c, 2, "dot", .18, 40, S * .05); kick(); }, 300);
       else setTimeout(() => { const n = mode ? 2 : 4; for (let i = 0; i < n; i++) dots(m.x + (i - (n - 1) / 2) * S * 1.1, m.y, mode ? 9 : 14, c, mode ? 4.5 : 6, "dot", .04, 46, S * .06); rings.push({ x: m.x, y: m.y, r0: S * .4, r1: S * (mode ? 2.4 : 3.6), t: 0, life: 30, c: cols[0], w: mode ? 3 : 5 }); kick(); }, mode ? 250 : 420);
     }
@@ -11879,18 +11915,22 @@ ${recent || "まだありません"}`;
       const tier = kind === "premium" ? "premium" : kind === "hyper" ? "hyper" : "";
       showText("PERFECT!", PF_NAME[kind], sub, "", tier);
       fit(); const m = { x: M + COLS * S / 2, y: M + ROWS * S * .42 }, W = (COLS + 2) * S, H = (ROWS + 2) * S;
+      // 動きの少ない演出：盤面ぜんぶが、色つきでふわっと光る（動かない）。PREMIUM は列ごとに虹色
+      if (mode() === "calm") { const RB = ["255,107,107", "255,159,28", "255,228,92", "107,203,119", "77,150,255", "199,125,255"]; for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) { const q = pt({ r, c }); glows.push({ x: q.x, y: q.y, t: -(r + c) * 2, life: 46, a: .5, c: kind === "premium" ? RB[c % RB.length] : kind === "normal" ? "255,255,255" : "255,216,77" }); } kick(); return; }
+      if (mode() === "lite") return;  // 軽い演出：文字と、文字のまわりの小さな粒・輪だけ（金の輪・光の粒・PREMIUM の特別演出は出さない）
       if (kind !== "normal") setTimeout(() => { rings.push({ x: m.x, y: m.y, r0: S * .6, r1: S * 4.4, t: 0, life: 34, c: "255,216,77", w: 6 }); kick(); }, 300);  // GREAT〜：金の輪
       if (kind === "super" || kind === "hyper" || kind === "premium") setTimeout(() => { for (const [x0, dir] of [[0, 1], [W, -1]]) for (let i = 0; i < 40; i++) { const an = -Math.PI / 2 + dir * (.2 + fxRand() * .5), v = 6 + fxRand() * 6; parts.push({ x: x0, y: H, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: .16, drag: .97, t: -fxRand() * 8, life: 60, s: S * .06, c: ["rgba(255,216,77,A)", "rgba(255,255,255,A)"][i % 2], k: "dot", rot: 0, vr: 0, ph: 0 }); } kick(); }, 380);  // SUPER〜：左右から光の粒
       if (kind === "premium") { let k; do { k = Object.keys(PREMIUM)[Math.floor(fxRand() * 4)]; } while (k === lastPrem); lastPrem = k; PREMIUM[k](); kick(1600); }
     }
     return {
-      // 「派手」で、セットの PERFECT 演出を使うとき（今までのバナー・虹の演出は出さない）
-      themed: () => fxLv() === 2 && !autoLite && !hot && !matchMedia("(prefers-reduced-motion: reduce)").matches,
+      // セットの演出・英語の文字を使うとき（派手・軽い演出・動きの少ない演出）。今までのバナー・虹の演出（控えめ）は出さない
+      themed: () => ["full", "lite", "calm"].includes(mode()),
+      mode,
       perfectText,
       resultText: (main, sub, miss) => showText(main, "", sub, miss ? "miss" : "res"),
       // PERFECT で盤面ぜんぶが消える部分（「派手」のときだけ）。動かしたら true（そのぶん待つ）。それ以外は false で今までの消え方
       async perfect(tiles) {
-        if (fxLv() < 2 || autoLite || hot || matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+        if (mode() !== "full") return false;  // 軽い演出・動きの少ない演出は、今までの消え方（動きを減らす設定では、CSS でフェードだけ）
         fit();
         const k = set[1];
         const T = tiles.map((t, i) => { const r = Math.floor(i / COLS), c = i % COLS; return { el: elFor(t), r, c, p: pt({ r, c }) }; });
@@ -11900,8 +11940,11 @@ ${recent || "まだありません"}`;
       },
       // cells：消える単語のマス（{r, c}）、col：単語の色、combo：このなぞりで何語目か
       play(cells, col, combo) {
-        if (fxLv() < 2 || autoLite || hot || matchMedia("(prefers-reduced-motion: reduce)").matches || !cells.length) return;
+        const md = mode();
+        if (!cells.length || !["full", "lite", "calm"].includes(md)) return;
         fit();
+        // 動きの少ない演出：消える単語のマスが、単語の色でふわっと光るだけ
+        if (md === "calm") { let h = col || "#ffe27a"; const v = /^var\((--[\w-]+)\)$/.exec(h); if (v) h = getComputedStyle(document.documentElement).getPropertyValue(v[1]).trim(); h = /^#[0-9a-f]{6}$/i.test(h) ? h.slice(1) : "ffe27a"; const rgb = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)).join(","); cells.map(pt).forEach((q, i) => glows.push({ x: q.x, y: q.y, t: -i * 2, life: 30, a: .55, c: rgb })); kick(); return; }
         const k = set[0], ps = cells.map(pt);
         FX[k](ps, col || "#ffe27a");
         if (combo >= 5) setTimeout(() => { FX[k](ps, col || "#ffe27a"); kick(); }, 140);  // 大きいコンボは2回重ねる
@@ -11911,13 +11954,13 @@ ${recent || "まだありません"}`;
       // 計測表示用：描いた回数（増えていくだけ）・重いときの自動「控えめ」・熱いとき
       stats: () => ({ draws, lite: autoLite, hot }),
       // 重くて「控えめ」になったあと、書きかえの速さが戻ったかを3秒だけ測る（何も動いていないときに、15秒に1回まで）。
-      // 9割以上が 1秒50回より速ければ、派手な演出に戻す（前は一度「控えめ」になるとアプリを閉じるまで戻らなかった）
+      // 9割以上が 1秒25回より速ければ（1秒30回の低電力モードもふくむ）、派手な演出に戻す
       recheck() {
         const now = performance.now();
         if (!autoLite || probing || now - lastProbe < 15000) return;
         probing = true; lastProbe = now;
         let n = 0, ok = 0, last = 0;
-        const step = t => { if (last) { n++; if (t - last < 20) ok++; } last = t; if (n < 180) requestAnimationFrame(step); else { probing = false; if (ok >= 162) { autoLite = false; slow = 0; } } };
+        const step = t => { if (last) { n++; if (t - last < 40) ok++; } last = t; if (n < 180) requestAnimationFrame(step); else { probing = false; if (ok >= 162) { autoLite = false; slow = 0; } } };
         requestAnimationFrame(step);
       },
       setHot(v) { hot = !!v; },
@@ -11949,6 +11992,51 @@ ${recent || "まだありません"}`;
     return { state: () => state, hot: () => hot };
   })();
   // 計測表示：設定のバージョン表示を5秒長押しすると出る（もう一度5秒長押しで消える）。出ている間だけ数える
+  // ---------- 演出が控えめ・軽くなっている理由と、そのお知らせ（バグだと思われないように） ----------
+  // 理由：アプリの設定（控えめ／なし）・iPhone の「視差効果を減らす」・本体が熱い・重い。判定は reason() の1か所だけ
+  // お知らせは、単語が消えたあと（指を離したあと）に盤面の下へ小さく出す。設定・視差効果はアプリを開くたびに1回、熱い・重いは1日1回まで。「今後表示しない」で理由ごとに止められる
+  const FxNote = (() => {
+    const KEY = "wordDrop.fxNote.v1";
+    let data = {}; try { data = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} };
+    const seen = new Set(); let hideT = 0, curK = "";
+    function reason() {
+      const m = clearFx.mode();
+      if (m === "off" || m === "mild") return { k: "set", name: m === "off" ? "なし" : "控えめ" };
+      if (m === "calm") return { k: "reduce" };
+      if (m === "lite") return { k: Heat.hot() ? "hot" : "heavy" };
+      return null;
+    }
+    const STATE = { reduce: "今は iPhone の「視差効果を減らす」のため、動きの少ない演出です", hot: "今は本体が熱いため、一時的に演出を軽くしています", heavy: "今は動きが重いため、一時的に演出を軽くしています" };
+    function renderState() { const r = reason(), t = (r && STATE[r.k]) || ""; for (const id of ["fxState", "gsFxState"]) { const e = $(id); e.textContent = t; e.hidden = !t; } }
+    function hide() { clearTimeout(hideT); const e = $("fxNote"); e.classList.remove("show"); setTimeout(() => { if (!e.classList.contains("show")) e.hidden = true; }, 280); }
+    function maybeShow() {
+      if (tut || !$("overlay").hidden || $("view-game").hidden) return;
+      const r = reason(); if (!r || data["never_" + r.k] || seen.has(r.k)) return;
+      const often = r.k === "hot" || r.k === "heavy", day = dayKey();
+      if (often && data.day === day) return;
+      seen.add(r.k); if (often) { data.day = day; save(); }
+      curK = r.k;
+      $("fxNoteText").textContent = r.k === "set" ? `演出が「${r.name}」になっています。派手にすると、もっと気持ちいい演出が見られます`
+        : r.k === "reduce" ? "iPhone の「視差効果を減らす」がオンのため、動きの少ない演出になっています。設定 → アクセシビリティ → 動作 から変えられます"
+        : "本体の負担を減らすため、一時的に演出を軽くしています";
+      $("fxNoteSet").hidden = r.k !== "set";
+      // 盤面の下から、下のボタン（一覧・ナビ・設定）の上までのあいだに置く。入りきらないときは、ボタンにかぶらない位置を優先
+      const e = $("fxNote"), b = boardEl.getBoundingClientRect(), bar = $("canWords"), barTop = bar && !bar.hidden ? bar.getBoundingClientRect().top : innerHeight - 16;
+      e.hidden = false; const h = e.offsetHeight;
+      e.style.top = Math.max(8, Math.min(b.bottom + 8, barTop - 6 - h)) + "px";
+      void e.offsetWidth; e.classList.add("show");
+      clearTimeout(hideT); hideT = setTimeout(hide, 7000);
+    }
+    $("fxNoteX").addEventListener("click", hide);
+    // 画面のどこかにさわったら（次のなぞりを始めたら）すぐ消す。さわった操作はそのままゲームに届く
+    document.addEventListener("pointerdown", e => { if ($("fxNote").classList.contains("show") && !e.target.closest("#fxNote")) hide(); }, true);
+    $("fxNoteNever").addEventListener("click", () => { if (curK) { data["never_" + curK] = 1; save(); } hide(); });
+    $("fxNoteSet").addEventListener("click", () => { hide(); $("setBtn").click(); });
+    $("fxLevel").addEventListener("change", renderState);
+    const label = () => { const r = reason(); return !r ? "そのまま" : r.k === "set" ? `設定で${r.name}` : r.k === "reduce" ? "視差効果を減らす→動きの少ない演出" : r.k === "hot" ? "本体が熱い→軽い演出" : "重い→軽い演出"; };
+    return { reason, renderState, maybeShow, label };
+  })();
   const Meter = (() => {
     let el = null, iv = 0, rafId = 0, frames = 0, moving = false, d0 = 0, t0 = 0, opened = 0;
     function count() { frames += moving ? 1 : 0; rafId = requestAnimationFrame(count); }
@@ -11965,8 +12053,8 @@ ${recent || "まだありません"}`;
         `動いているアニメ <b>${running}</b>個`,
         `画面の要素 <b>${document.getElementsByTagName("*").length}</b>個`,
         `効果音 ${SFX.state()}・BGM ${BGM.state()}`,
-        `熱 <b>${Heat.state()}</b>${Heat.hot() ? "（自動で軽く）" : ""}${st.lite ? "・重いので控えめ" : ""}`,
-        `演出 ${["なし", "控えめ", "派手"][fxLv()]}`,
+        `熱 <b>${Heat.state()}</b>${Heat.hot() ? "（自動で軽く）" : ""}${st.lite ? "・重いので軽く" : ""}`,
+        `演出 ${["なし", "控えめ", "派手"][fxLv()]}・<b>${FxNote.label()}</b>`,
       ].join("<br>");
       frames = 0; d0 = st.draws; t0 = now;
     }
@@ -13003,6 +13091,7 @@ ${recent || "まだありません"}`;
     for (const v of ["game", "book", "settings"]) $("view-" + v).hidden = v !== name;
     document.querySelectorAll(".tabbar button").forEach(b => b.classList.toggle("on", b.dataset.view === name));
     if (name === "book") renderBook();
+    if (name === "settings") try { FxNote.renderState(); } catch (e) {}  // 起動の途中（まだ FxNote がない）では何もしない
     if (name === "game") { fitBoard(); measure(); if (board) render(); }
   }
   // タブ：「ホーム」はタイトル画面へ。単語帳・設定はタイトル画面の上に開く
@@ -13074,6 +13163,7 @@ ${recent || "まだありません"}`;
   for (const c of $("gameSet").querySelectorAll("[data-sync]")) c.addEventListener("change", () => { const m = $(c.dataset.sync); m.checked = c.checked; m.dispatchEvent(new Event("change")); });
   // 演出・BGM はボタンで切りかえ（中身はタイトルの設定のプルダウンと同じ）
   function renderGsSeg() {
+    FxNote.renderState();
     for (const [seg, sel] of [["gsFx", "fxLevel"], ["gsBgm", "bgmSel"]]) $(seg).querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === $(sel).value)));
   }
   for (const [seg, sel] of [["gsFx", "fxLevel"], ["gsBgm", "bgmSel"]]) $(seg).addEventListener("click", e => {
